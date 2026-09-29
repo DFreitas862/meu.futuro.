@@ -4,20 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meu Futuro - Controle Financeiro</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen pb-12">
 
+    <!-- Verificação rápida de Login -->
+    <script>
+        if (localStorage.getItem('meufuturo_logado') !== 'true') {
+            window.location.href = 'index.html';
+        }
+    </script>
+
     <!-- Header -->
     <header class="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-50 shadow-md">
         <div class="max-w-6xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
-                <a href="index.html" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-arrow-left"></i></a>
+                <button onclick="sair()" class="text-slate-400 hover:text-rose-400 transition" title="Sair"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
                 <h1 class="text-lg font-bold text-emerald-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Financeiro</span></h1>
             </div>
             <div class="flex space-x-2">
@@ -76,29 +81,23 @@
 
         <!-- Grid inferior: Transações e Cartões -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Transações Recentes -->
             <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
                 <h3 class="text-base font-bold text-white mb-4"><i class="fa-solid fa-right-left"></i> Entradas e Saídas Recentes</h3>
-                <div class="space-y-3" id="listaTransacoes">
-                    <!-- Preenchido via JS -->
-                </div>
+                <div class="space-y-3" id="listaTransacoes"></div>
             </section>
 
-            <!-- Cartões de Crédito -->
             <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-base font-bold text-white"><i class="fa-solid fa-credit-card"></i> Cartões de Crédito</h3>
                     <button onclick="abrirModalCartao()" class="text-xs bg-slate-800 hover:bg-slate-700 text-emerald-400 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 transition">+ Cartão</button>
                 </div>
-                <div class="space-y-3" id="listaCartoes">
-                    <!-- Preenchido via JS -->
-                </div>
+                <div class="space-y-3" id="listaCartoes"></div>
             </section>
         </div>
 
     </main>
 
-    <!-- Modal Nova Dívida -->
+    <!-- Modais -->
     <div id="modalDivida" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-white">Cadastrar Dívida Atrasada</h3>
@@ -110,65 +109,59 @@
                 </div>
                 <input type="date" id="divVencimento" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
                 <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" onclick="fecharModalDivida()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold hover:bg-slate-700">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold hover:bg-rose-500">Salvar Dívida</button>
+                    <button type="button" onclick="fecharModalDivida()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold">Salvar</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal Nova Transação -->
     <div id="modalTransacao" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-white">Nova Transação</h3>
             <form id="formTransacao" onsubmit="salvarTransacao(event)" class="space-y-3">
-                <input type="text" id="transDesc" placeholder="Descrição (Ex: Salário, Mercado)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
+                <input type="text" id="transDesc" placeholder="Descrição" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
                 <input type="number" step="0.01" id="transValor" placeholder="Valor (R$)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
                 <select id="transTipo" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
-                    <option value="receita">Receita (Entrada)</option>
-                    <option value="despesa">Despesa (Saída)</option>
+                    <option value="receita">Receita</option>
+                    <option value="despesa">Despesa</option>
                 </select>
                 <input type="date" id="transData" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
                 <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" onclick="fecharModalTransacao()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold hover:bg-slate-700">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-500">Salvar Transação</button>
+                    <button type="button" onclick="fecharModalTransacao()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold">Salvar</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal Novo Cartão -->
     <div id="modalCartao" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
-            <h3 class="text-lg font-bold text-white">Cadastrar Cartão de Crédito</h3>
+            <h3 class="text-lg font-bold text-white">Cadastrar Cartão</h3>
             <form id="formCartao" onsubmit="salvarCartao(event)" class="space-y-3">
-                <input type="text" id="cartaoNome" placeholder="Nome do Cartão (Ex: Nubank)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
+                <input type="text" id="cartaoNome" placeholder="Nome do Cartão" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
                 <input type="number" step="0.01" id="cartaoLimite" placeholder="Limite Total (R$)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
                 <div class="grid grid-cols-2 gap-2">
                     <input type="number" id="cartaoFechamento" placeholder="Dia Fechamento" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
                     <input type="number" id="cartaoVencimento" placeholder="Dia Vencimento" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" onclick="fecharModalCartao()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold hover:bg-slate-700">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-500">Salvar Cartão</button>
+                    <button type="button" onclick="fecharModalCartao()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold">Salvar</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Script de Integração com as tabelas meufuturo_* -->
+    <!-- Importa o arquivo separado com a chave do Supabase -->
+    <script src="supabase.js"></script>
+
+    <!-- Script de Lógica do Financeiro -->
     <script>
-        const SUPABASE_URL = 'SUA_URL_DO_SUPABASE';
-        const SUPABASE_ANON_KEY = 'SUA_CHAVE_ANON_DO_SUPABASE';
-
-        const { createClient } = supabase;
-        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
         async function carregarTudo() {
             await Promise.all([carregarDividas(), carregarTransacoes(), carregarCartoes()]);
         }
 
-        // --- DÍVIDAS ATRASADAS ---
         async function carregarDividas() {
             const { data, error } = await _supabase.from('meufuturo_dividas_atrasadas').select('*').order('data_vencimento', { ascending: true });
             if (error) return console.error('Erro dívidas:', error);
@@ -214,7 +207,6 @@
             carregarDividas();
         }
 
-        // --- TRANSAÇÕES ---
         async function carregarTransacoes() {
             const { data, error } = await _supabase.from('meufuturo_transacoes').select('*').order('data', { ascending: false }).limit(5);
             if (error) return;
@@ -258,7 +250,6 @@
             if (!error) { fecharModalTransacao(); carregarTransacoes(); document.getElementById('formTransacao').reset(); }
         }
 
-        // --- CARTÕES ---
         async function carregarCartoes() {
             const { data } = await _supabase.from('meufuturo_cartoes').select('*');
             const lista = document.getElementById('listaCartoes');
@@ -290,7 +281,11 @@
             if (!error) { fecharModalCartao(); carregarCartoes(); document.getElementById('formCartao').reset(); }
         }
 
-        // Controles de Modais
+        function sair() {
+            localStorage.removeItem('meufuturo_logado');
+            window.location.href = 'index.html';
+        }
+
         function abrirModalDivida() { document.getElementById('modalDivida').classList.remove('hidden'); }
         function fecharModalDivida() { document.getElementById('modalDivida').classList.add('hidden'); }
         function abrirModalTransacao() { document.getElementById('modalTransacao').classList.remove('hidden'); }
