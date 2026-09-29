@@ -5,25 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meu Futuro - Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-sm w-full space-y-6 shadow-2xl text-center">
-        <h1 class="text-2xl font-extrabold text-emerald-400">Meu Futuro</h1>
+        <div>
+            <div class="w-16 h-16 bg-emerald-600/20 border border-emerald-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4 text-emerald-400 text-2xl">
+                <i class="fa-solid fa-wallet"></i>
+            </div>
+            <h1 class="text-2xl font-extrabold text-emerald-400">Meu Futuro</h1>
+            <p class="text-xs text-slate-400 mt-1">Controle Financeiro Pessoal</p>
+        </div>
+
         <form onsubmit="fazerLogin(event)" class="space-y-4">
-            <input type="password" id="senha" placeholder="Digite sua senha" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white text-center outline-none focus:border-emerald-500">
-            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold p-3 rounded-xl transition">Entrar</button>
+            <input type="text" id="nomeUsuario" placeholder="Seu Nome (Ex: Diego)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white text-center outline-none focus:border-emerald-500 transition">
+            <input type="password" id="senha" placeholder="Sua Senha" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white text-center outline-none focus:border-emerald-500 transition">
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold p-3 rounded-xl transition shadow-lg shadow-emerald-900/30">Entrar no Sistema</button>
         </form>
     </div>
+
     <script>
         function fazerLogin(e) {
             e.preventDefault();
+            const nome = document.getElementById('nomeUsuario').value.trim();
             const senha = document.getElementById('senha').value;
-            // Defina sua senha aqui (ex: 1234 ou o que preferir)
+
+            // Validação de acesso (você pode ajustar a senha aqui se quiser)
             if (senha === '1234' || senha === 'admin') {
                 localStorage.setItem('meufuturo_logado', 'true');
+                localStorage.setItem('meufuturo_usuario', nome);
                 window.location.href = 'home.html';
             } else {
-                alert('Senha incorreta!');
+                alert('Senha incorreta! Tente novamente.');
             }
         }
     </script>
