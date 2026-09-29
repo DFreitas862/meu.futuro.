@@ -5,53 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meu Futuro - Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4">
-
-    <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-sm w-full space-y-6 shadow-2xl">
-        <div class="text-center space-y-2">
-            <h1 class="text-2xl font-extrabold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                🚀 Meu Futuro
-            </h1>
-            <p class="text-xs text-slate-400">Controle financeiro e planejamento</p>
-        </div>
-
+    <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-sm w-full space-y-6 shadow-2xl text-center">
+        <h1 class="text-2xl font-extrabold text-emerald-400">Meu Futuro</h1>
         <form onsubmit="fazerLogin(event)" class="space-y-4">
-            <div>
-                <label class="text-xs text-slate-400 block mb-1">Usuário / Nome</label>
-                <input type="text" id="loginUsuario" value="Diego Freitas" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
-            </div>
-            <div>
-                <label class="text-xs text-slate-400 block mb-1">Senha de Acesso</label>
-                <input type="password" id="loginSenha" placeholder="Digite sua senha" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
-            </div>
-            <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition text-sm shadow-lg shadow-emerald-900/20">
-                Entrar no Sistema
-            </button>
+            <input type="password" id="senha" placeholder="Digite sua senha" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white text-center outline-none focus:border-emerald-500">
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold p-3 rounded-xl transition">Entrar</button>
         </form>
-
-        <div class="text-center pt-2 border-t border-slate-800">
-            <button onclick="alert('Módulo de cadastro de novos usuários será ativado em breve!');" class="text-xs text-slate-400 hover:text-emerald-400 transition">
-                Não tem uma conta? <span class="text-emerald-400 font-bold">Cadastre-se</span>
-            </button>
-        </div>
     </div>
-
     <script>
         function fazerLogin(e) {
             e.preventDefault();
-            const usuario = document.getElementById('loginUsuario').value.trim();
-            const senha = document.getElementById('loginSenha').value.trim();
-
-            const usuarioCorreto = "Diego Freitas";
-            const senhaCorreta = "Diego Freitas 160986";
-
-            if (usuario.toLowerCase() === usuarioCorreto.toLowerCase() && senha === senhaCorreta) {
+            const senha = document.getElementById('senha').value;
+            // Defina sua senha aqui (ex: 1234 ou o que preferir)
+            if (senha === '1234' || senha === 'admin') {
                 localStorage.setItem('meufuturo_logado', 'true');
-                window.location.href = 'financeiro.html';
+                window.location.href = 'home.html';
             } else {
-                alert('Usuário ou senha incorretos. Tente novamente.');
+                alert('Senha incorreta!');
             }
         }
     </script>
