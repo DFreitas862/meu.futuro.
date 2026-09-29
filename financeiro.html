@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Futuro - Controle Financeiro & PDV</title>
+    <title>Meu Futuro - Painel Geral & Financeiro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -21,12 +21,12 @@
         <div class="max-w-6xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <button onclick="sair()" class="text-slate-400 hover:text-rose-400 transition" title="Sair"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
-                <h1 class="text-lg font-bold text-emerald-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Financeiro & PDV</span></h1>
+                <h1 class="text-lg font-bold text-emerald-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Painel Principal</span></h1>
             </div>
             <div class="flex flex-wrap gap-1.5">
-                <button onclick="abrirModalPDV()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition shadow-lg shadow-indigo-900/30"><i class="fa-solid fa-cash-register"></i> Novo PDV (Carrinho)</button>
-                <button onclick="abrirModalTransacao()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition"><i class="fa-solid fa-plus"></i> Simples</button>
-                <button onclick="abrirModalCarne()" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition"><i class="fa-solid fa-file-invoice-dollar"></i> Carnê</button>
+                <button onclick="abrirModalPDV()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition"><i class="fa-solid fa-cash-register"></i> PDV</button>
+                <button onclick="abrirModalAgenda()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition"><i class="fa-solid fa-calendar-plus"></i> + Tarefa</button>
+                <button onclick="abrirModalTransacao()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition"><i class="fa-solid fa-plus"></i> Transação</button>
             </div>
         </div>
     </header>
@@ -34,7 +34,7 @@
     <!-- Conteúdo Principal -->
     <main class="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
 
-        <!-- Cards de Resumo -->
+        <!-- Cards de Resumo Financeiro -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow">
                 <p class="text-xs text-slate-400 uppercase font-bold">Patrimônio / Saldo Total</p>
@@ -54,27 +54,35 @@
             </div>
         </div>
 
-        <!-- Seção: Contas Bancárias, VR e Cartões (Dinâmicos) -->
+        <!-- Seção: Agenda / Tarefas do Dia & Compromissos -->
+        <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-base font-bold text-blue-400"><i class="fa-solid fa-calendar-days mr-2"></i>Agenda & Compromissos do Dia</h3>
+                <button onclick="abrirModalAgenda()" class="text-xs bg-slate-800 hover:bg-slate-700 text-blue-400 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 transition">+ Nova Tarefa</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="listaAgenda">
+                <!-- Preenchido via JS -->
+            </div>
+        </section>
+
+        <!-- Seção: Contas Bancárias, VR e Cartões -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Bancos / Contas -->
             <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg space-y-4">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-base font-bold text-emerald-400"><i class="fa-solid fa-building-columns"></i> Bancos (Itaú, Nubank)</h3>
+                    <h3 class="text-base font-bold text-emerald-400"><i class="fa-solid fa-building-columns"></i> Bancos</h3>
                     <button onclick="abrirModalConta()" class="text-xs bg-slate-800 hover:bg-slate-700 text-emerald-400 font-semibold px-2 py-1 rounded-lg border border-slate-700 transition">+ Banco</button>
                 </div>
                 <div class="space-y-3" id="listaContas"></div>
             </section>
 
-            <!-- VR / Benefícios -->
             <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg space-y-4">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-base font-bold text-cyan-400"><i class="fa-solid fa-utensils"></i> Vale Refeição / Alimentação</h3>
+                    <h3 class="text-base font-bold text-cyan-400"><i class="fa-solid fa-utensils"></i> Vale Refeição / VA</h3>
                     <button onclick="abrirModalVR()" class="text-xs bg-slate-800 hover:bg-slate-700 text-cyan-400 font-semibold px-2 py-1 rounded-lg border border-slate-700 transition">+ VR</button>
                 </div>
                 <div class="space-y-3" id="listaVR"></div>
             </section>
 
-            <!-- Cartões de Crédito -->
             <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg space-y-4">
                 <div class="flex justify-between items-center">
                     <h3 class="text-base font-bold text-purple-400"><i class="fa-solid fa-credit-card"></i> Cartões de Crédito</h3>
@@ -84,17 +92,16 @@
             </section>
         </div>
 
-        <!-- Carnês e Empréstimos -->
+        <!-- Carnês e Dívidas -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-file-invoice-dollar"></i> Carnês & Empréstimos (Casas Bahia, Carro)</h3>
+                    <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-file-invoice-dollar"></i> Carnês & Empréstimos</h3>
                     <button onclick="abrirModalCarne()" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 transition">+ Carnê</button>
                 </div>
                 <div class="space-y-3" id="listaCarnes"></div>
             </section>
 
-            <!-- Dívidas Atrasadas -->
             <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-base font-bold text-rose-400"><i class="fa-solid fa-triangle-exclamation"></i> Dívidas Atrasadas</h3>
@@ -126,62 +133,77 @@
 
     <!-- ================= MODAIS ================= -->
 
-    <!-- Modal PDV / Carrinho de Compras -->
+    <!-- Modal Nova Tarefa / Agenda -->
+    <div id="modalAgenda" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-bold text-blue-400"><i class="fa-solid fa-calendar-plus mr-2"></i>Nova Tarefa / Compromisso</h3>
+                <button onclick="fecharModalAgenda()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3">
+                <input type="text" id="agendaTitulo" placeholder="Título do Compromisso / Rota (Ex: Entrega Zona Sul)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <input type="date" id="agendaData" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <select id="agendaPrioridade" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    <option value="normal">Prioridade Normal</option>
+                    <option value="alta">Prioridade Alta / Urgente</option>
+                </select>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="fecharModalAgenda()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
+                    <button type="button" onclick="salvarAgenda()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold">Salvar Tarefa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal PDV / Carrinho -->
     <div id="modalPDV" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-lg w-full space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <h3 class="text-lg font-bold text-indigo-400"><i class="fa-solid fa-cash-register mr-2"></i>PDV / Carrinho de Compras</h3>
                 <button onclick="fecharModalPDV()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            
             <div class="space-y-3">
                 <div class="grid grid-cols-2 gap-2">
-                    <input type="text" id="pdv Estabelecimento" placeholder="Local (Ex: Supermercado)" class="bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white outline-none">
+                    <input type="text" id="pdvEstabelecimento" placeholder="Local (Ex: Supermercado)" class="bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white outline-none">
                     <select id="pdvConta" class="bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white outline-none">
                         <option value="">Forma de Pagamento</option>
                     </select>
                 </div>
-
-                <!-- Adicionar Item -->
                 <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-2">
-                    <p class="text-xs font-bold text-slate-400 uppercase">Adicionar Item ao Carrinho</p>
+                    <p class="text-xs font-bold text-slate-400 uppercase">Adicionar Item</p>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <input type="text" id="itemNome" placeholder="Produto (Ex: Energético)" class="sm:col-span-2 bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none">
                         <input type="number" step="0.01" id="itemValor" placeholder="Valor (R$)" class="bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none">
                     </div>
                     <button type="button" onclick="adicionarItemCarrinho()" class="w-full bg-slate-800 hover:bg-slate-700 text-indigo-400 font-bold text-xs py-2 rounded-lg border border-slate-700 transition">+ Adicionar Item</button>
                 </div>
-
-                <!-- Lista do Carrinho -->
-                <div class="max-h-40 overflow-y-auto space-y-2 border border-slate-800 p-2 rounded-xl bg-slate-950/30" id="listaCarrinho">
+                <div class="max-h-36 overflow-y-auto space-y-2 border border-slate-800 p-2 rounded-xl bg-slate-950/30" id="listaCarrinho">
                     <p class="text-xs text-slate-500 text-center py-4">Nenhum item adicionado ainda.</p>
                 </div>
-
                 <div class="flex justify-between items-center pt-2 border-t border-slate-800">
                     <span class="text-sm font-bold text-slate-300">Total da Compra:</span>
                     <span id="pdvTotal" class="text-xl font-extrabold text-indigo-400">R$ 0,00</span>
                 </div>
-
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalPDV()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="button" onclick="finalizarPDV()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-900/40">Finalizar & Dar Baixa</button>
+                    <button type="button" onclick="finalizarPDV()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold">Finalizar Compra</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal Extrato / Detalhes da Conta -->
+    <!-- Modal Extrato -->
     <div id="modalExtrato" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-xl w-full space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 id="extratoTitulo" class="text-lg font-bold text-emerald-400">Extrato da Conta</h3>
+                <h3 id="extratoTitulo" class="text-lg font-bold text-emerald-400">Histórico</h3>
                 <button onclick="fecharModalExtrato()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <div class="space-y-2 max-h-80 overflow-y-auto" id="extratoLista"></div>
         </div>
     </div>
 
-    <!-- Outros Modais básicos -->
+    <!-- Outros Modais padrão -->
     <div id="modalConta" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-white">Cadastrar Banco</h3>
@@ -200,7 +222,7 @@
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-cyan-400">Cadastrar VR / VA</h3>
             <div class="space-y-3">
-                <input type="text" id="vrNome" placeholder="Nome (Ex: Ticket Alimentação)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <input type="text" id="vrNome" placeholder="Nome (Ex: Ticket)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <input type="number" step="0.01" id="vrSaldo" placeholder="Saldo Inicial (R$)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalVR()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
@@ -212,9 +234,9 @@
 
     <div id="modalCartao" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
-            <h3 class="text-lg font-bold text-purple-400">Cadastrar Cartão de Crédito</h3>
+            <h3 class="text-lg font-bold text-purple-400">Cadastrar Cartão</h3>
             <div class="space-y-3">
-                <input type="text" id="cartaoNome" placeholder="Nome do Cartão (Ex: Nubank Crédito)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <input type="text" id="cartaoNome" placeholder="Nome do Cartão" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <input type="number" step="0.01" id="cartaoLimite" placeholder="Limite Total" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalCartao()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
@@ -228,11 +250,11 @@
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-amber-400">Cadastrar Carnê</h3>
             <div class="space-y-3">
-                <input type="text" id="carneCredor" placeholder="Credor (Ex: Casas Bahia)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                <input type="number" step="0.01" id="carneValor" placeholder="Valor da Parcela" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <input type="text" id="carneCredor" placeholder="Credor" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <input type="number" step="0.01" id="carneValor" placeholder="Valor Parcela" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="grid grid-cols-2 gap-2">
-                    <input type="number" id="carneAtual" placeholder="Parcela Atual" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                    <input type="number" id="carneTotal" placeholder="Total Parcelas" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    <input type="number" id="carneAtual" placeholder="Parc. Atual" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    <input type="number" id="carneTotal" placeholder="Total Parc." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 </div>
                 <input type="number" id="carneVencimento" placeholder="Dia Vencimento" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="flex justify-end space-x-2 pt-2">
@@ -261,20 +283,19 @@
         </div>
     </div>
 
-    <!-- Modal Transação Simples -->
     <div id="modalTransacao" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-white">Transação Simples</h3>
             <div class="space-y-3">
-                <input type="text" id="transDesc" placeholder="Descrição / Produto (Ex: Salário, Conta de Luz)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <input type="text" id="transDesc" placeholder="Descrição" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <input type="number" step="0.01" id="transValor" placeholder="Valor (R$)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="grid grid-cols-2 gap-2">
                     <select id="transTipo" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                        <option value="despesa">Despesa (Saída)</option>
-                        <option value="receita">Receita (Entrada)</option>
+                        <option value="despesa">Despesa</option>
+                        <option value="receita">Receita</option>
                     </select>
                     <select id="transContaId" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                        <option value="">Selecione a Conta</option>
+                        <option value="">Selecione Conta</option>
                     </select>
                 </div>
                 <input type="date" id="transData" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
@@ -292,29 +313,92 @@
         let carrinhoItens = [];
 
         async function carregarTudo() {
-            await Promise.all([carregarContas(), carregarVR(), carregarCartoes(), carregarCarnes(), carregarDividas(), carregarTransacoes()]);
+            await Promise.all([carregarAgenda(), carregarContas(), carregarVR(), carregarCartoes(), carregarCarnes(), carregarDividas(), carregarTransacoes()]);
         }
 
-        // --- CONTAS BANCÁRIAS ---
+        // --- AGENDA / TAREFAS ---
+        async function carregarAgenda() {
+            const { data, error } = await _supabase.from('meufuturo_agenda').select('*').order('data', { ascending: true });
+            const lista = document.getElementById('listaAgenda');
+            lista.innerHTML = '';
+
+            if(!data || data.length === 0) {
+                lista.innerHTML = '<p class="text-xs text-slate-500 col-span-full text-center py-4">Nenhum compromisso agendado.</p>';
+                return;
+            }
+
+            data.forEach(t => {
+                const badgeColor = t.prioridade === 'alta' ? 'border-rose-500/50 bg-rose-950/20 text-rose-300' : 'border-slate-800 bg-slate-950/40 text-slate-300';
+                const statusCheck = t.status === 'concluido' ? 'line-through opacity-50' : '';
+                
+                lista.innerHTML += `
+                    <div class="p-3 rounded-xl border ${badgeTypeColor(t.prioridade)} flex justify-between items-center text-xs">
+                        <div class="${statusCheck} space-y-1">
+                            <p class="font-bold text-white text-sm">${t.titulo}</p>
+                            <span class="text-slate-400"><i class="fa-regular fa-calendar mr-1"></i>${new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="alternarTarefa('${t.id}', '${t.status}')" class="px-2.5 py-1 rounded-lg font-bold ${t.status === 'concluido' ? 'bg-slate-800 text-slate-400' : 'bg-emerald-600 text-white'}" title="Marcar status">
+                                <i class="fa-solid fa-check"></i>
+                            </button>
+                            <button onclick="deletarTarefa('${t.id}')" class="text-rose-400 hover:text-rose-300 p-1" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function badgeTypeColor(prioridade) {
+            return prioridade === 'alta' ? 'border-rose-900/50 bg-rose-950/10' : 'border-slate-800 bg-slate-950/40';
+        }
+
+        async function salvarAgenda() {
+            const titulo = document.getElementById('agendaTitulo').value;
+            const data = document.getElementById('agendaData').value;
+            const prioridade = document.getElementById('agendaPrioridade').value;
+            if(!titulo || !data) return alert('Preencha o título e a data!');
+
+            const { error } = await _supabase.from('meufuturo_agenda').insert([{ titulo, data, prioridade, status: 'pendente' }]);
+            if(!error) {
+                fecharModalAgenda();
+                carregarAgenda();
+                document.getElementById('agendaTitulo').value = '';
+                document.getElementById('agendaData').value = '';
+            } else {
+                alert('Erro ao salvar tarefa: ' + error.message);
+            }
+        }
+
+        async function alternarTarefa(id, statusAtual) {
+            const novoStatus = statusAtual === 'concluido' ? 'pendente' : 'concluido';
+            await _supabase.from('meufuturo_agenda').update({ status: novoStatus }).eq('id', id);
+            carregarAgenda();
+        }
+
+        async function deletarTarefa(id) {
+            await _supabase.from('meufuturo_agenda').delete().eq('id', id);
+            carregarAgenda();
+        }
+
+        // --- CONTAS, VR, CARTÕES, PDV (Mantidos e integrados) ---
         async function carregarContas() {
             const { data } = await _supabase.from('meufuturo_contas').select('*');
             let soma = 0;
             const lista = document.getElementById('listaContas');
             lista.innerHTML = '';
-            
             data?.forEach(c => {
                 soma += Number(c.saldo_inicial);
                 lista.innerHTML += `
                     <div onclick="abrirExtrato('${c.id}', '${c.nome_banco}', 'conta')" class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-emerald-500 transition">
                         <div>
                             <p class="font-bold text-sm text-white"><i class="fa-solid fa-wallet text-emerald-400 mr-1.5"></i>${c.nome_banco}</p>
-                            <span class="text-xs text-slate-400">Ver histórico</span>
+                            <span class="text-xs text-slate-400">Ver extrato</span>
                         </div>
                         <span class="text-emerald-400 font-bold text-sm">R$ ${Number(c.saldo_inicial).toFixed(2)}</span>
                     </div>
                 `;
             });
-            atualizarPatrimonio(soma);
+            document.getElementById('saldoTotal').innerText = `R$ ${soma.toFixed(2)}`;
             popularSelectsContas(data, 'conta');
         }
 
@@ -322,24 +406,20 @@
             const nome = document.getElementById('contaBanco').value;
             const saldo = parseFloat(document.getElementById('contaSaldo').value);
             if(!nome || isNaN(saldo)) return alert('Preencha os campos!');
-
             const { error } = await _supabase.from('meufuturo_contas').insert([{ nome_banco: nome, saldo_inicial: saldo }]);
             if(!error) { fecharModalConta(); carregarContas(); document.getElementById('contaBanco').value=''; document.getElementById('contaSaldo').value=''; }
-            else alert(error.message);
         }
 
-        // --- VR / VA ---
         async function carregarVR() {
             const { data } = await _supabase.from('meufuturo_vr').select('*');
             const lista = document.getElementById('listaVR');
             lista.innerHTML = '';
-            
             data?.forEach(v => {
                 lista.innerHTML += `
                     <div onclick="abrirExtrato('${v.id}', '${v.nome}', 'vr')" class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-cyan-500 transition">
                         <div>
                             <p class="font-bold text-sm text-white"><i class="fa-solid fa-utensils text-cyan-400 mr-1.5"></i>${v.nome}</p>
-                            <span class="text-xs text-slate-400">Ver histórico</span>
+                            <span class="text-xs text-slate-400">Ver extrato</span>
                         </div>
                         <span class="text-cyan-400 font-bold text-sm">R$ ${Number(v.saldo).toFixed(2)}</span>
                     </div>
@@ -352,48 +432,38 @@
             const nome = document.getElementById('vrNome').value;
             const saldo = parseFloat(document.getElementById('vrSaldo').value);
             if(!nome || isNaN(saldo)) return alert('Preencha os campos!');
-
             const { error } = await _supabase.from('meufuturo_vr').insert([{ nome, saldo, tipo: 'credito' }]);
             if(!error) { fecharModalVR(); carregarVR(); document.getElementById('vrNome').value=''; document.getElementById('vrSaldo').value=''; }
-            else alert(error.message);
         }
 
-        // --- CARTÕES ---
         async function carregarCartoes() {
             const { data } = await _supabase.from('meufuturo_cartoes').select('*');
             const lista = document.getElementById('listaCartoes');
             lista.innerHTML = '';
-            
             data?.forEach(c => {
                 lista.innerHTML += `
-                    <div onclick="abrirExtrato('${c.id}', '${c.nome}', 'cartao')" class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-purple-500 transition">
+                    <div class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
                         <div>
                             <p class="font-bold text-sm text-white"><i class="fa-solid fa-credit-card text-purple-400 mr-1.5"></i>${c.nome}</p>
                             <span class="text-xs text-slate-400">Limite: R$ ${Number(c.limite).toFixed(2)}</span>
                         </div>
-                        <span class="text-purple-400 font-bold text-xs">Faturas &gt;</span>
                     </div>
                 `;
             });
-            popularSelectsContas(data, 'cartao');
         }
 
         async function salvarCartao() {
             const nome = document.getElementById('cartaoNome').value;
             const limite = parseFloat(document.getElementById('cartaoLimite').value);
             if(!nome || isNaN(limite)) return alert('Preencha os campos!');
-
             const { error } = await _supabase.from('meufuturo_cartoes').insert([{ nome, limite, fechamento: 10, vencimento: 15 }]);
             if(!error) { fecharModalCartao(); carregarCartoes(); document.getElementById('cartaoNome').value=''; document.getElementById('cartaoLimite').value=''; }
-            else alert(error.message);
         }
 
-        // Popular Selects de Contas nos Modais
         function popularSelectsContas(dados, tipo) {
             const selectTrans = document.getElementById('transContaId');
             const selectPdv = document.getElementById('pdvConta');
             if(!dados) return;
-
             dados.forEach(d => {
                 const opt = document.createElement('option');
                 opt.value = `${tipo}:${d.id}`;
@@ -403,16 +473,11 @@
             });
         }
 
-        function atualizarPatrimonio(somaBancos) {
-            document.getElementById('saldoTotal').innerText = `R$ ${somaBancos.toFixed(2)}`;
-        }
-
-        // --- PDV / CARRINHO DE COMPRAS ---
+        // --- PDV CARRINHO ---
         function adicionarItemCarrinho() {
             const nome = document.getElementById('itemNome').value;
             const valor = parseFloat(document.getElementById('itemValor').value);
-            if(!nome || isNaN(valor)) return alert('Informe o nome e o valor do item!');
-
+            if(!nome || isNaN(valor)) return alert('Informe item e valor!');
             carrinhoItens.push({ nome, valor });
             document.getElementById('itemNome').value = '';
             document.getElementById('itemValor').value = '';
@@ -423,13 +488,11 @@
             const lista = document.getElementById('listaCarrinho');
             lista.innerHTML = '';
             let total = 0;
-
             if(carrinhoItens.length === 0) {
-                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhum item adicionado ainda.</p>';
+                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhum item adicionado.</p>';
                 document.getElementById('pdvTotal').innerText = 'R$ 0,00';
                 return;
             }
-
             carrinhoItens.forEach((item, index) => {
                 total += item.valor;
                 lista.innerHTML += `
@@ -437,7 +500,7 @@
                         <span class="text-white font-medium">${item.nome}</span>
                         <div class="flex items-center space-x-2">
                             <span class="text-indigo-400 font-bold">R$ ${item.valor.toFixed(2)}</span>
-                            <button onclick="removerItemCarrinho(${index})" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="removerItemCarrinho(${index})" class="text-rose-400"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
                 `;
@@ -451,24 +514,15 @@
         }
 
         async function finalizarPDV() {
-            const estab = document.getElementById('pdv Estabelecimento').value || 'Compra PDV';
+            const estab = document.getElementById('pdvEstabelecimento').value || 'Compra PDV';
             const contaInfo = document.getElementById('pdvConta').value;
-            if(!contaInfo || carrinhoItens.length === 0) return alert('Selecione a forma de pagamento e adicione itens!');
-
+            if(!contaInfo || carrinhoItens.length === 0) return alert('Selecione o pagamento e adicione itens!');
             const [tipoConta, contaId] = contaInfo.split(':');
             const totalCompra = carrinhoItens.reduce((acc, item) => acc + item.valor, 0);
             const dataHoje = new Date().toISOString().split('T')[0];
 
-            // 1. Registra a transação principal
-            const { error } = await _supabase.from('meufuturo_transacoes').insert([{
-                descricao: `${estab} (${carrinhoItens.length} itens)`,
-                valor: totalCompra,
-                tipo: 'despesa',
-                data: dataHoje
-            }]);
-            if(error) return alert('Erro ao registrar transação: ' + error.message);
+            await _supabase.from('meufuturo_transacoes').insert([{ descricao: `${estab} (${carrinhoItens.length} itens)`, valor: totalCompra, tipo: 'despesa', data: dataHoje }]);
 
-            // 2. Abate o saldo da conta escolhida
             if(tipoConta === 'conta') {
                 const { data: c } = await _supabase.from('meufuturo_contas').select('saldo_inicial').eq('id', contaId).single();
                 await _supabase.from('meufuturo_contas').update({ saldo_inicial: Number(c.saldo_inicial) - totalCompra }).eq('id', contaId);
@@ -480,38 +534,27 @@
             carrinhoItens = [];
             fecharModalPDV();
             carregarTudo();
-            alert('Compra finalizada e saldo atualizado com sucesso!');
+            alert('Compra finalizada com sucesso!');
         }
 
-        // --- EXTRATO POR CONTA ---
-        async function abrirExtrato(id, nome, tipo) {
-            document.getElementById('extratoTitulo').innerText = `Histórico / Extrato: ${nome}`;
+        async function abrirExtrato(id, nome) {
+            document.getElementById('extratoTitulo').innerText = `Extrato: ${nome}`;
             const lista = document.getElementById('extratoLista');
             lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Carregando...</p>';
             document.getElementById('modalExtrato').classList.remove('hidden');
 
             const { data } = await _supabase.from('meufuturo_transacoes').select('*').order('data', { ascending: false });
             lista.innerHTML = '';
-            
-            if(!data || data.length === 0) {
-                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhuma transação encontrada.</p>';
-                return;
-            }
-
-            data.forEach(t => {
+            data?.forEach(t => {
                 lista.innerHTML += `
                     <div class="flex justify-between items-center bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-xs">
-                        <div>
-                            <p class="font-bold text-white">${t.descricao}</p>
-                            <span class="text-slate-500">${new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
-                        </div>
+                        <div><p class="font-bold text-white">${t.descricao}</p><span class="text-slate-500">${t.data}</span></div>
                         <span class="${t.tipo === 'receita' ? 'text-blue-400' : 'text-amber-400'} font-bold">R$ ${Number(t.valor).toFixed(2)}</span>
                     </div>
                 `;
             });
         }
 
-        // --- CARNÊS E DÍVIDAS ---
         async function carregarCarnes() {
             const { data } = await _supabase.from('meufuturo_carnes').select('*');
             const lista = document.getElementById('listaCarnes');
@@ -519,10 +562,7 @@
             data?.forEach(c => {
                 lista.innerHTML += `
                     <div class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
-                        <div>
-                            <p class="font-bold text-white">${c.credor}</p>
-                            <span class="text-slate-400">Parc. ${c.parcela_atual}/${c.total_parcelas} | Venc. dia ${c.dia_vencimento}</span>
-                        </div>
+                        <div><p class="font-bold text-white">${c.credor}</p><span class="text-slate-400">Parc. ${c.parcela_atual}/${c.total_parcelas}</span></div>
                         <span class="text-amber-400 font-bold">R$ ${Number(c.valor_parcela).toFixed(2)}</span>
                     </div>
                 `;
@@ -535,10 +575,9 @@
             const atual = parseInt(document.getElementById('carneAtual').value);
             const total = parseInt(document.getElementById('carneTotal').value);
             const venc = parseInt(document.getElementById('carneVencimento').value);
-
-            if(!credor || isNaN(valor)) return alert('Preencha os campos!');
+            if(!credor || isNaN(valor)) return alert('Preencha tudo!');
             const { error } = await _supabase.from('meufuturo_carnes').insert([{ credor, valor_parcela: valor, parcela_atual: atual, total_parcelas: total, dia_vencimento: venc, status: 'ativo' }]);
-            if(!error) { fecharModalCarne(); carregarCarnes(); } else alert(error.message);
+            if(!error) { fecharModalCarne(); carregarCarnes(); }
         }
 
         async function carregarDividas() {
@@ -552,7 +591,7 @@
                     <tr class="border-b border-slate-800">
                         <td class="p-2 text-white">${d.credor}</td>
                         <td class="p-2 text-rose-400 font-bold">R$ ${Number(d.valor_atualizado).toFixed(2)}</td>
-                        <td class="p-2 text-slate-400">${new Date(d.data_vencimento + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+                        <td class="p-2 text-slate-400">${d.data_vencimento}</td>
                         <td class="p-2"><button onclick="marcarDividaPaga('${d.id}')" class="text-emerald-400 underline font-bold">Pagar</button></td>
                     </tr>
                 `;
@@ -565,9 +604,9 @@
             const original = parseFloat(document.getElementById('divOriginal').value);
             const atual = parseFloat(document.getElementById('divAtual').value);
             const venc = document.getElementById('divVencimento').value;
-            if(!credor || isNaN(original)) return alert('Preencha os campos!');
+            if(!credor || isNaN(original)) return alert('Preencha tudo!');
             const { error } = await _supabase.from('meufuturo_dividas_atrasadas').insert([{ credor, valor_original: original, valor_atualizado: atual, data_vencimento: venc, status: 'pendente' }]);
-            if(!error) { fecharModalDivida(); carregarDividas(); } else alert(error.message);
+            if(!error) { fecharModalDivida(); carregarDividas(); }
         }
 
         async function marcarDividaPaga(id) {
@@ -587,10 +626,7 @@
             data?.slice(-5).reverse().forEach(t => {
                 lista.innerHTML += `
                     <div class="flex justify-between items-center bg-slate-950/40 p-3 rounded-xl border border-slate-800 text-xs">
-                        <div>
-                            <p class="font-medium text-white">${t.descricao}</p>
-                            <span class="text-slate-500">${new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
-                        </div>
+                        <div><p class="font-medium text-white">${t.descricao}</p><span class="text-slate-500">${t.data}</span></div>
                         <span class="${t.tipo === 'receita' ? 'text-blue-400' : 'text-amber-400'} font-bold">R$ ${Number(t.valor).toFixed(2)}</span>
                     </div>
                 `;
@@ -604,7 +640,6 @@
             const contaInfo = document.getElementById('transContaId').value;
             const data = document.getElementById('transData').value;
             if(!desc || isNaN(valor) || !contaInfo) return alert('Preencha tudo!');
-
             const [tipoConta, contaId] = contaInfo.split(':');
             await _supabase.from('meufuturo_transacoes').insert([{ descricao: desc, valor, tipo, data }]);
             
@@ -617,7 +652,6 @@
                 let novo = tipo === 'receita' ? Number(v.saldo) + valor : Number(v.saldo) - valor;
                 await _supabase.from('meufuturo_vr').update({ saldo: novo }).eq('id', contaId);
             }
-
             fecharModalTransacao();
             carregarTudo();
         }
@@ -625,6 +659,8 @@
         function sair() { localStorage.removeItem('meufuturo_logado'); window.location.href = 'index.html'; }
 
         // Controles de Modais
+        function abrirModalAgenda() { document.getElementById('modalAgenda').classList.remove('hidden'); }
+        function fecharModalAgenda() { document.getElementById('modalAgenda').classList.add('hidden'); }
         function abrirModalPDV() { document.getElementById('modalPDV').classList.remove('hidden'); }
         function fecharModalPDV() { document.getElementById('modalPDV').classList.add('hidden'); }
         function fecharModalExtrato() { document.getElementById('modalExtrato').classList.add('hidden'); }
@@ -645,4 +681,3 @@
     </script>
 </body>
 </html>
-
