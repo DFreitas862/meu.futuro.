@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Futuro - Painel Geral & Financeiro</title>
+    <title>Meu Futuro - Financeiro & PDV</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -20,13 +20,13 @@
     <header class="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-50 shadow-md">
         <div class="max-w-6xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
-                <button onclick="sair()" class="text-slate-400 hover:text-rose-400 transition" title="Sair"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
-                <h1 class="text-lg font-bold text-emerald-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Painel Principal</span></h1>
+                <button onclick="window.location.href='home.html'" class="text-slate-400 hover:text-emerald-400 transition" title="Voltar ao Menu"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+                <h1 class="text-lg font-bold text-emerald-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Financeiro & PDV</span></h1>
             </div>
             <div class="flex flex-wrap gap-1.5">
-                <button onclick="abrirModalPDV()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition"><i class="fa-solid fa-cash-register"></i> PDV</button>
-                <button onclick="abrirModalAgenda()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition"><i class="fa-solid fa-calendar-plus"></i> + Tarefa</button>
-                <button onclick="abrirModalTransacao()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition"><i class="fa-solid fa-plus"></i> Transação</button>
+                <button onclick="abrirModalPDV()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition shadow-lg shadow-indigo-900/30"><i class="fa-solid fa-cash-register mr-1"></i> Novo PDV (Carrinho)</button>
+                <button onclick="abrirModalTransacao()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition"><i class="fa-solid fa-plus"></i> Simples</button>
+                <button onclick="abrirModalCarne()" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition"><i class="fa-solid fa-file-invoice-dollar"></i> Carnê</button>
             </div>
         </div>
     </header>
@@ -34,7 +34,7 @@
     <!-- Conteúdo Principal -->
     <main class="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
 
-        <!-- Cards de Resumo Financeiro -->
+        <!-- Cards de Resumo -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow">
                 <p class="text-xs text-slate-400 uppercase font-bold">Patrimônio / Saldo Total</p>
@@ -54,22 +54,11 @@
             </div>
         </div>
 
-        <!-- Seção: Agenda / Tarefas do Dia & Compromissos -->
-        <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg space-y-4">
-            <div class="flex justify-between items-center">
-                <h3 class="text-base font-bold text-blue-400"><i class="fa-solid fa-calendar-days mr-2"></i>Agenda & Compromissos do Dia</h3>
-                <button onclick="abrirModalAgenda()" class="text-xs bg-slate-800 hover:bg-slate-700 text-blue-400 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 transition">+ Nova Tarefa</button>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="listaAgenda">
-                <!-- Preenchido via JS -->
-            </div>
-        </section>
-
-        <!-- Seção: Contas Bancárias, VR e Cartões -->
+        <!-- Contas Bancárias, VR e Cartões -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg space-y-4">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-base font-bold text-emerald-400"><i class="fa-solid fa-building-columns"></i> Bancos</h3>
+                    <h3 class="text-base font-bold text-emerald-400"><i class="fa-solid fa-building-columns"></i> Bancos (Itaú, Nubank)</h3>
                     <button onclick="abrirModalConta()" class="text-xs bg-slate-800 hover:bg-slate-700 text-emerald-400 font-semibold px-2 py-1 rounded-lg border border-slate-700 transition">+ Banco</button>
                 </div>
                 <div class="space-y-3" id="listaContas"></div>
@@ -133,28 +122,6 @@
 
     <!-- ================= MODAIS ================= -->
 
-    <!-- Modal Nova Tarefa / Agenda -->
-    <div id="modalAgenda" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="text-lg font-bold text-blue-400"><i class="fa-solid fa-calendar-plus mr-2"></i>Nova Tarefa / Compromisso</h3>
-                <button onclick="fecharModalAgenda()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <div class="space-y-3">
-                <input type="text" id="agendaTitulo" placeholder="Título do Compromisso / Rota (Ex: Entrega Zona Sul)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                <input type="date" id="agendaData" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                <select id="agendaPrioridade" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                    <option value="normal">Prioridade Normal</option>
-                    <option value="alta">Prioridade Alta / Urgente</option>
-                </select>
-                <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" onclick="fecharModalAgenda()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="button" onclick="salvarAgenda()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold">Salvar Tarefa</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Modal PDV / Carrinho -->
     <div id="modalPDV" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-lg w-full space-y-4 shadow-2xl">
@@ -196,14 +163,14 @@
     <div id="modalExtrato" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-xl w-full space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 id="extratoTitulo" class="text-lg font-bold text-emerald-400">Histórico</h3>
+                <h3 id="extratoTitulo" class="text-lg font-bold text-emerald-400">Extrato</h3>
                 <button onclick="fecharModalExtrato()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <div class="space-y-2 max-h-80 overflow-y-auto" id="extratoLista"></div>
         </div>
     </div>
 
-    <!-- Outros Modais padrão -->
+    <!-- Modais de Cadastro -->
     <div id="modalConta" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-white">Cadastrar Banco</h3>
@@ -313,74 +280,9 @@
         let carrinhoItens = [];
 
         async function carregarTudo() {
-            await Promise.all([carregarAgenda(), carregarContas(), carregarVR(), carregarCartoes(), carregarCarnes(), carregarDividas(), carregarTransacoes()]);
+            await Promise.all([carregarContas(), carregarVR(), carregarCartoes(), carregarCarnes(), carregarDividas(), carregarTransacoes()]);
         }
 
-        // --- AGENDA / TAREFAS ---
-        async function carregarAgenda() {
-            const { data, error } = await _supabase.from('meufuturo_agenda').select('*').order('data', { ascending: true });
-            const lista = document.getElementById('listaAgenda');
-            lista.innerHTML = '';
-
-            if(!data || data.length === 0) {
-                lista.innerHTML = '<p class="text-xs text-slate-500 col-span-full text-center py-4">Nenhum compromisso agendado.</p>';
-                return;
-            }
-
-            data.forEach(t => {
-                const badgeColor = t.prioridade === 'alta' ? 'border-rose-500/50 bg-rose-950/20 text-rose-300' : 'border-slate-800 bg-slate-950/40 text-slate-300';
-                const statusCheck = t.status === 'concluido' ? 'line-through opacity-50' : '';
-                
-                lista.innerHTML += `
-                    <div class="p-3 rounded-xl border ${badgeTypeColor(t.prioridade)} flex justify-between items-center text-xs">
-                        <div class="${statusCheck} space-y-1">
-                            <p class="font-bold text-white text-sm">${t.titulo}</p>
-                            <span class="text-slate-400"><i class="fa-regular fa-calendar mr-1"></i>${new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <button onclick="alternarTarefa('${t.id}', '${t.status}')" class="px-2.5 py-1 rounded-lg font-bold ${t.status === 'concluido' ? 'bg-slate-800 text-slate-400' : 'bg-emerald-600 text-white'}" title="Marcar status">
-                                <i class="fa-solid fa-check"></i>
-                            </button>
-                            <button onclick="deletarTarefa('${t.id}')" class="text-rose-400 hover:text-rose-300 p-1" title="Excluir"><i class="fa-solid fa-trash"></i></button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function badgeTypeColor(prioridade) {
-            return prioridade === 'alta' ? 'border-rose-900/50 bg-rose-950/10' : 'border-slate-800 bg-slate-950/40';
-        }
-
-        async function salvarAgenda() {
-            const titulo = document.getElementById('agendaTitulo').value;
-            const data = document.getElementById('agendaData').value;
-            const prioridade = document.getElementById('agendaPrioridade').value;
-            if(!titulo || !data) return alert('Preencha o título e a data!');
-
-            const { error } = await _supabase.from('meufuturo_agenda').insert([{ titulo, data, prioridade, status: 'pendente' }]);
-            if(!error) {
-                fecharModalAgenda();
-                carregarAgenda();
-                document.getElementById('agendaTitulo').value = '';
-                document.getElementById('agendaData').value = '';
-            } else {
-                alert('Erro ao salvar tarefa: ' + error.message);
-            }
-        }
-
-        async function alternarTarefa(id, statusAtual) {
-            const novoStatus = statusAtual === 'concluido' ? 'pendente' : 'concluido';
-            await _supabase.from('meufuturo_agenda').update({ status: novoStatus }).eq('id', id);
-            carregarAgenda();
-        }
-
-        async function deletarTarefa(id) {
-            await _supabase.from('meufuturo_agenda').delete().eq('id', id);
-            carregarAgenda();
-        }
-
-        // --- CONTAS, VR, CARTÕES, PDV (Mantidos e integrados) ---
         async function carregarContas() {
             const { data } = await _supabase.from('meufuturo_contas').select('*');
             let soma = 0;
@@ -659,8 +561,6 @@
         function sair() { localStorage.removeItem('meufuturo_logado'); window.location.href = 'index.html'; }
 
         // Controles de Modais
-        function abrirModalAgenda() { document.getElementById('modalAgenda').classList.remove('hidden'); }
-        function fecharModalAgenda() { document.getElementById('modalAgenda').classList.add('hidden'); }
         function abrirModalPDV() { document.getElementById('modalPDV').classList.remove('hidden'); }
         function fecharModalPDV() { document.getElementById('modalPDV').classList.add('hidden'); }
         function fecharModalExtrato() { document.getElementById('modalExtrato').classList.add('hidden'); }
