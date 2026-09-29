@@ -38,7 +38,7 @@
         <!-- Cards de Resumo -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow">
-                <p class="text-xs text-slate-400 uppercase font-bold">Saldo Geral</p>
+                <p class="text-xs text-slate-400 uppercase font-bold">Saldo Geral (Bancos)</p>
                 <h2 id="saldoTotal" class="text-2xl font-extrabold text-emerald-400 mt-1">R$ 0,00</h2>
             </div>
             <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow">
@@ -61,7 +61,6 @@
 
         <!-- Seção: Bancos & Contas e Carnês/Empréstimos -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Contas Bancárias -->
             <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-base font-bold text-emerald-400"><i class="fa-solid fa-building-columns"></i> Contas Bancárias</h3>
@@ -70,7 +69,6 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="listaContas"></div>
             </section>
 
-            <!-- Carnês e Empréstimos -->
             <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-base font-bold text-purple-400"><i class="fa-solid fa-file-invoice-dollar"></i> Carnês & Empréstimos</h3>
@@ -83,7 +81,7 @@
         <!-- Seção: Dívidas Atrasadas -->
         <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-base font-bold text-rose-400"><i class="fa-solid fa-triangle-exclamation"></i> Dívidas Atrasadas (Foco em Negociação)</h3>
+                <h3 class="text-base font-bold text-rose-400"><i class="fa-solid fa-triangle-exclamation"></i> Dívidas Atrasadas</h3>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm text-slate-300">
@@ -132,107 +130,116 @@
     <div id="modalConta" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-white">Cadastrar Conta Bancária</h3>
-            <form id="formConta" onsubmit="salvarConta(event)" class="space-y-3">
-                <input type="text" id="contaBanco" placeholder="Nome do Banco (Ex: Itaú, Nubank)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                <input type="number" step="0.01" id="contaSaldo" placeholder="Saldo Atual (R$)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+            <div class="space-y-3">
+                <input type="text" id="contaBanco" placeholder="Nome do Banco (Ex: Itaú)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <input type="number" step="0.01" id="contaSaldo" placeholder="Saldo Inicial (R$)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalConta()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold">Salvar Conta</button>
+                    <button type="button" onclick="salvarConta()" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold">Salvar Conta</button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
     <div id="modalCarne" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-white">Cadastrar Carnê / Empréstimo</h3>
-            <form id="formCarne" onsubmit="salvarCarne(event)" class="space-y-3">
-                <input type="text" id="carneCredor" placeholder="Credor (Ex: Casas Bahia, Carro)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                <input type="number" step="0.01" id="carneValor" placeholder="Valor da Parcela (R$)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+            <div class="space-y-3">
+                <input type="text" id="carneCredor" placeholder="Credor (Ex: Casas Bahia)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <input type="number" step="0.01" id="carneValor" placeholder="Valor da Parcela (R$)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="grid grid-cols-2 gap-2">
-                    <input type="number" id="carneAtual" placeholder="Parcela Atual (Ex: 3)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                    <input type="number" id="carneTotal" placeholder="Total Parcelas (Ex: 12)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    <input type="number" id="carneAtual" placeholder="Parcela Atual (Ex: 1)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    <input type="number" id="carneTotal" placeholder="Total Parcelas (Ex: 12)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 </div>
-                <input type="number" id="carneVencimento" placeholder="Dia do Vencimento (Ex: 10)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <input type="number" id="carneVencimento" placeholder="Dia do Vencimento (Ex: 10)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalCarne()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-xl text-xs font-bold">Salvar Carnê</button>
+                    <button type="button" onclick="salvarCarne()" class="px-4 py-2 bg-purple-600 text-white rounded-xl text-xs font-bold">Salvar Carnê</button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
     <div id="modalVR" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-white">Lançamento no VR</h3>
-            <form id="formVR" onsubmit="salvarVR(event)" class="space-y-3">
-                <input type="text" id="vrDesc" placeholder="Descrição" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                <input type="number" step="0.01" id="vrValor" placeholder="Valor (R$)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+            <div class="space-y-3">
+                <input type="text" id="vrDesc" placeholder="Descrição" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <input type="number" step="0.01" id="vrValor" placeholder="Valor (R$)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <select id="vrTipo" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                     <option value="credito">Crédito (Recarga)</option>
                     <option value="gasto">Gasto (Mercado)</option>
                 </select>
-                <input type="date" id="vrData" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <input type="date" id="vrData" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalVR()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 bg-cyan-600 text-white rounded-xl text-xs font-bold">Salvar</button>
+                    <button type="button" onclick="salvarVR()" class="px-4 py-2 bg-cyan-600 text-white rounded-xl text-xs font-bold">Salvar</button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
     <div id="modalDivida" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-white">Cadastrar Dívida Atrasada</h3>
-            <form id="formDivida" onsubmit="salvarDivida(event)" class="space-y-3">
-                <input type="text" id="divCredor" placeholder="Credor" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+            <div class="space-y-3">
+                <input type="text" id="divCredor" placeholder="Credor" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="grid grid-cols-2 gap-2">
-                    <input type="number" step="0.01" id="divOriginal" placeholder="Original" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                    <input type="number" step="0.01" id="divAtual" placeholder="Atualizado" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    <input type="number" step="0.01" id="divOriginal" placeholder="Original" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    <input type="number" step="0.01" id="divAtual" placeholder="Atualizado" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 </div>
-                <input type="date" id="divVencimento" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <input type="date" id="divVencimento" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalDivida()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold">Salvar</button>
+                    <button type="button" onclick="salvarDivida()" class="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold">Salvar</button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
+    <!-- Modal Transação com escolha de Banco -->
     <div id="modalTransacao" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-white">Nova Transação</h3>
-            <form id="formTransacao" onsubmit="salvarTransacao(event)" class="space-y-3">
-                <input type="text" id="transDesc" placeholder="Descrição" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                <input type="number" step="0.01" id="transValor" placeholder="Valor (R$)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                <select id="transTipo" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                    <option value="receita">Receita</option>
-                    <option value="despesa">Despesa</option>
-                </select>
-                <input type="date" id="transData" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+            <div class="space-y-3">
+                <input type="text" id="transDesc" placeholder="Descrição (Ex: Supermercado, Salário)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <input type="number" step="0.01" id="transValor" placeholder="Valor (R$)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <select id="transTipo" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                        <option value="despesa">Despesa (Saída)</option>
+                        <option value="receita">Receita (Entrada)</option>
+                    </select>
+                    <!-- Select que carrega os bancos cadastrados -->
+                    <select id="transContaId" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                        <option value="">Selecione o Banco</option>
+                    </select>
+                </div>
+
+                <input type="date" id="transData" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalTransacao()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold">Salvar</button>
+                    <button type="button" onclick="salvarTransacao()" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold">Salvar Transação</button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
     <div id="modalCartao" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-white">Cadastrar Cartão</h3>
-            <form id="formCartao" onsubmit="salvarCartao(event)" class="space-y-3">
-                <input type="text" id="cartaoNome" placeholder="Nome do Cartão" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                <input type="number" step="0.01" id="cartaoLimite" placeholder="Limite Total" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+            <div class="space-y-3">
+                <input type="text" id="cartaoNome" placeholder="Nome do Cartão" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <input type="number" step="0.01" id="cartaoLimite" placeholder="Limite Total" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="grid grid-cols-2 gap-2">
-                    <input type="number" id="cartaoFechamento" placeholder="Dia Fechamento" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                    <input type="number" id="cartaoVencimento" placeholder="Dia Vencimento" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    <input type="number" id="cartaoFechamento" placeholder="Dia Fechamento" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    <input type="number" id="cartaoVencimento" placeholder="Dia Vencimento" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalCartao()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold">Salvar</button>
+                    <button type="button" onclick="salvarCartao()" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold">Salvar</button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
@@ -243,15 +250,21 @@
             await Promise.all([carregarContas(), carregarCarnes(), carregarDividas(), carregarTransacoes(), carregarCartoes(), carregarVR()]);
         }
 
+        // --- CONTAS BANCÁRIAS ---
         async function carregarContas() {
             const { data, error } = await _supabase.from('meufuturo_contas').select('*');
-            if (error) return console.error('Erro ao carregar contas:', error);
+            if (error) return console.error('Erro:', error);
 
             let somaContas = 0;
             const lista = document.getElementById('listaContas');
+            const selectConta = document.getElementById('transContaId');
+            
             lista.innerHTML = '';
+            selectConta.innerHTML = '<option value="">Selecione o Banco</option>';
+
             data?.forEach(c => {
                 somaContas += Number(c.saldo_inicial);
+                // Exibe na lista de contas
                 lista.innerHTML += `
                     <div class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
                         <div>
@@ -261,25 +274,32 @@
                         <span class="text-emerald-400 font-bold text-sm">R$ ${Number(c.saldo_inicial).toFixed(2)}</span>
                     </div>
                 `;
+                // Adiciona no select do modal de transações
+                selectConta.innerHTML += `<option value="${c.id}">${c.nome_banco} (R$ ${Number(c.saldo_inicial).toFixed(2)})</option>`;
             });
             document.getElementById('saldoTotal').innerText = `R$ ${somaContas.toFixed(2)}`;
         }
 
-        async function salvarConta(e) {
-            e.preventDefault();
+        async function salvarConta() {
+            const banco = document.getElementById('contaBanco').value;
+            const saldo = document.getElementById('contaSaldo').value;
+            if(!banco || !saldo) return alert('Preencha todos os campos!');
+
             const { error } = await _supabase.from('meufuturo_contas').insert([{
-                nome_banco: document.getElementById('contaBanco').value,
-                saldo_inicial: parseFloat(document.getElementById('contaSaldo').value)
+                nome_banco: banco,
+                saldo_inicial: parseFloat(saldo)
             }]);
             if (!error) {
                 fecharModalConta();
                 carregarContas();
-                document.getElementById('formConta').reset();
+                document.getElementById('contaBanco').value = '';
+                document.getElementById('contaSaldo').value = '';
             } else {
-                alert('Erro ao salvar conta no Supabase: ' + error.message);
+                alert('Erro ao salvar: ' + error.message);
             }
         }
 
+        // --- CARNÊS ---
         async function carregarCarnes() {
             const { data } = await _supabase.from('meufuturo_carnes').select('*').order('dia_vencimento', { ascending: true });
             const lista = document.getElementById('listaCarnes');
@@ -300,20 +320,23 @@
             });
         }
 
-        async function salvarCarne(e) {
-            e.preventDefault();
+        async function salvarCarne() {
+            const credor = document.getElementById('carneCredor').value;
+            const valor = document.getElementById('carneValor').value;
+            const atual = document.getElementById('carneAtual').value;
+            const total = document.getElementById('carneTotal').value;
+            const venc = document.getElementById('carneVencimento').value;
+
+            if(!credor || !valor || !atual || !total || !venc) return alert('Preencha tudo!');
+
             const { error } = await _supabase.from('meufuturo_carnes').insert([{
-                credor: document.getElementById('carneCredor').value,
-                valor_parcela: parseFloat(document.getElementById('carneValor').value),
-                parcela_atual: parseInt(document.getElementById('carneAtual').value),
-                total_parcelas: parseInt(document.getElementById('carneTotal').value),
-                dia_vencimento: parseInt(document.getElementById('carneVencimento').value),
-                status: 'ativo'
+                credor, valor_parcela: parseFloat(valor), parcela_atual: parseInt(atual), total_parcelas: parseInt(total), dia_vencimento: parseInt(venc), status: 'ativo'
             }]);
-            if (!error) { fecharModalCarne(); carregarCarnes(); document.getElementById('formCarne').reset(); }
-            else { alert('Erro ao salvar carnê: ' + error.message); }
+            if (!error) { fecharModalCarne(); carregarCarnes(); document.getElementById('formCarne')?.reset(); }
+            else alert('Erro: ' + error.message);
         }
 
+        // --- VR ---
         async function carregarVR() {
             const { data } = await _supabase.from('meufuturo_vr').select('*');
             let saldoVrTotal = 0;
@@ -325,8 +348,7 @@
 
             const lista = document.getElementById('listaVR');
             lista.innerHTML = '';
-            const ultimos = data?.slice(-5).reverse() || [];
-            ultimos.forEach(v => {
+            data?.slice(-5).reverse().forEach(v => {
                 const cor = v.tipo === 'credito' ? 'text-cyan-400' : 'text-amber-400';
                 const sinal = v.tipo === 'credito' ? '+' : '-';
                 lista.innerHTML += `
@@ -341,17 +363,19 @@
             });
         }
 
-        async function salvarVR(e) {
-            e.preventDefault();
-            const { error } = await _supabase.from('meufuturo_vr').insert([{
-                descricao: document.getElementById('vrDesc').value,
-                valor: parseFloat(document.getElementById('vrValor').value),
-                tipo: document.getElementById('vrTipo').value,
-                data: document.getElementById('vrData').value
-            }]);
-            if (!error) { fecharModalVR(); carregarVR(); document.getElementById('formVR').reset(); }
+        async function salvarVR() {
+            const desc = document.getElementById('vrDesc').value;
+            const valor = document.getElementById('vrValor').value;
+            const tipo = document.getElementById('vrTipo').value;
+            const data = document.getElementById('vrData').value;
+            if(!desc || !valor || !data) return alert('Preencha tudo!');
+
+            const { error } = await _supabase.from('meufuturo_vr').insert([{ descricao: desc, valor: parseFloat(valor), tipo, data }]);
+            if (!error) { fecharModalVR(); carregarVR(); }
+            else alert('Erro: ' + error.message);
         }
 
+        // --- DÍVIDAS ---
         async function carregarDividas() {
             const { data } = await _supabase.from('meufuturo_dividas_atrasadas').select('*').order('data_vencimento', { ascending: true });
             let totalAtraso = 0;
@@ -376,16 +400,16 @@
             document.getElementById('totalAtrasadas').innerText = `R$ ${totalAtraso.toFixed(2)}`;
         }
 
-        async function salvarDivida(e) {
-            e.preventDefault();
-            const { error } = await _supabase.from('meufuturo_dividas_atrasadas').insert([{
-                credor: document.getElementById('divCredor').value,
-                valor_original: parseFloat(document.getElementById('divOriginal').value),
-                valor_atualizado: parseFloat(document.getElementById('divAtual').value),
-                data_vencimento: document.getElementById('divVencimento').value,
-                status: 'pendente'
-            }]);
-            if (!error) { fecharModalDivida(); carregarDividas(); document.getElementById('formDivida').reset(); }
+        async function salvarDivida() {
+            const credor = document.getElementById('divCredor').value;
+            const original = document.getElementById('divOriginal').value;
+            const atual = document.getElementById('divAtual').value;
+            const venc = document.getElementById('divVencimento').value;
+            if(!credor || !original || !atual || !venc) return alert('Preencha tudo!');
+
+            const { error } = await _supabase.from('meufuturo_dividas_atrasadas').insert([{ credor, valor_original: parseFloat(original), valor_atualizado: parseFloat(atual), data_vencimento: venc, status: 'pendente' }]);
+            if (!error) { fecharModalDivida(); carregarDividas(); }
+            else alert('Erro: ' + error.message);
         }
 
         async function marcarDividaPaga(id) {
@@ -393,6 +417,7 @@
             carregarDividas();
         }
 
+        // --- TRANSAÇÕES (Com baixa automática na conta escolhida) ---
         async function carregarTransacoes() {
             const { data } = await _supabase.from('meufuturo_transacoes').select('*');
             let totalRec = 0, totalDesp = 0;
@@ -405,8 +430,7 @@
 
             const lista = document.getElementById('listaTransacoes');
             lista.innerHTML = '';
-            const ultimos = data?.slice(-5).reverse() || [];
-            ultimos.forEach(t => {
+            data?.slice(-5).reverse().forEach(t => {
                 const cor = t.tipo === 'receita' ? 'text-blue-400' : 'text-amber-400';
                 const sinal = t.tipo === 'receita' ? '+' : '-';
                 lista.innerHTML += `
@@ -421,17 +445,42 @@
             });
         }
 
-        async function salvarTransacao(e) {
-            e.preventDefault();
-            const { error } = await _supabase.from('meufuturo_transacoes').insert([{
-                descricao: document.getElementById('transDesc').value,
-                valor: parseFloat(document.getElementById('transValor').value),
-                tipo: document.getElementById('transTipo').value,
-                data: document.getElementById('transData').value
-            }]);
-            if (!error) { fecharModalTransacao(); carregarTransacoes(); document.getElementById('formTransacao').reset(); }
+        async function salvarTransacao() {
+            const desc = document.getElementById('transDesc').value;
+            const valor = parseFloat(document.getElementById('transValor').value);
+            const tipo = document.getElementById('transTipo').value;
+            const contaId = document.getElementById('transContaId').value;
+            const data = document.getElementById('transData').value;
+
+            if(!desc || isNaN(valor) || !data || !contaId) return alert('Preencha todos os campos e selecione o banco!');
+
+            // 1. Salva a transação
+            const { error } = await _supabase.from('meufuturo_transacoes').insert([{ descricao: desc, valor, tipo, data }]);
+            if (error) return alert('Erro ao salvar transação: ' + error.message);
+
+            // 2. Busca o saldo atual da conta selecionada
+            const { data: contaData, error: contaErr } = await _supabase.from('meufuturo_contas').select('*').eq('id', contaId).single();
+            if(contaErr) return alert('Erro ao buscar conta bancária.');
+
+            let novoSaldo = Number(contaData.saldo_inicial);
+            if(tipo === 'receita') {
+                novoSaldo += valor;
+            } else {
+                novoSaldo -= valor; // Tira o dinheiro do banco escolhido!
+            }
+
+            // 3. Atualiza o saldo da conta no Supabase
+            const { error: updErr } = await _supabase.from('meufuturo_contas').update({ saldo_inicial: novoSaldo }).eq('id', contaId);
+            if(updErr) return alert('Erro ao atualizar saldo do banco.');
+
+            fecharModalTransacao();
+            carregarTudo();
+            document.getElementById('transDesc').value = '';
+            document.getElementById('transValor').value = '';
+            document.getElementById('transData').value = '';
         }
 
+        // --- CARTÕES ---
         async function carregarCartoes() {
             const { data } = await _supabase.from('meufuturo_cartoes').select('*');
             const lista = document.getElementById('listaCartoes');
@@ -452,15 +501,16 @@
             });
         }
 
-        async function salvarCartao(e) {
-            e.preventDefault();
-            const { error } = await _supabase.from('meufuturo_cartoes').insert([{
-                nome: document.getElementById('cartaoNome').value,
-                limite: parseFloat(document.getElementById('cartaoLimite').value),
-                fechamento: parseInt(document.getElementById('cartaoFechamento').value),
-                vencimento: parseInt(document.getElementById('cartaoVencimento').value)
-            }]);
-            if (!error) { fecharModalCartao(); carregarCartoes(); document.getElementById('formCartao').reset(); }
+        async function salvarCartao() {
+            const nome = document.getElementById('cartaoNome').value;
+            const limite = document.getElementById('cartaoLimite').value;
+            const fechamento = document.getElementById('cartaoFechamento').value;
+            const vencimento = document.getElementById('cartaoVencimento').value;
+            if(!nome || !limite || !fechamento || !vencimento) return alert('Preencha tudo!');
+
+            const { error } = await _supabase.from('meufuturo_cartoes').insert([{ nome, limite: parseFloat(limite), fechamento: parseInt(fechamento), vencimento: parseInt(vencimento) }]);
+            if (!error) { fecharModalCartao(); carregarCartoes(); }
+            else alert('Erro: ' + error.message);
         }
 
         function sair() {
