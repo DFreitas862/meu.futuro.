@@ -3,67 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Futuro - Início</title>
-    <!-- Tailwind CSS -->
+    <title>Meu Futuro - Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome para ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4">
 
-    <!-- Header Simples -->
-    <header class="p-6 border-b border-slate-800 flex justify-between items-center max-w-md md:max-w-2xl mx-auto w-full">
-        <h1 class="text-xl font-extrabold tracking-wide bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-            🚀 Meu Futuro
-        </h1>
-        <span class="text-xs text-slate-400 bg-slate-900 px-3 py-1 rounded-full border border-slate-800">Painel Geral</span>
-    </header>
-
-    <!-- Conteúdo Principal / Menu de Acesso -->
-    <main class="max-w-md md:max-w-2xl mx-auto w-full p-6 space-y-6 flex-grow flex flex-col justify-center">
-        
-        <div class="space-y-2 text-center md:text-left">
-            <h2 class="text-2xl font-bold text-white">Olá, Diego!</h2>
-            <p class="text-sm text-slate-400">O que vamos organizar ou planejar hoje?</p>
+    <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-sm w-full space-y-6 shadow-2xl">
+        <div class="text-center space-y-2">
+            <h1 class="text-2xl font-extrabold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                🚀 Meu Futuro
+            </h1>
+            <p class="text-xs text-slate-400">Controle financeiro e planejamento</p>
         </div>
 
-        <!-- Lista de Opções -->
-        <div class="space-y-3">
-            <!-- Botão Financeiro -->
-            <a href="financeiro.html" class="flex items-center justify-between p-4 bg-slate-900 hover:bg-slate-800/80 border border-slate-800 hover:border-emerald-500/50 rounded-2xl transition group shadow-lg">
-                <div class="flex items-center space-x-4">
-                    <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-xl group-hover:scale-110 transition">
-                        <i class="fa-solid fa-wallet"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-white text-base">Financeiro</h3>
-                        <p class="text-xs text-slate-400">Entradas, saídas, cartões e dívidas</p>
-                    </div>
-                </div>
-                <i class="fa-solid fa-chevron-right text-slate-600 group-hover:text-emerald-400 transition"></i>
-            </a>
+        <form onsubmit="fazerLogin(event)" class="space-y-4">
+            <div>
+                <label class="text-xs text-slate-400 block mb-1">Usuário / Nome</label>
+                <input type="text" id="loginUsuario" value="Diego Freitas" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
+            </div>
+            <div>
+                <label class="text-xs text-slate-400 block mb-1">Senha de Acesso</label>
+                <input type="password" id="loginSenha" placeholder="Digite sua senha" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
+            </div>
+            <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition text-sm shadow-lg shadow-emerald-900/20">
+                Entrar no Sistema
+            </button>
+        </form>
 
-            <!-- Botão Agenda -->
-            <a href="#" onclick="alert('Módulo de Agenda será o próximo passo após ajustarmos as finanças!'); return false;" class="flex items-center justify-between p-4 bg-slate-900 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/50 rounded-2xl transition group shadow-lg">
-                <div class="flex items-center space-x-4">
-                    <div class="w-12 h-12 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center text-xl group-hover:scale-110 transition">
-                        <i class="fa-solid fa-calendar-days"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-white text-base">Agenda & Ideias</h3>
-                        <p class="text-xs text-slate-400">Planejamento e futuro (Em breve)</p>
-                    </div>
-                </div>
-                <i class="fa-solid fa-chevron-right text-slate-600 group-hover:text-cyan-400 transition"></i>
-            </a>
+        <div class="text-center pt-2 border-t border-slate-800">
+            <button onclick="alert('Módulo de cadastro de novos usuários será ativado em breve!');" class="text-xs text-slate-400 hover:text-emerald-400 transition">
+                Não tem uma conta? <span class="text-emerald-400 font-bold">Cadastre-se</span>
+            </button>
         </div>
+    </div>
 
-    </main>
+    <script>
+        function fazerLogin(e) {
+            e.preventDefault();
+            const usuario = document.getElementById('loginUsuario').value;
+            const senha = document.getElementById('loginSenha').value;
 
-    <!-- Rodapé -->
-    <footer class="p-6 text-center text-xs text-slate-600">
-        Desenvolvido com foco no seu sucesso 💡
-    </footer>
-
+            // Senha padrão solicitada: Diego Freitas 160986
+            if (senha === 'Diego Freitas 160986') {
+                localStorage.setItem('meufuturo_logado', 'true');
+                window.location.href = 'financeiro.html';
+            } else {
+                alert('Senha incorreta! A senha padrão é: Diego Freitas 160986');
+            }
+        }
+    </script>
 </body>
 </html>
