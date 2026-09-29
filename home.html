@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Futuro - Menu Principal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4">
+
+    <script>
+        if (localStorage.getItem('meufuturo_logado') !== 'true') {
+            window.location.href = 'index.html';
+        }
+    </script>
+
+    <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-md w-full space-y-6 shadow-2xl text-center">
+        <div>
+            <h1 class="text-2xl font-extrabold text-emerald-400">Meu Futuro</h1>
+            <p class="text-xs text-slate-400 mt-1">Escolha o módulo que deseja acessar</p>
+        </div>
+
+        <div class="grid grid-cols-1 gap-3">
+            <button onclick="window.location.href='financeiro.html'" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold p-4 rounded-xl transition flex items-center justify-center space-x-3 shadow-lg">
+                <i class="fa-solid fa-wallet text-xl"></i>
+                <span class="text-base">Módulo Financeiro & PDV</span>
+            </button>
+            <button onclick="window.location.href='agenda.html'" class="bg-blue-600 hover:bg-blue-500 text-white font-bold p-4 rounded-xl transition flex items-center justify-center space-x-3 shadow-lg">
+                <i class="fa-solid fa-calendar-days text-xl"></i>
+                <span class="text-base">Agenda & Compromissos</span>
+            </button>
+        </div>
+
+        <button onclick="sair()" class="text-xs text-rose-400 hover:underline pt-2 block mx-auto">Sair do Sistema</button>
+    </div>
+
+    <script>
+        function sair() {
+            localStorage.removeItem('meufuturo_logado');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
