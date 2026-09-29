@@ -25,7 +25,6 @@
             <div>
                 <label class="text-xs text-slate-400 block mb-1">Senha de Acesso</label>
                 <input type="password" id="loginSenha" placeholder="Digite sua senha" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
-                <span class="text-[10px] text-slate-500 mt-1 block">Padrão: Diego Freitas 160986</span>
             </div>
             <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition text-sm shadow-lg shadow-emerald-900/20">
                 Entrar no Sistema
@@ -45,7 +44,6 @@
             const usuario = document.getElementById('loginUsuario').value.trim();
             const senha = document.getElementById('loginSenha').value.trim();
 
-            // Validação flexível para evitar erros de espaço ou maiúsculas/minúsculas
             const usuarioCorreto = "Diego Freitas";
             const senhaCorreta = "Diego Freitas 160986";
 
@@ -53,7 +51,7 @@
                 localStorage.setItem('meufuturo_logado', 'true');
                 window.location.href = 'financeiro.html';
             } else {
-                alert('Credenciais incorretas!\n\nUsuário: Diego Freitas\nSenha: Diego Freitas 160986');
+                alert('Usuário ou senha incorretos. Tente novamente.');
             }
         }
     </script>
