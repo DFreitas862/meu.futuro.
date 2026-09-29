@@ -64,7 +64,7 @@
             <!-- Contas Bancárias -->
             <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-base font-bold text-emerald-400"><i class="fa-solid fa-building-columns"></i> Contas Bancárias (Itaú, Nubank...)</h3>
+                    <h3 class="text-base font-bold text-emerald-400"><i class="fa-solid fa-building-columns"></i> Contas Bancárias</h3>
                     <button onclick="abrirModalConta()" class="text-xs bg-slate-800 hover:bg-slate-700 text-emerald-400 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 transition">+ Conta</button>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="listaContas"></div>
@@ -73,7 +73,7 @@
             <!-- Carnês e Empréstimos -->
             <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-base font-bold text-purple-400"><i class="fa-solid fa-file-invoice-dollar"></i> Carnês & Empréstimos (Casas Bahia, Carro)</h3>
+                    <h3 class="text-base font-bold text-purple-400"><i class="fa-solid fa-file-invoice-dollar"></i> Carnês & Empréstimos</h3>
                     <button onclick="abrirModalCarne()" class="text-xs bg-slate-800 hover:bg-slate-700 text-purple-400 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 transition">+ Carnê</button>
                 </div>
                 <div class="space-y-3" id="listaCarnes"></div>
@@ -102,7 +102,7 @@
             </div>
         </section>
 
-        <!-- Grid inferior: Transações, Cartões e VR -->
+        <!-- Grid inferior -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
                 <h3 class="text-base font-bold text-white mb-4"><i class="fa-solid fa-right-left"></i> Transações Recentes</h3>
@@ -129,13 +129,12 @@
     </main>
 
     <!-- Modais -->
-    <!-- Modal Nova Conta Bancária -->
     <div id="modalConta" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-white">Cadastrar Conta Bancária</h3>
             <form id="formConta" onsubmit="salvarConta(event)" class="space-y-3">
                 <input type="text" id="contaBanco" placeholder="Nome do Banco (Ex: Itaú, Nubank)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                <input type="number" step="0.01" id="contaSaldo" placeholder="Saldo Atual na Conta (R$)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <input type="number" step="0.01" id="contaSaldo" placeholder="Saldo Atual (R$)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalConta()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
                     <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold">Salvar Conta</button>
@@ -144,7 +143,6 @@
         </div>
     </div>
 
-    <!-- Modal Novo Carnê / Empréstimo -->
     <div id="modalCarne" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-white">Cadastrar Carnê / Empréstimo</h3>
@@ -164,7 +162,6 @@
         </div>
     </div>
 
-    <!-- Outros Modais -->
     <div id="modalVR" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-white">Lançamento no VR</h3>
@@ -246,9 +243,10 @@
             await Promise.all([carregarContas(), carregarCarnes(), carregarDividas(), carregarTransacoes(), carregarCartoes(), carregarVR()]);
         }
 
-        // --- CONTAS BANCÁRIAS ---
         async function carregarContas() {
-            const { data } = await _supabase.from('meufuturo_contas').select('*');
+            const { data, error } = await _supabase.from('meufuturo_contas').select('*');
+            if (error) return console.error('Erro ao carregar contas:', error);
+
             let somaContas = 0;
             const lista = document.getElementById('listaContas');
             lista.innerHTML = '';
@@ -264,7 +262,6 @@
                     </div>
                 `;
             });
-            // Atualiza o saldo geral com a soma das contas
             document.getElementById('saldoTotal').innerText = `R$ ${somaContas.toFixed(2)}`;
         }
 
@@ -274,10 +271,15 @@
                 nome_banco: document.getElementById('contaBanco').value,
                 saldo_inicial: parseFloat(document.getElementById('contaSaldo').value)
             }]);
-            if (!error) { fecharModalConta(); carregarContas(); document.getElementById('formConta').reset(); }
+            if (!error) {
+                fecharModalConta();
+                carregarContas();
+                document.getElementById('formConta').reset();
+            } else {
+                alert('Erro ao salvar conta no Supabase: ' + error.message);
+            }
         }
 
-        // --- CARNÊS E EMPRÉSTIMOS ---
         async function carregarCarnes() {
             const { data } = await _supabase.from('meufuturo_carnes').select('*').order('dia_vencimento', { ascending: true });
             const lista = document.getElementById('listaCarnes');
@@ -309,9 +311,9 @@
                 status: 'ativo'
             }]);
             if (!error) { fecharModalCarne(); carregarCarnes(); document.getElementById('formCarne').reset(); }
+            else { alert('Erro ao salvar carnê: ' + error.message); }
         }
 
-        // --- VR ---
         async function carregarVR() {
             const { data } = await _supabase.from('meufuturo_vr').select('*');
             let saldoVrTotal = 0;
@@ -350,7 +352,6 @@
             if (!error) { fecharModalVR(); carregarVR(); document.getElementById('formVR').reset(); }
         }
 
-        // --- DÍVIDAS ---
         async function carregarDividas() {
             const { data } = await _supabase.from('meufuturo_dividas_atrasadas').select('*').order('data_vencimento', { ascending: true });
             let totalAtraso = 0;
@@ -392,7 +393,6 @@
             carregarDividas();
         }
 
-        // --- TRANSAÇÕES ---
         async function carregarTransacoes() {
             const { data } = await _supabase.from('meufuturo_transacoes').select('*');
             let totalRec = 0, totalDesp = 0;
@@ -432,7 +432,6 @@
             if (!error) { fecharModalTransacao(); carregarTransacoes(); document.getElementById('formTransacao').reset(); }
         }
 
-        // --- CARTÕES ---
         async function carregarCartoes() {
             const { data } = await _supabase.from('meufuturo_cartoes').select('*');
             const lista = document.getElementById('listaCartoes');
@@ -469,7 +468,6 @@
             window.location.href = 'index.html';
         }
 
-        // Controles de Modais
         function abrirModalConta() { document.getElementById('modalConta').classList.remove('hidden'); }
         function fecharModalConta() { document.getElementById('modalConta').classList.add('hidden'); }
         function abrirModalCarne() { document.getElementById('modalCarne').classList.remove('hidden'); }
