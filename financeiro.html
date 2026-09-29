@@ -6,12 +6,10 @@
     <title>Meu Futuro - Controle Financeiro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen pb-12">
 
-    <!-- Verificação rápida de Login -->
     <script>
         if (localStorage.getItem('meufuturo_logado') !== 'true') {
             window.location.href = 'index.html';
@@ -25,8 +23,9 @@
                 <button onclick="sair()" class="text-slate-400 hover:text-rose-400 transition" title="Sair"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
                 <h1 class="text-lg font-bold text-emerald-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Financeiro</span></h1>
             </div>
-            <div class="flex space-x-2">
+            <div class="flex flex-wrap gap-2">
                 <button onclick="abrirModalTransacao()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-lg transition"><i class="fa-solid fa-plus"></i> Transação</button>
+                <button onclick="abrirModalVR()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-3 py-2 rounded-lg transition"><i class="fa-solid fa-utensils"></i> VR</button>
                 <button onclick="abrirModalDivida()" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold px-3 py-2 rounded-lg transition"><i class="fa-solid fa-plus"></i> Dívida</button>
             </div>
         </div>
@@ -36,7 +35,7 @@
     <main class="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
 
         <!-- Cards de Resumo -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow">
                 <p class="text-xs text-slate-400 uppercase font-bold">Saldo do Mês</p>
                 <h2 id="saldoTotal" class="text-2xl font-extrabold text-emerald-400 mt-1">R$ 0,00</h2>
@@ -49,13 +48,17 @@
                 <p class="text-xs text-slate-400 uppercase font-bold">Saídas</p>
                 <h2 id="totalDespesas" class="text-2xl font-extrabold text-amber-400 mt-1">R$ 0,00</h2>
             </div>
-            <div class="bg-slate-900 p-4 rounded-2xl border border-rose-900/50 bg-rose-950/10 shadow">
+            <div class="bg-slate-900 p-4 rounded-2xl border border-cyan-900/50 bg-cyan-950/10 shadow">
+                <p class="text-xs text-cyan-400 uppercase font-bold">Saldo VR (Mercado)</p>
+                <h2 id="saldoVR" class="text-2xl font-extrabold text-cyan-400 mt-1">R$ 0,00</h2>
+            </div>
+            <div class="bg-slate-900 p-4 rounded-2xl border border-rose-900/50 bg-rose-950/10 shadow sm:col-span-2 lg:col-span-1">
                 <p class="text-xs text-rose-400 uppercase font-bold">Dívidas Atrasadas</p>
                 <h2 id="totalAtrasadas" class="text-2xl font-extrabold text-rose-500 mt-1">R$ 0,00</h2>
             </div>
         </div>
 
-        <!-- Seção: Dívidas Atrasadas (Urgente) -->
+        <!-- Seção: Dívidas Atrasadas -->
         <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-base font-bold text-rose-400"><i class="fa-solid fa-triangle-exclamation"></i> Dívidas Atrasadas (Foco em Negociação)</h3>
@@ -72,42 +75,71 @@
                             <th class="p-3 rounded-r-lg">Ações</th>
                         </tr>
                     </thead>
-                    <tbody id="tabelaDividas" class="divide-y divide-slate-800">
-                        <!-- Preenchido via JS -->
-                    </tbody>
+                    <tbody id="tabelaDividas" class="divide-y divide-slate-800"></tbody>
                 </table>
             </div>
         </section>
 
-        <!-- Grid inferior: Transações e Cartões -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Grid inferior: Transações, Cartões e VR -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Transações -->
             <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
-                <h3 class="text-base font-bold text-white mb-4"><i class="fa-solid fa-right-left"></i> Entradas e Saídas Recentes</h3>
+                <h3 class="text-base font-bold text-white mb-4"><i class="fa-solid fa-right-left"></i> Transações Recentes</h3>
                 <div class="space-y-3" id="listaTransacoes"></div>
             </section>
 
+            <!-- Cartões de Crédito -->
             <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-base font-bold text-white"><i class="fa-solid fa-credit-card"></i> Cartões de Crédito</h3>
+                    <h3 class="text-base font-bold text-white"><i class="fa-solid fa-credit-card"></i> Cartões</h3>
                     <button onclick="abrirModalCartao()" class="text-xs bg-slate-800 hover:bg-slate-700 text-emerald-400 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 transition">+ Cartão</button>
                 </div>
                 <div class="space-y-3" id="listaCartoes"></div>
+            </section>
+
+            <!-- Controle do VR / Mercado -->
+            <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-base font-bold text-cyan-400"><i class="fa-solid fa-utensils"></i> Extrato do VR</h3>
+                    <button onclick="abrirModalVR()" class="text-xs bg-slate-800 hover:bg-slate-700 text-cyan-400 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 transition">+ Lançamento</button>
+                </div>
+                <div class="space-y-3" id="listaVR"></div>
             </section>
         </div>
 
     </main>
 
     <!-- Modais -->
+    <div id="modalVR" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
+            <h3 class="text-lg font-bold text-white">Lançamento no VR (Mercado)</h3>
+            <form id="formVR" onsubmit="salvarVR(event)" class="space-y-3">
+                <input type="text" id="vrDesc" placeholder="Descrição (Ex: Supermercado X, Recarga VR)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-cyan-500 outline-none">
+                <input type="number" step="0.01" id="vrValor" placeholder="Valor (R$)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-cyan-500 outline-none">
+                <select id="vrTipo" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-cyan-500 outline-none">
+                    <option value="credito">Crédito (Entrada / Recarga)</option>
+                    <option value="gasto">Gasto (Compra no Mercado)</option>
+                </select>
+                <input type="date" id="vrData" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-cyan-500 outline-none">
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="fecharModalVR()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-cyan-600 text-white rounded-xl text-xs font-bold">Salvar VR</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Demais Modais (Dívida, Transação, Cartão) -->
     <div id="modalDivida" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-white">Cadastrar Dívida Atrasada</h3>
             <form id="formDivida" onsubmit="salvarDivida(event)" class="space-y-3">
-                <input type="text" id="divCredor" placeholder="Nome do Credor (Ex: Banco X)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
+                <input type="text" id="divCredor" placeholder="Nome do Credor" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="grid grid-cols-2 gap-2">
-                    <input type="number" step="0.01" id="divOriginal" placeholder="Valor Original (R$)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
-                    <input type="number" step="0.01" id="divAtual" placeholder="Valor Atualizado (R$)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
+                    <input type="number" step="0.01" id="divOriginal" placeholder="Valor Original" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    <input type="number" step="0.01" id="divAtual" placeholder="Valor Atualizado" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 </div>
-                <input type="date" id="divVencimento" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
+                <input type="date" id="divVencimento" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalDivida()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
                     <button type="submit" class="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold">Salvar</button>
@@ -120,13 +152,13 @@
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-white">Nova Transação</h3>
             <form id="formTransacao" onsubmit="salvarTransacao(event)" class="space-y-3">
-                <input type="text" id="transDesc" placeholder="Descrição" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
-                <input type="number" step="0.01" id="transValor" placeholder="Valor (R$)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
-                <select id="transTipo" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
+                <input type="text" id="transDesc" placeholder="Descrição" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <input type="number" step="0.01" id="transValor" placeholder="Valor (R$)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <select id="transTipo" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                     <option value="receita">Receita</option>
                     <option value="despesa">Despesa</option>
                 </select>
-                <input type="date" id="transData" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
+                <input type="date" id="transData" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalTransacao()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
                     <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold">Salvar</button>
@@ -139,11 +171,11 @@
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-white">Cadastrar Cartão</h3>
             <form id="formCartao" onsubmit="salvarCartao(event)" class="space-y-3">
-                <input type="text" id="cartaoNome" placeholder="Nome do Cartão" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
-                <input type="number" step="0.01" id="cartaoLimite" placeholder="Limite Total (R$)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
+                <input type="text" id="cartaoNome" placeholder="Nome do Cartão" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <input type="number" step="0.01" id="cartaoLimite" placeholder="Limite Total" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="grid grid-cols-2 gap-2">
-                    <input type="number" id="cartaoFechamento" placeholder="Dia Fechamento" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
-                    <input type="number" id="cartaoVencimento" placeholder="Dia Vencimento" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none">
+                    <input type="number" id="cartaoFechamento" placeholder="Dia Fechamento" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    <input type="number" id="cartaoVencimento" placeholder="Dia Vencimento" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalCartao()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
@@ -153,18 +185,60 @@
         </div>
     </div>
 
-    <!-- Importa o arquivo separado com a chave do Supabase -->
     <script src="supabase.js"></script>
 
-    <!-- Script de Lógica do Financeiro -->
     <script>
         async function carregarTudo() {
-            await Promise.all([carregarDividas(), carregarTransacoes(), carregarCartoes()]);
+            await Promise.all([carregarDividas(), carregarTransacoes(), carregarCartoes(), carregarVR()]);
         }
 
+        // --- VR / MERCADO ---
+        async function carregarVR() {
+            const { data, error } = await _supabase.from('meufuturo_vr').select('*').order('data', { ascending: false }).limit(5);
+            if (error) return console.error('Erro VR:', error);
+
+            let saldoVrTotal = 0;
+            const { data: allVr } = await _supabase.from('meufuturo_vr').select('*');
+            allVr?.forEach(v => {
+                if(v.tipo === 'credito') saldoVrTotal += Number(v.valor);
+                else saldoVrTotal -= Number(v.valor);
+            });
+
+            document.getElementById('saldoVR').innerText = `R$ ${saldoVrTotal.toFixed(2)}`;
+
+            const lista = document.getElementById('listaVR');
+            lista.innerHTML = '';
+            data.forEach(v => {
+                const cor = v.tipo === 'credito' ? 'text-cyan-400' : 'text-amber-400';
+                const sinal = v.tipo === 'credito' ? '+' : '-';
+                lista.innerHTML += `
+                    <div class="flex justify-between items-center bg-slate-950/40 p-3 rounded-xl border border-slate-800">
+                        <div>
+                            <p class="text-sm font-medium text-white">${v.descricao}</p>
+                            <span class="text-xs text-slate-500">${new Date(v.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                        </div>
+                        <span class="${cor} font-bold text-sm">${sinal} R$ ${Number(v.valor).toFixed(2)}</span>
+                    </div>
+                `;
+            });
+        }
+
+        async function salvarVR(e) {
+            e.preventDefault();
+            const { error } = await _supabase.from('meufuturo_vr').insert([{
+                descricao: document.getElementById('vrDesc').value,
+                valor: parseFloat(document.getElementById('vrValor').value),
+                tipo: document.getElementById('vrTipo').value,
+                data: document.getElementById('vrData').value
+            }]);
+            if (!error) { fecharModalVR(); carregarVR(); document.getElementById('formVR').reset(); }
+            else alert('Erro ao salvar lançamento no VR.');
+        }
+
+        // --- DÍVIDAS ---
         async function carregarDividas() {
             const { data, error } = await _supabase.from('meufuturo_dividas_atrasadas').select('*').order('data_vencimento', { ascending: true });
-            if (error) return console.error('Erro dívidas:', error);
+            if (error) return;
 
             let totalAtraso = 0;
             const tbody = document.getElementById('tabelaDividas');
@@ -199,7 +273,6 @@
                 status: 'pendente'
             }]);
             if (!error) { fecharModalDivida(); carregarDividas(); document.getElementById('formDivida').reset(); }
-            else alert('Erro ao salvar dívida.');
         }
 
         async function marcarDividaPaga(id) {
@@ -207,10 +280,9 @@
             carregarDividas();
         }
 
+        // --- TRANSAÇÕES ---
         async function carregarTransacoes() {
-            const { data, error } = await _supabase.from('meufuturo_transacoes').select('*').order('data', { ascending: false }).limit(5);
-            if (error) return;
-
+            const { data } = await _supabase.from('meufuturo_transacoes').select('*').order('data', { ascending: false }).limit(5);
             let totalRec = 0, totalDesp = 0;
             const { data: allTrans } = await _supabase.from('meufuturo_transacoes').select('*');
             allTrans?.forEach(t => {
@@ -224,7 +296,7 @@
 
             const lista = document.getElementById('listaTransacoes');
             lista.innerHTML = '';
-            data.forEach(t => {
+            data?.forEach(t => {
                 const cor = t.tipo === 'receita' ? 'text-blue-400' : 'text-amber-400';
                 const sinal = t.tipo === 'receita' ? '+' : '-';
                 lista.innerHTML += `
@@ -250,6 +322,7 @@
             if (!error) { fecharModalTransacao(); carregarTransacoes(); document.getElementById('formTransacao').reset(); }
         }
 
+        // --- CARTÕES ---
         async function carregarCartoes() {
             const { data } = await _supabase.from('meufuturo_cartoes').select('*');
             const lista = document.getElementById('listaCartoes');
@@ -286,6 +359,9 @@
             window.location.href = 'index.html';
         }
 
+        // Controles de Modais
+        function abrirModalVR() { document.getElementById('modalVR').classList.remove('hidden'); }
+        function fecharModalVR() { document.getElementById('modalVR').classList.add('hidden'); }
         function abrirModalDivida() { document.getElementById('modalDivida').classList.remove('hidden'); }
         function fecharModalDivida() { document.getElementById('modalDivida').classList.add('hidden'); }
         function abrirModalTransacao() { document.getElementById('modalTransacao').classList.remove('hidden'); }
