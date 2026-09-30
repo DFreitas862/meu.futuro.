@@ -23,7 +23,7 @@
                 <button onclick="window.location.href='home.html'" class="text-slate-400 hover:text-blue-400 transition" title="Voltar ao Menu"><i class="fa-solid fa-arrow-left text-lg"></i></button>
                 <h1 class="text-lg font-bold text-blue-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Agenda & Propósito</span></h1>
             </div>
-            <button onclick="abrirModalCompromisso()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition shadow-lg shadow-blue-900/30"><i class="fa-solid fa-plus mr-1"></i> Novo Bloco</button>
+            <button onclick="abrirModalCriar()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition shadow-lg shadow-blue-900/30"><i class="fa-solid fa-plus mr-1"></i> Novo Bloco</button>
         </div>
     </header>
 
@@ -61,14 +61,15 @@
 
     </main>
 
-    <!-- Modal Novo Compromisso -->
+    <!-- Modal Compromisso (Criar / Editar) -->
     <div id="modalCompromisso" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="text-lg font-bold text-blue-400"><i class="fa-solid fa-calendar-plus mr-2"></i>Novo Bloco de Rotina</h3>
+                <h3 id="modalTituloForm" class="text-lg font-bold text-blue-400"><i class="fa-solid fa-calendar-plus mr-2"></i>Novo Bloco de Rotina</h3>
                 <button onclick="fecharModalCompromisso()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <div class="space-y-3">
+                <input type="hidden" id="compId">
                 <div>
                     <label class="text-[10px] text-slate-400 block mb-1">Título da Atividade</label>
                     <input type="text" id="compTitulo" placeholder="Ex: Trabalho, Oração, Leitura, Uber..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
@@ -88,10 +89,10 @@
                     </div>
                 </div>
                 <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Data Inicial</label>
+                    <label class="text-[10px] text-slate-400 block mb-1">Data</label>
                     <input type="date" id="compData" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white outline-none">
                 </div>
-                <div>
+                <div id="divRepetirContainer">
                     <label class="text-[10px] text-slate-400 block mb-1">Repetição</label>
                     <select id="compRepetir" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                         <option value="nenhum">Apenas neste dia (Único)</option>
@@ -100,7 +101,7 @@
                     </select>
                 </div>
                 <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Descrição / Detalhes</label>
+                    <label class="text-[10px] text-slate-400 block mb-1">Descrição / Detalhes / Anotações</label>
                     <textarea id="compDesc" rows="2" placeholder="O que vai rolar nesse bloco?" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none"></textarea>
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
@@ -143,7 +144,6 @@
         async function carregarAgenda() {
             const dataSelecionada = document.getElementById('filtroDataAgenda').value;
             atualizarTextoDataCabecalho(dataSelecionada);
-            document.getElementById('compData').value = dataSelecionada;
 
             const lista = document.getElementById('listaAgenda');
             lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Buscando programação...</p>';
@@ -157,6 +157,8 @@
             }
 
             data.forEach(item => {
+                // Passa os dados em formato seguro para o botão de editar
+                const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
                 lista.innerHTML += `
                     <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
                         <div class="space-y-1">
@@ -167,10 +169,40 @@
                             </div>
                             ${item.descricao ? `<p class="text-slate-400 pl-1">${item.descricao}</p>` : ''}
                         </div>
-                        <button onclick="excluirCompromisso('${item.id}')" class="text-rose-400 hover:text-rose-300 p-2 ml-2" title="Excluir bloco"><i class="fa-solid fa-trash text-sm"></i></button>
+                        <div class="flex items-center space-x-1 ml-2">
+                            <button onclick="abrirModalEditar(${itemJson})" class="text-slate-400 hover:text-blue-400 p-2" title="Editar bloco"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
+                            <button onclick="excluirCompromisso('${item.id}')" class="text-rose-400 hover:text-rose-300 p-2" title="Excluir bloco"><i class="fa-solid fa-trash text-sm"></i></button>
+                        </div>
                     </div>
                 `;
             });
+        }
+
+        function abrirModalCriar() {
+            document.getElementById('modalTituloForm').innerHTML = '<i class="fa-solid fa-calendar-plus mr-2"></i>Novo Bloco de Rotina';
+            document.getElementById('compId').value = '';
+            document.getElementById('compTitulo').value = '';
+            document.getElementById('compLocal').value = '';
+            document.getElementById('compInicio').value = '';
+            document.getElementById('compFim').value = '';
+            document.getElementById('compData').value = document.getElementById('filtroDataAgenda').value;
+            document.getElementById('compDesc').value = '';
+            document.getElementById('divRepetirContainer').style.display = 'block';
+            document.getElementById('modalCompromisso').classList.remove('hidden');
+        }
+
+        function abrirModalEditar(item) {
+            document.getElementById('modalTituloForm').innerHTML = '<i class="fa-solid fa-pen-to-square mr-2"></i>Editar Bloco';
+            document.getElementById('compId').value = item.id;
+            document.getElementById('compTitulo').value = item.titulo || '';
+            document.getElementById('compLocal').value = item.local || '';
+            document.getElementById('compInicio').value = item.hora_inicio || '';
+            document.getElementById('compFim').value = item.hora_fim || '';
+            document.getElementById('compData').value = item.data || '';
+            document.getElementById('compDesc').value = item.descricao || '';
+            // Na edição, escondemos a repetição para focar em alterar apenas aquele bloco específico
+            document.getElementById('divRepetirContainer').style.display = 'none';
+            document.getElementById('modalCompromisso').classList.remove('hidden');
         }
 
         async function salvarCompromisso() {
@@ -178,6 +210,7 @@
             btn.disabled = true;
             btn.innerText = 'Salvando...';
 
+            const id = document.getElementById('compId').value;
             const titulo = document.getElementById('compTitulo').value;
             const local = document.getElementById('compLocal').value;
             const horaInicio = document.getElementById('compInicio').value;
@@ -193,53 +226,64 @@
                 return;
             }
 
-            let datasParaInserir = [dataInicial];
+            if(id) {
+                // MODO EDIÇÃO: Atualiza o registro existente
+                const { error } = await _supabase.from('meufuturo_agenda_v3').update({
+                    titulo,
+                    local,
+                    hora_inicio: horaInicio,
+                    hora_fim: horaFim || null,
+                    data: dataInicial,
+                    descricao
+                }).eq('id', id);
 
-            if(repetir === 'seg_a_sex') {
-                // Gera para os próximos dias úteis (ex: próximas 4 semanas / 20 dias úteis)
-                let dataAtual = new Date(dataInicial + 'T00:00:00');
-                for(let i = 1; i < 28; i++) {
-                    dataAtual.setDate(dataAtual.getDate() + 1);
-                    let diaSemana = dataAtual.getDay(); // 0 = Domingo, 6 = Sábado
-                    if(diaSemana !== 0 && diaSemana !== 6) {
+                if(error) {
+                    alert('Erro ao atualizar: ' + error.message);
+                    btn.disabled = false;
+                    btn.innerText = 'Salvar Bloco';
+                    return;
+                }
+            } else {
+                // MODO CRIAÇÃO (com suporte a repetição)
+                let datasParaInserir = [dataInicial];
+
+                if(repetir === 'seg_a_sex') {
+                    let dataAtual = new Date(dataInicial + 'T00:00:00');
+                    for(let i = 1; i < 28; i++) {
+                        dataAtual.setDate(dataAtual.getDate() + 1);
+                        let diaSemana = dataAtual.getDay();
+                        if(diaSemana !== 0 && diaSemana !== 6) {
+                            datasParaInserir.push(dataAtual.toISOString().split('T')[0]);
+                        }
+                    }
+                } else if(repetir === 'semanal') {
+                    let dataAtual = new Date(dataInicial + 'T00:00:00');
+                    for(let i = 1; i < 8; i++) {
+                        dataAtual.setDate(dataAtual.getDate() + 7);
                         datasParaInserir.push(dataAtual.toISOString().split('T')[0]);
                     }
                 }
-            } else if(repetir === 'semanal') {
-                // Gera nas próximas 8 semanas no mesmo dia da semana
-                let dataAtual = new Date(dataInicial + 'T00:00:00');
-                for(let i = 1; i < 8; i++) {
-                    dataAtual.setDate(dataAtual.getDate() + 7);
-                    datasParaInserir.push(dataAtual.toISOString().split('T')[0]);
+
+                const registros = datasParaInserir.map(d => ({
+                    titulo,
+                    local,
+                    hora_inicio: horaInicio,
+                    hora_fim: horaFim || null,
+                    data: d,
+                    descricao
+                }));
+
+                const { error } = await _supabase.from('meufuturo_agenda_v3').insert(registros);
+
+                if(error) {
+                    alert('Erro ao salvar: ' + error.message);
+                    btn.disabled = false;
+                    btn.innerText = 'Salvar Bloco';
+                    return;
                 }
             }
 
-            // Prepara os objetos para inserção em lote no Supabase
-            const registros = datasParaInserir.map(d => ({
-                titulo,
-                local,
-                hora_inicio: horaInicio,
-                hora_fim: horaFim || null,
-                data: d,
-                descricao
-            }));
-
-            const { error } = await _supabase.from('meufuturo_agenda_v3').insert(registros);
-
-            if(error) {
-                alert('Erro ao salvar: ' + error.message);
-                btn.disabled = false;
-                btn.innerText = 'Salvar Bloco';
-                return;
-            }
-
             fecharModalCompromisso();
-            document.getElementById('compTitulo').value = '';
-            document.getElementById('compLocal').value = '';
-            document.getElementById('compDesc').value = '';
-            document.getElementById('compInicio').value = '';
-            document.getElementById('compFim').value = '';
-            document.getElementById('compRepetir').value = 'nenhum';
             carregarAgenda();
             
             btn.disabled = false;
@@ -252,7 +296,6 @@
             carregarAgenda();
         }
 
-        function abrirModalCompromisso() { document.getElementById('modalCompromisso').classList.remove('hidden'); }
         function fecharModalCompromisso() { document.getElementById('modalCompromisso').classList.add('hidden'); }
 
         carregarAgenda();
