@@ -175,7 +175,7 @@
         </div>
     </div>
 
-    <!-- Modal Extrato Específico por Conta com Botão de Excluir -->
+    <!-- Modal Extrato Específico por Conta -->
     <div id="modalExtrato" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-xl w-full space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -296,6 +296,8 @@
 
     <script>
         let carrinhoItens = [];
+        let listaContasBanco = [];
+        let listaVRBanco = [];
 
         async function carregarTudo() {
             await Promise.all([carregarContas(), carregarVR(), carregarCartoes(), carregarCarnes(), carregarDividas(), carregarTransacoes()]);
@@ -303,6 +305,7 @@
 
         async function carregarContas() {
             const { data } = await _supabase.from('meufuturo_contas').select('*');
+            listaContasBanco = data || [];
             let soma = 0;
             const lista = document.getElementById('listaContas');
             lista.innerHTML = '';
@@ -319,7 +322,7 @@
                 `;
             });
             document.getElementById('saldoTotal').innerText = `R$ ${soma.toFixed(2)}`;
-            popularSelectsContas(data, 'conta');
+            popularSelectsContas();
         }
 
         async function salvarConta() {
@@ -332,6 +335,7 @@
 
         async function carregarVR() {
             const { data } = await _supabase.from('meufuturo_vr').select('*');
+            listaVRBanco = data || [];
             const lista = document.getElementById('listaVR');
             lista.innerHTML = '';
             data?.forEach(v => {
@@ -345,7 +349,7 @@
                     </div>
                 `;
             });
-            popularSelectsContas(data, 'vr');
+            popularSelectsContas();
         }
 
         async function salvarVRConta() {
@@ -380,16 +384,25 @@
             if(!error) { fecharModalCartao(); carregarCartoes(); document.getElementById('cartaoNome').value=''; document.getElementById('cartaoLimite').value=''; }
         }
 
-        function popularSelectsContas(dados, tipo) {
+        function popularSelectsContas() {
             const selectTrans = document.getElementById('transContaId');
             const selectPdv = document.getElementById('pdvConta');
-            if(!dados) return;
+            
             selectTrans.innerHTML = '<option value="">Selecione Conta</option>';
             selectPdv.innerHTML = '<option value="">Forma de Pagamento</option>';
-            dados.forEach(d => {
+
+            listaContasBanco.forEach(d => {
                 const opt = document.createElement('option');
-                opt.value = `${tipo}:${d.id}`;
-                opt.textContent = `[${tipo.toUpperCase()}] ${d.nome_banco || d.nome}`;
+                opt.value = `conta:${d.id}`;
+                opt.textContent = `[CONTA] ${d.nome_banco}`;
+                selectTrans.appendChild(opt);
+                selectPdv.appendChild(opt.cloneNode(true));
+            });
+
+            listaVRBanco.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = `vr:${d.id}`;
+                opt.textContent = `[VR] ${d.nome}`;
                 selectTrans.appendChild(opt);
                 selectPdv.appendChild(opt.cloneNode(true));
             });
@@ -497,7 +510,7 @@
             alert('Compra finalizada com sucesso!');
         }
 
-        // --- EXTRATO COM OPÇÃO DE EXCLUIR E ESTORNAR SALDO ---
+        // --- EXTRATO ESPECÍFICO POR CONTA ---
         async function abrirExtrato(id, nome, tipoConta) {
             document.getElementById('extratoTitulo').innerText = `Extrato: ${nome}`;
             const lista = document.getElementById('extratoLista');
@@ -521,40 +534,49 @@
                         </div>
                         <div class="flex items-center space-x-3">
                             <span class="${t.tipo === 'receita' ? 'text-blue-400' : 'text-amber-400'} font-bold">R$ ${Number(t.valor).toFixed(2)}</span>
-                            <button onclick="excluirTransacao('${t.id}', '${t.tipo}', ${t.valor}, '${id}', '${tipoConta}', '${nome}')" class="text-rose-400 hover:text-rose-300 p-1" title="Excluir movimentação"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="excluirTransacaoGeral('${t.id}', '${t.tipo}', ${t.valor}, '${t.conta_id}')" class="text-rose-400 hover:text-rose-300 p-1" title="Excluir movimentação"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
                 `;
             });
         }
 
-        async function excluirTransacao(transId, tipoTrans, valorTrans, contaId, tipoConta, nomeConta) {
-            if(!confirm('Deseja realmente excluir esta movimentação? O valor será estornado na conta.')) return;
+        // Função universal de exclusão e estorno automático
+        async function excluirTransacaoGeral(transId, tipoTrans, valorTrans, contaIdTrans) {
+            if(!confirm('Deseja realmente excluir esta movimentação? O valor será estornado na conta correspondente.')) return;
+
+            // Identifica se a conta pertence aos Bancos ou ao VR
+            let tipoConta = 'conta';
+            let contaEncontrada = listaContasBanco.find(c => c.id === contaIdTrans);
+            
+            if(!contaEncontrada) {
+                contaEncontrada = listaVRBanco.find(v => v.id === contaIdTrans);
+                if(contaEncontrada) tipoConta = 'vr';
+            }
 
             // 1. Apaga a transação
             const { error } = await _supabase.from('meufuturo_transacoes').delete().eq('id', transId);
             if(error) return alert('Erro ao excluir: ' + error.message);
 
-            // 2. Estorna o valor no saldo da conta correspondente
-            if(tipoConta === 'conta') {
-                const { data: c } = await _supabase.from('meufuturo_contas').select('saldo_inicial').eq('id', contaId).single();
-                let novoSaldo = Number(c.saldo_inicial);
-                // Se era despesa, devolve o dinheiro. Se era receita, tira o dinheiro.
-                if(tipoTrans === 'despesa') novoSaldo += Number(valorTrans);
-                else novoSaldo -= Number(valorTrans);
+            // 2. Estorna o saldo se houver conta vinculada
+            if(contaEncontrada) {
+                if(tipoConta === 'conta') {
+                    let novoSaldo = Number(contaEncontrada.saldo_inicial);
+                    if(tipoTrans === 'despesa') novoSaldo += Number(valorTrans);
+                    else novoSaldo -= Number(valorTrans);
 
-                await _supabase.from('meufuturo_contas').update({ saldo_inicial: novoSaldo }).eq('id', contaId);
-            } else if(tipoConta === 'vr') {
-                const { data: v } = await _supabase.from('meufuturo_vr').select('saldo').eq('id', contaId).single();
-                let novoSaldo = Number(v.saldo);
-                if(tipoTrans === 'despesa') novoSaldo += Number(valorTrans);
-                else novoSaldo -= Number(valorTrans);
+                    await _supabase.from('meufuturo_contas').update({ saldo_inicial: novoSaldo }).eq('id', contaIdTrans);
+                } else if(tipoConta === 'vr') {
+                    let novoSaldo = Number(contaEncontrada.saldo);
+                    if(tipoTrans === 'despesa') novoSaldo += Number(valorTrans);
+                    else novoSaldo -= Number(valorTrans);
 
-                await _supabase.from('meufuturo_vr').update({ saldo: novoSaldo }).eq('id', contaId);
+                    await _supabase.from('meufuturo_vr').update({ saldo: novoSaldo }).eq('id', contaIdTrans);
+                }
             }
 
             alert('Movimentação excluída e saldo atualizado!');
-            abrirExtrato(contaId, nomeConta, tipoConta);
+            fecharModalExtrato();
             carregarTudo();
         }
 
@@ -626,11 +648,23 @@
 
             const lista = document.getElementById('listaTransacoes');
             lista.innerHTML = '';
-            data?.slice(-5).reverse().forEach(t => {
+            
+            if(!data || data.length === 0) {
+                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhuma transação recente.</p>';
+                return;
+            }
+
+            data.slice(-5).reverse().forEach(t => {
                 lista.innerHTML += `
                     <div class="flex justify-between items-center bg-slate-950/40 p-3 rounded-xl border border-slate-800 text-xs">
-                        <div><p class="font-medium text-white">${t.descricao}</p><span class="text-slate-500">${t.data}</span></div>
-                        <span class="${t.tipo === 'receita' ? 'text-blue-400' : 'text-amber-400'} font-bold">R$ ${Number(t.valor).toFixed(2)}</span>
+                        <div>
+                            <p class="font-medium text-white">${t.descricao}</p>
+                            <span class="text-slate-500">${new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="${t.tipo === 'receita' ? 'text-blue-400' : 'text-amber-400'} font-bold">R$ ${Number(t.valor).toFixed(2)}</span>
+                            <button onclick="excluirTransacaoGeral('${t.id}', '${t.tipo}', ${t.valor}, '${t.conta_id}')" class="text-rose-400 hover:text-rose-300 p-1" title="Excluir movimentação"><i class="fa-solid fa-trash"></i></button>
+                        </div>
                     </div>
                 `;
             });
