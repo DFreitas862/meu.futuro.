@@ -169,7 +169,7 @@
             const select = document.getElementById('compTag');
             select.innerHTML = '';
             
-            if(listaTagsGlobal.length === 0) {
+            if(!listaTagsGlobal || listaTagsGlobal.length === 0) {
                 const opt = document.createElement('option');
                 opt.value = 'Geral';
                 opt.innerText = 'Geral';
@@ -233,7 +233,9 @@
             let totalBlocos = data.length;
             let estatisticas = {};
 
-            listaTagsGlobal.forEach(t => estatisticas[t.nome] = 0);
+            if(listaTagsGlobal && listaTagsGlobal.length > 0) {
+                listaTagsGlobal.forEach(t => estatisticas[t.nome] = 0);
+            }
             estatisticas['Geral'] = 0;
 
             data.forEach(item => {
@@ -270,43 +272,48 @@
             const lista = document.getElementById('listaAgenda');
             lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Buscando programação...</p>';
 
-            const { data, error } = await _supabase.from('meufuturo_agenda_v3').select('*').eq('data', dataSelecionada).order('hora_inicio', { ascending: true });
+            try {
+                const { data, error } = await _supabase.from('meufuturo_agenda_v3').select('*').eq('data', dataSelecionada).order('hora_inicio', { ascending: true });
 
-            if(error) {
-                lista.innerHTML = `<p class="text-xs text-rose-400 text-center py-6">Erro ao carregar dados: ${error.message}</p>`;
-                calcularDashboard([]);
-                return;
-            }
+                if(error) {
+                    lista.innerHTML = `<p class="text-xs text-rose-400 text-center py-6">Erro ao carregar dados: ${error.message}</p>`;
+                    calcularDashboard([]);
+                    return;
+                }
 
-            if(!data || data.length === 0) {
-                lista.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">Nenhum bloco encontrado para este dia.</p>`;
-                calcularDashboard([]);
-                return;
-            }
+                if(!data || data.length === 0) {
+                    lista.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">Nenhum bloco encontrado para este dia.</p>`;
+                    calcularDashboard([]);
+                    return;
+                }
 
-            calcularDashboard(data);
-            lista.innerHTML = '';
+                calcularDashboard(data);
+                lista.innerHTML = '';
 
-            data.forEach(item => {
-                const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
-                lista.innerHTML += `
-                    <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
-                        <div class="space-y-1">
-                            <div class="flex items-center space-x-2 flex-wrap gap-y-1">
-                                <span class="bg-blue-900/40 border border-blue-700/50 text-blue-300 font-bold px-2 py-0.5 rounded text-[10px]">${item.hora_inicio} - ${item.hora_fim || item.hora_inicio}</span>
-                                <span class="font-bold text-white text-sm">${item.titulo}</span>
-                                ${item.tag ? `<span class="bg-indigo-900/40 border border-indigo-700/50 text-indigo-300 px-2 py-0.5 rounded text-[10px] font-semibold">#${item.tag}</span>` : ''}
-                                ${item.local ? `<span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px]"><i class="fa-solid fa-location-dot text-rose-400 mr-1"></i>${item.local}</span>` : ''}
+                data.forEach(item => {
+                    const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
+                    lista.innerHTML += `
+                        <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+                            <div class="space-y-1">
+                                <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+                                    <span class="bg-blue-900/40 border border-blue-700/50 text-blue-300 font-bold px-2 py-0.5 rounded text-[10px]">${item.hora_inicio} - ${item.hora_fim || item.hora_inicio}</span>
+                                    <span class="font-bold text-white text-sm">${item.titulo}</span>
+                                    ${item.tag ? `<span class="bg-indigo-900/40 border border-indigo-700/50 text-indigo-300 px-2 py-0.5 rounded text-[10px] font-semibold">#${item.tag}</span>` : ''}
+                                    ${item.local ? `<span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px]"><i class="fa-solid fa-location-dot text-rose-400 mr-1"></i>${item.local}</span>` : ''}
+                                </div>
+                                ${item.descricao ? `<p class="text-slate-400 pl-1">${item.descricao}</p>` : ''}
                             </div>
-                            ${item.descricao ? `<p class="text-slate-400 pl-1">${item.descricao}</p>` : ''}
+                            <div class="flex items-center space-x-1 ml-2">
+                                <button onclick="abrirModalEditar(${itemJson})" class="text-slate-400 hover:text-blue-400 p-2" title="Editar bloco"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
+                                <button onclick="excluirCompromisso('${item.id}')" class="text-rose-400 hover:text-rose-300 p-2" title="Excluir bloco"><i class="fa-solid fa-trash text-sm"></i></button>
+                            </div>
                         </div>
-                        <div class="flex items-center space-x-1 ml-2">
-                            <button onclick="abrirModalEditar(${itemJson})" class="text-slate-400 hover:text-blue-400 p-2" title="Editar bloco"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
-                            <button onclick="excluirCompromisso('${item.id}')" class="text-rose-400 hover:text-rose-300 p-2" title="Excluir bloco"><i class="fa-solid fa-trash text-sm"></i></button>
-                        </div>
-                    </div>
-                `;
-            });
+                    `;
+                });
+            } catch(e) {
+                lista.innerHTML = `<p class="text-xs text-rose-400 text-center py-6">Erro de conexão: ${e.message}</p>`;
+                calcularDashboard([]);
+            }
         }
 
         function abrirModalCriar() {
