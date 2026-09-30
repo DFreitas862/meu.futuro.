@@ -49,7 +49,10 @@
                     <canvas id="graficoDashboard"></canvas>
                 </div>
                 <div id="resumoTextoDashboard" class="space-y-2 bg-slate-950/60 p-4 rounded-xl border border-slate-800 text-xs max-h-48 overflow-y-auto">
-                    <!-- Gerenciado via JS -->
+                    <div class="flex justify-between border-b border-slate-800/80 pb-1.5">
+                        <span class="text-slate-400">Total de Blocos:</span>
+                        <span class="font-bold text-white">0</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -92,7 +95,7 @@
                     <div>
                         <label class="text-[10px] text-slate-400 block mb-1">Caderno (Assunto)</label>
                         <select id="compTag" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none">
-                            <!-- Preenchido via banco -->
+                            <option value="Geral">Geral</option>
                         </select>
                     </div>
                     <div>
@@ -144,12 +147,22 @@
         let meuGrafico = null;
         let listaTagsGlobal = [];
 
+        async function inicializarApp() {
+            atualizarTextoDataCabecalho(hojeIso);
+            await carregarTagsDoBanco();
+            await carregarAgenda();
+        }
+
         async function carregarTagsDoBanco() {
-            const { data, error } = await _supabase.from('meufuturo_tags').select('*').order('nome', { ascending: true });
-            if(!error && data) {
-                listaTagsGlobal = data;
-                atualizarSelectModal();
+            try {
+                const { data, error } = await _supabase.from('meufuturo_tags').select('*').order('nome', { ascending: true });
+                if(!error && data) {
+                    listaTagsGlobal = data;
+                }
+            } catch(e) {
+                console.error("Erro ao carregar tags:", e);
             }
+            atualizarSelectModal();
         }
 
         function atualizarSelectModal(selecionada = '') {
@@ -172,8 +185,6 @@
                 select.appendChild(opt);
             });
         }
-
-        atualizarTextoDataCabecalho(hojeIso);
 
         function atualizarTextoDataCabecalho(dataStr) {
             const [ano, mes, dia] = dataStr.split('-');
@@ -223,10 +234,11 @@
             let estatisticas = {};
 
             listaTagsGlobal.forEach(t => estatisticas[t.nome] = 0);
+            estatisticas['Geral'] = 0;
 
             data.forEach(item => {
                 let tag = item.tag || 'Geral';
-                if(!estatisticas[tag]) estatisticas[tag] = 0;
+                if(estatisticas[tag] === undefined) estatisticas[tag] = 0;
 
                 let diff = 60;
                 if(item.hora_inicio && item.hora_fim) {
@@ -260,7 +272,13 @@
 
             const { data, error } = await _supabase.from('meufuturo_agenda_v3').select('*').eq('data', dataSelecionada).order('hora_inicio', { ascending: true });
 
-            if(error || !data || data.length === 0) {
+            if(error) {
+                lista.innerHTML = `<p class="text-xs text-rose-400 text-center py-6">Erro ao carregar dados: ${error.message}</p>`;
+                calcularDashboard([]);
+                return;
+            }
+
+            if(!data || data.length === 0) {
                 lista.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">Nenhum bloco encontrado para este dia.</p>`;
                 calcularDashboard([]);
                 return;
@@ -292,7 +310,7 @@
         }
 
         function abrirModalCriar() {
-            let tagPadrao = listaTagsGlobal.length > 0 ? listaTagsGlobal[0].nome : '';
+            let tagPadrao = listaTagsGlobal.length > 0 ? listaTagsGlobal[0].nome : 'Geral';
             atualizarSelectModal(tagPadrao);
             
             document.getElementById('modalTituloForm').innerHTML = '<i class="fa-solid fa-calendar-plus mr-2"></i>Novo Bloco de Rotina';
@@ -308,7 +326,7 @@
         }
 
         function abrirModalEditar(item) {
-            atualizarSelectModal(item.tag || '');
+            atualizarSelectModal(item.tag || 'Geral');
             document.getElementById('modalTituloForm').innerHTML = '<i class="fa-solid fa-pen-to-square mr-2"></i>Editar Bloco';
             document.getElementById('compId').value = item.id;
             document.getElementById('compTitulo').value = item.titulo || '';
@@ -403,9 +421,8 @@
 
         function fecharModalCompromisso() { document.getElementById('modalCompromisso').classList.add('hidden'); }
 
-        carregarTagsDoBanco().then(() => {
-            carregarAgenda();
-        });
+        // Inicializa o aplicativo corretamente
+        inicializarApp();
     </script>
 </body>
 </html>
