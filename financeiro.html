@@ -169,13 +169,13 @@
 
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalPDV()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="button" onclick="finalizarPDV()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold">Finalizar Compra</button>
+                    <button type="button" id="btnFinalizarPDV" onclick="finalizarPDV()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition">Finalizar Compra</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal Extrato Específico por Conta -->
+    <!-- Modal Extrato Específico por Conta com Botão de Excluir -->
     <div id="modalExtrato" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-xl w-full space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -286,7 +286,7 @@
                 <input type="date" id="transData" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalTransacao()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="button" onclick="salvarTransacao()" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold">Salvar</button>
+                    <button type="button" id="btnSalvarTransacao" onclick="salvarTransacao()" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold transition">Salvar</button>
                 </div>
             </div>
         </div>
@@ -309,7 +309,7 @@
             data?.forEach(c => {
                 soma += Number(c.saldo_inicial);
                 lista.innerHTML += `
-                    <div onclick="abrirExtrato('${c.id}', '${c.nome_banco}')" class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-emerald-500 transition">
+                    <div onclick="abrirExtrato('${c.id}', '${c.nome_banco}', 'conta')" class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-emerald-500 transition">
                         <div>
                             <p class="font-bold text-sm text-white"><i class="fa-solid fa-wallet text-emerald-400 mr-1.5"></i>${c.nome_banco}</p>
                             <span class="text-xs text-slate-400">Ver extrato</span>
@@ -336,7 +336,7 @@
             lista.innerHTML = '';
             data?.forEach(v => {
                 lista.innerHTML += `
-                    <div onclick="abrirExtrato('${v.id}', '${v.nome}')" class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-cyan-500 transition">
+                    <div onclick="abrirExtrato('${v.id}', '${v.nome}', 'vr')" class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-cyan-500 transition">
                         <div>
                             <p class="font-bold text-sm text-white"><i class="fa-solid fa-utensils text-cyan-400 mr-1.5"></i>${v.nome}</p>
                             <span class="text-xs text-slate-400">Ver extrato</span>
@@ -384,6 +384,8 @@
             const selectTrans = document.getElementById('transContaId');
             const selectPdv = document.getElementById('pdvConta');
             if(!dados) return;
+            selectTrans.innerHTML = '<option value="">Selecione Conta</option>';
+            selectPdv.innerHTML = '<option value="">Forma de Pagamento</option>';
             dados.forEach(d => {
                 const opt = document.createElement('option');
                 opt.value = `${tipo}:${d.id}`;
@@ -454,15 +456,23 @@
         }
 
         async function finalizarPDV() {
+            const btn = document.getElementById('btnFinalizarPDV');
+            btn.disabled = true;
+            btn.innerText = 'Processando...';
+
             const estab = document.getElementById('pdvEstabelecimento').value || 'Compra PDV';
             const contaInfo = document.getElementById('pdvConta').value;
-            if(!contaInfo || carrinhoItens.length === 0) return alert('Selecione a forma de pagamento e adicione itens!');
+            if(!contaInfo || carrinhoItens.length === 0) {
+                alert('Selecione a forma de pagamento e adicione itens!');
+                btn.disabled = false;
+                btn.innerText = 'Finalizar Compra';
+                return;
+            }
             
             const [tipoConta, contaId] = contaInfo.split(':');
             const totalCompra = carrinhoItens.reduce((acc, item) => acc + item.total, 0);
             const dataHoje = new Date().toISOString().split('T')[0];
 
-            // Salva a transação vinculada ao conta_id correto
             await _supabase.from('meufuturo_transacoes').insert([{ 
                 descricao: `${estab} (${carrinhoItens.length} itens)`, 
                 valor: totalCompra, 
@@ -482,17 +492,18 @@
             carrinhoItens = [];
             fecharModalPDV();
             carregarTudo();
+            btn.disabled = false;
+            btn.innerText = 'Finalizar Compra';
             alert('Compra finalizada com sucesso!');
         }
 
-        // --- EXTRATO ESPECÍFICO POR ID DE CONTA ---
-        async function abrirExtrato(id, nome) {
+        // --- EXTRATO COM OPÇÃO DE EXCLUIR E ESTORNAR SALDO ---
+        async function abrirExtrato(id, nome, tipoConta) {
             document.getElementById('extratoTitulo').innerText = `Extrato: ${nome}`;
             const lista = document.getElementById('extratoLista');
             lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Carregando...</p>';
             document.getElementById('modalExtrato').classList.remove('hidden');
 
-            // Busca apenas as transações desta conta específica
             const { data, error } = await _supabase.from('meufuturo_transacoes').select('*').eq('conta_id', id).order('data', { ascending: false });
             
             lista.innerHTML = '';
@@ -508,10 +519,43 @@
                             <p class="font-bold text-white">${t.descricao}</p>
                             <span class="text-slate-500">${new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
                         </div>
-                        <span class="${t.tipo === 'receita' ? 'text-blue-400' : 'text-amber-400'} font-bold">R$ ${Number(t.valor).toFixed(2)}</span>
+                        <div class="flex items-center space-x-3">
+                            <span class="${t.tipo === 'receita' ? 'text-blue-400' : 'text-amber-400'} font-bold">R$ ${Number(t.valor).toFixed(2)}</span>
+                            <button onclick="excluirTransacao('${t.id}', '${t.tipo}', ${t.valor}, '${id}', '${tipoConta}', '${nome}')" class="text-rose-400 hover:text-rose-300 p-1" title="Excluir movimentação"><i class="fa-solid fa-trash"></i></button>
+                        </div>
                     </div>
                 `;
             });
+        }
+
+        async function excluirTransacao(transId, tipoTrans, valorTrans, contaId, tipoConta, nomeConta) {
+            if(!confirm('Deseja realmente excluir esta movimentação? O valor será estornado na conta.')) return;
+
+            // 1. Apaga a transação
+            const { error } = await _supabase.from('meufuturo_transacoes').delete().eq('id', transId);
+            if(error) return alert('Erro ao excluir: ' + error.message);
+
+            // 2. Estorna o valor no saldo da conta correspondente
+            if(tipoConta === 'conta') {
+                const { data: c } = await _supabase.from('meufuturo_contas').select('saldo_inicial').eq('id', contaId).single();
+                let novoSaldo = Number(c.saldo_inicial);
+                // Se era despesa, devolve o dinheiro. Se era receita, tira o dinheiro.
+                if(tipoTrans === 'despesa') novoSaldo += Number(valorTrans);
+                else novoSaldo -= Number(valorTrans);
+
+                await _supabase.from('meufuturo_contas').update({ saldo_inicial: novoSaldo }).eq('id', contaId);
+            } else if(tipoConta === 'vr') {
+                const { data: v } = await _supabase.from('meufuturo_vr').select('saldo').eq('id', contaId).single();
+                let novoSaldo = Number(v.saldo);
+                if(tipoTrans === 'despesa') novoSaldo += Number(valorTrans);
+                else novoSaldo -= Number(valorTrans);
+
+                await _supabase.from('meufuturo_vr').update({ saldo: novoSaldo }).eq('id', contaId);
+            }
+
+            alert('Movimentação excluída e saldo atualizado!');
+            abrirExtrato(contaId, nomeConta, tipoConta);
+            carregarTudo();
         }
 
         async function carregarCarnes() {
@@ -593,12 +637,22 @@
         }
 
         async function salvarTransacao() {
+            const btn = document.getElementById('btnSalvarTransacao');
+            btn.disabled = true;
+            btn.innerText = 'Salvando...';
+
             const desc = document.getElementById('transDesc').value;
             const valor = parseFloat(document.getElementById('transValor').value);
             const tipo = document.getElementById('transTipo').value;
             const contaInfo = document.getElementById('transContaId').value;
             const data = document.getElementById('transData').value;
-            if(!desc || isNaN(valor) || !contaInfo) return alert('Preencha tudo!');
+            
+            if(!desc || isNaN(valor) || !contaInfo) {
+                alert('Preencha tudo!');
+                btn.disabled = false;
+                btn.innerText = 'Salvar';
+                return;
+            }
             
             const [tipoConta, contaId] = contaInfo.split(':');
             
@@ -619,8 +673,11 @@
                 let novo = tipo === 'receita' ? Number(v.saldo) + valor : Number(v.saldo) - valor;
                 await _supabase.from('meufuturo_vr').update({ saldo: novo }).eq('id', contaId);
             }
+
             fecharModalTransacao();
             carregarTudo();
+            btn.disabled = false;
+            btn.innerText = 'Salvar';
         }
 
         // Controles de Modais
