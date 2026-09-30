@@ -51,7 +51,7 @@
                 <div id="resumoTextoDashboard" class="space-y-2 bg-slate-950/60 p-4 rounded-xl border border-slate-800 text-xs max-h-48 overflow-y-auto">
                     <div class="flex justify-between border-b border-slate-800/80 pb-1.5">
                         <span class="text-slate-400">Total de Blocos:</span>
-                        <span class="font-bold text-white">0</span>
+                        <span id="dashTotalBlocos" class="font-bold text-white">0</span>
                     </div>
                 </div>
             </div>
@@ -100,7 +100,7 @@
                     </div>
                     <div>
                         <label class="text-[10px] text-slate-400 block mb-1">Local (Opcional)</label>
-                        <input type="text" id="compLocal" placeholder="Ex: Templo, Escritório..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none">
+                        <input type="text" id="compLocal" placeholder="Ex: Templo, Escritório..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white outline-none">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
@@ -141,8 +141,12 @@
 
     <script>
         const hojeIso = new Date().toISOString().split('T')[0];
-        document.getElementById('filtroDataAgenda').value = hojeIso;
-        document.getElementById('compData').value = hojeIso;
+        
+        // Garante que o input de data existe antes de atribuir valor
+        const inputFiltroData = document.getElementById('filtroDataAgenda');
+        const inputCompData = document.getElementById('compData');
+        if(inputFiltroData) inputFiltroData.value = hojeIso;
+        if(inputCompData) inputCompData.value = hojeIso;
         
         let meuGrafico = null;
         let listaTagsGlobal = [];
@@ -167,6 +171,7 @@
 
         function atualizarSelectModal(selecionada = '') {
             const select = document.getElementById('compTag');
+            if(!select) return;
             select.innerHTML = '';
             
             if(!listaTagsGlobal || listaTagsGlobal.length === 0) {
@@ -187,14 +192,17 @@
         }
 
         function atualizarTextoDataCabecalho(dataStr) {
+            const el = document.getElementById('dataAtualTexto');
+            if(!el) return;
             const [ano, mes, dia] = dataStr.split('-');
             const dataObj = new Date(ano, mes - 1, dia);
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('dataAtualTexto').innerText = dataObj.toLocaleDateString('pt-BR', options);
+            el.innerText = dataObj.toLocaleDateString('pt-BR', options);
         }
 
         function mudarDia(dias) {
             const inputData = document.getElementById('filtroDataAgenda');
+            if(!inputData) return;
             const dataAtual = new Date(inputData.value + 'T00:00:00');
             dataAtual.setDate(dataAtual.getDate() + dias);
             inputData.value = dataAtual.toISOString().split('T')[0];
@@ -202,12 +210,15 @@
         }
 
         function irParaHoje() {
-            document.getElementById('filtroDataAgenda').value = hojeIso;
+            const inputData = document.getElementById('filtroDataAgenda');
+            if(inputData) inputData.value = hojeIso;
             carregarAgenda();
         }
 
         function renderizarGrafico(estatisticas) {
-            const ctx = document.getElementById('graficoDashboard').getContext('2d');
+            const canvasEl = document.getElementById('graficoDashboard');
+            if(!canvasEl) return;
+            const ctx = canvasEl.getContext('2d');
             if (meuGrafico) meuGrafico.destroy();
 
             const labels = Object.keys(estatisticas);
@@ -252,13 +263,17 @@
                 estatisticas[tag] += diff;
             });
 
-            document.getElementById('dashTotalBlocos').innerText = totalBlocos;
-            const containerResumo = document.getElementById('resumoTextoDashboard');
-            containerResumo.innerHTML = `<div class="flex justify-between border-b border-slate-800/80 pb-1.5"><span class="text-slate-400">Total de Blocos:</span><span class="font-bold text-white">${totalBlocos}</span></div>`;
+            const dashTotal = document.getElementById('dashTotalBlocos');
+            if(dashTotal) dashTotal.innerText = totalBlocos;
 
-            for(const [tag, mins] of Object.entries(estatisticas)) {
-                if(mins > 0) {
-                    containerResumo.innerHTML += `<div class="flex justify-between border-b border-slate-800/80 pb-1.5"><span class="text-slate-300">#${tag}:</span><span class="font-bold text-blue-300">${(mins / 60).toFixed(1)}h</span></div>`;
+            const containerResumo = document.getElementById('resumoTextoDashboard');
+            if(containerResumo) {
+                containerResumo.innerHTML = `<div class="flex justify-between border-b border-slate-800/80 pb-1.5"><span class="text-slate-400">Total de Blocos:</span><span class="font-bold text-white">${totalBlocos}</span></div>`;
+
+                for(const [tag, mins] of Object.entries(estatisticas)) {
+                    if(mins > 0) {
+                        containerResumo.innerHTML += `<div class="flex justify-between border-b border-slate-800/80 pb-1.5"><span class="text-slate-300">#${tag}:</span><span class="font-bold text-blue-300">${(mins / 60).toFixed(1)}h</span></div>`;
+                    }
                 }
             }
 
@@ -266,10 +281,12 @@
         }
 
         async function carregarAgenda() {
-            const dataSelecionada = document.getElementById('filtroDataAgenda').value;
+            const inputFiltro = document.getElementById('filtroDataAgenda');
+            const dataSelecionada = inputFiltro ? inputFiltro.value : hojeIso;
             atualizarTextoDataCabecalho(dataSelecionada);
 
             const lista = document.getElementById('listaAgenda');
+            if(!lista) return;
             lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Buscando programação...</p>';
 
             try {
@@ -326,7 +343,8 @@
             document.getElementById('compLocal').value = '';
             document.getElementById('compInicio').value = '';
             document.getElementById('compFim').value = '';
-            document.getElementById('compData').value = document.getElementById('filtroDataAgenda').value;
+            const filtroData = document.getElementById('filtroDataAgenda');
+            document.getElementById('compData').value = filtroData ? filtroData.value : hojeIso;
             document.getElementById('compDesc').value = '';
             document.getElementById('divRepetirContainer').style.display = 'block';
             document.getElementById('modalCompromisso').classList.remove('hidden');
