@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Futuro - Agenda & Dashboard</title>
+    <title>Meu Futuro - Acontecendo Agora</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen pb-12">
 
@@ -19,435 +18,185 @@
 
     <!-- Header -->
     <header class="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-50 shadow-md">
-        <div class="max-w-4xl mx-auto flex justify-between items-center">
+        <div class="max-w-md mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <button onclick="window.location.href='home.html'" class="text-slate-400 hover:text-blue-400 transition" title="Voltar ao Menu"><i class="fa-solid fa-arrow-left text-lg"></i></button>
-                <h1 class="text-lg font-bold text-blue-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Agenda & Dashboard</span></h1>
+                <h1 class="text-lg font-bold text-blue-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Agora</span></h1>
             </div>
-            <div class="flex items-center space-x-2">
-                <button onclick="window.location.href='tags.html'" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg transition" title="Ir para Cadernos"><i class="fa-solid fa-book mr-1"></i> Cadernos</button>
-                <button onclick="abrirModalCriar()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition shadow-lg shadow-blue-900/30"><i class="fa-solid fa-plus mr-1"></i> Novo Bloco</button>
-            </div>
+            <button onclick="window.location.href='agenda.html'" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg transition"><i class="fa-solid fa-calendar-days mr-1"></i> Agenda</button>
         </div>
     </header>
 
     <!-- Conteúdo Principal -->
-    <main class="max-w-4xl mx-auto p-4 md:p-6 space-y-6">
+    <main class="max-w-md mx-auto p-4 md:p-6 space-y-6">
 
-        <!-- Dashboard Gráfico do Dia -->
-        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg space-y-4">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <div class="flex items-center space-x-2">
-                    <i class="fa-solid fa-chart-pie text-blue-400"></i>
-                    <h3 class="text-sm font-bold text-blue-400 uppercase tracking-wide">Distribuição do Tempo (Dashboard)</h3>
-                </div>
-                <span id="dataAtualTexto" class="text-xs text-slate-400"></span>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-                <div class="relative w-full h-48 flex justify-center">
-                    <canvas id="graficoDashboard"></canvas>
-                </div>
-                <div id="resumoTextoDashboard" class="space-y-2 bg-slate-950/60 p-4 rounded-xl border border-slate-800 text-xs max-h-48 overflow-y-auto">
-                    <div class="flex justify-between border-b border-slate-800/80 pb-1.5">
-                        <span class="text-slate-400">Total de Blocos:</span>
-                        <span id="dashTotalBlocos" class="font-bold text-white">0</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Seção da Linha do Tempo / Horários do Dia com Navegação de Dias -->
-        <section class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg space-y-4">
-            <div class="flex flex-col sm:flex-row justify-between items-center border-b border-slate-800 pb-3 gap-3">
-                <h3 class="text-base font-bold text-white flex items-center"><i class="fa-solid fa-calendar-day mr-2 text-blue-400"></i>Agenda Diária</h3>
-                
-                <div class="flex items-center space-x-2">
-                    <button onclick="mudarDia(-1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl text-xs font-bold transition" title="Dia Anterior"><i class="fa-solid fa-chevron-left"></i></button>
-                    <input type="date" id="filtroDataAgenda" onchange="carregarAgenda()" class="bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white outline-none">
-                    <button onclick="mudarDia(1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl text-xs font-bold transition" title="Próximo Dia"><i class="fa-solid fa-chevron-right"></i></button>
-                    <button onclick="irParaHoje()" class="bg-blue-900/40 border border-blue-700/50 hover:bg-blue-900/60 text-blue-300 px-3 py-1.5 rounded-xl text-xs font-bold transition">Hoje</button>
-                </div>
+        <!-- Card do Cronômetro / Registro Atual -->
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-5 text-center">
+            <div class="space-y-1">
+                <span class="text-xs font-bold text-blue-400 uppercase tracking-widest"><i class="fa-solid fa-stopwatch mr-1"></i> Cronômetro de Atividade</span>
+                <h2 id="statusAtividade" class="text-sm text-slate-400">Nenhuma atividade em andamento</h2>
             </div>
 
-            <!-- Lista de Blocos do Dia -->
-            <div class="space-y-3" id="listaAgenda">
-                <p class="text-xs text-slate-500 text-center py-6">Carregando programação...</p>
+            <!-- Display do Relógio / Cronômetro -->
+            <div id="displayTempo" class="text-5xl font-extrabold text-white font-mono tracking-wider py-4">
+                00:00:00
             </div>
-        </section>
 
-    </main>
-
-    <!-- Modal Compromisso (Criar / Editar) -->
-    <div id="modalCompromisso" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 id="modalTituloForm" class="text-lg font-bold text-blue-400"><i class="fa-solid fa-calendar-plus mr-2"></i>Novo Bloco de Rotina</h3>
-                <button onclick="fecharModalCompromisso()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <div class="space-y-3">
-                <input type="hidden" id="compId">
+            <!-- Formulário de Configuração (Antes de Iniciar) -->
+            <div id="painelConfig" class="space-y-3 text-left">
                 <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Título da Atividade</label>
-                    <input type="text" id="compTitulo" placeholder="Ex: Culto de Ensino, Trabalho..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    <label class="text-[10px] text-slate-400 block mb-1">O que você está fazendo?</label>
+                    <input type="text" id="inputTitulo" placeholder="Ex: Atendimento ao cliente, Leitura..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-blue-500 transition">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="text-[10px] text-slate-400 block mb-1">Caderno (Assunto)</label>
-                        <select id="compTag" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none">
+                        <select id="inputTag" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none">
                             <option value="Geral">Geral</option>
                         </select>
                     </div>
                     <div>
                         <label class="text-[10px] text-slate-400 block mb-1">Local (Opcional)</label>
-                        <input type="text" id="compLocal" placeholder="Ex: Templo, Escritório..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white outline-none">
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Início</label>
-                        <input type="time" id="compInicio" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white outline-none">
-                    </div>
-                    <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Término</label>
-                        <input type="time" id="compFim" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white outline-none">
+                        <input type="text" id="inputLocal" placeholder="Ex: Casa, Escritório..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none">
                     </div>
                 </div>
                 <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Data</label>
-                    <input type="date" id="compData" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white outline-none">
-                </div>
-                <div id="divRepetirContainer">
-                    <label class="text-[10px] text-slate-400 block mb-1">Repetição</label>
-                    <select id="compRepetir" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                        <option value="nenhum">Apenas neste dia (Único)</option>
-                        <option value="seg_a_sex">Segunda a Sexta (Próximas 4 semanas)</option>
-                        <option value="semanal">Toda semana (Próximas 8 semanas)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Descrição / Anotações do Caderno</label>
-                    <textarea id="compDesc" rows="2" placeholder="O que aconteceu ou foi programado?" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none"></textarea>
-                </div>
-                <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" onclick="fecharModalCompromisso()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="button" id="btnSalvarCompromisso" onclick="salvarCompromisso()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition">Salvar Bloco</button>
+                    <label class="text-[10px] text-slate-400 block mb-1">Detalhes / Anotações</label>
+                    <textarea id="inputDesc" rows="2" placeholder="Notas sobre o que está a ser feito..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none"></textarea>
                 </div>
             </div>
+
+            <!-- Botões de Ação -->
+            <div class="pt-2">
+                <button id="btnAcao" onclick="alternarCronometro()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-3.5 text-sm font-bold transition shadow-lg shadow-emerald-900/30 flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-play text-base"></i>
+                    <span>Iniciar Agora</span>
+                </button>
+            </div>
         </div>
-    </div>
+
+    </main>
 
     <script src="supabase.js"></script>
 
     <script>
-        const hojeIso = new Date().toISOString().split('T')[0];
-        
-        // Garante que o input de data existe antes de atribuir valor
-        const inputFiltroData = document.getElementById('filtroDataAgenda');
-        const inputCompData = document.getElementById('compData');
-        if(inputFiltroData) inputFiltroData.value = hojeIso;
-        if(inputCompData) inputCompData.value = hojeIso;
-        
-        let meuGrafico = null;
-        let listaTagsGlobal = [];
+        let timerInterval = null;
+        let segundosDecorridos = 0;
+        let horaInicioStr = '';
+        let dataInicioStr = '';
+        let emExecucao = false;
 
-        async function inicializarApp() {
-            atualizarTextoDataCabecalho(hojeIso);
-            await carregarTagsDoBanco();
-            await carregarAgenda();
-        }
-
-        async function carregarTagsDoBanco() {
+        async function carregarTagsNoSelect() {
             try {
                 const { data, error } = await _supabase.from('meufuturo_tags').select('*').order('nome', { ascending: true });
-                if(!error && data) {
-                    listaTagsGlobal = data;
+                const select = document.getElementById('inputTag');
+                if(!select) return;
+                select.innerHTML = '';
+
+                if(!error && data && data.length > 0) {
+                    data.forEach(t => {
+                        select.innerHTML += `<option value="${t.nome}">${t.nome}</option>`;
+                    });
+                } else {
+                    select.innerHTML = '<option value="Geral">Geral</option>';
                 }
             } catch(e) {
                 console.error("Erro ao carregar tags:", e);
             }
-            atualizarSelectModal();
         }
 
-        function atualizarSelectModal(selecionada = '') {
-            const select = document.getElementById('compTag');
-            if(!select) return;
-            select.innerHTML = '';
-            
-            if(!listaTagsGlobal || listaTagsGlobal.length === 0) {
-                const opt = document.createElement('option');
-                opt.value = 'Geral';
-                opt.innerText = 'Geral';
-                select.appendChild(opt);
-                return;
-            }
-
-            listaTagsGlobal.forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t.nome;
-                opt.innerText = t.nome;
-                if(t.nome === selecionada) opt.selected = true;
-                select.appendChild(opt);
-            });
+        function formatarTempo(segundos) {
+            const h = Math.floor(segundos / 3600).toString().padStart(2, '0');
+            const m = Math.floor((segundos % 3600) / 60).toString().padStart(2, '0');
+            const s = (segundos % 60).toString().padStart(2, '0');
+            return `${h}:${m}:${s}`;
         }
 
-        function atualizarTextoDataCabecalho(dataStr) {
-            const el = document.getElementById('dataAtualTexto');
-            if(!el) return;
-            const [ano, mes, dia] = dataStr.split('-');
-            const dataObj = new Date(ano, mes - 1, dia);
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            el.innerText = dataObj.toLocaleDateString('pt-BR', options);
-        }
+        async function alternarCronometro() {
+            const btn = document.getElementById('btnAcao');
+            const status = document.getElementById('statusAtividade');
+            const tituloInput = document.getElementById('inputTitulo');
 
-        function mudarDia(dias) {
-            const inputData = document.getElementById('filtroDataAgenda');
-            if(!inputData) return;
-            const dataAtual = new Date(inputData.value + 'T00:00:00');
-            dataAtual.setDate(dataAtual.getDate() + dias);
-            inputData.value = dataAtual.toISOString().split('T')[0];
-            carregarAgenda();
-        }
-
-        function irParaHoje() {
-            const inputData = document.getElementById('filtroDataAgenda');
-            if(inputData) inputData.value = hojeIso;
-            carregarAgenda();
-        }
-
-        function renderizarGrafico(estatisticas) {
-            const canvasEl = document.getElementById('graficoDashboard');
-            if(!canvasEl) return;
-            const ctx = canvasEl.getContext('2d');
-            if (meuGrafico) meuGrafico.destroy();
-
-            const labels = Object.keys(estatisticas);
-            const dadosHoras = Object.values(estatisticas).map(mins => (mins / 60).toFixed(1));
-            const coresFixas = ['#3b82f6', '#10b981', '#f59e0b', '#a855f7', '#ec4899', '#0ea5e9', '#6366f1', '#14b8a6'];
-            const cores = labels.map((_, index) => coresFixas[index % coresFixas.length]);
-
-            meuGrafico = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{ data: dadosHoras, backgroundColor: cores, borderWidth: 0 }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10 }, boxWidth: 12 } } }
-                }
-            });
-        }
-
-        function calcularDashboard(data) {
-            let totalBlocos = data.length;
-            let estatisticas = {};
-
-            if(listaTagsGlobal && listaTagsGlobal.length > 0) {
-                listaTagsGlobal.forEach(t => estatisticas[t.nome] = 0);
-            }
-            estatisticas['Geral'] = 0;
-
-            data.forEach(item => {
-                let tag = item.tag || 'Geral';
-                if(estatisticas[tag] === undefined) estatisticas[tag] = 0;
-
-                let diff = 60;
-                if(item.hora_inicio && item.hora_fim) {
-                    const [hIni, mIni] = item.hora_inicio.split(':').map(Number);
-                    const [hFim, mFim] = item.hora_fim.split(':').map(Number);
-                    let calc = (hFim * 60 + mFim) - (hIni * 60 + mIni);
-                    if(calc > 0) diff = calc;
-                }
-                estatisticas[tag] += diff;
-            });
-
-            const dashTotal = document.getElementById('dashTotalBlocos');
-            if(dashTotal) dashTotal.innerText = totalBlocos;
-
-            const containerResumo = document.getElementById('resumoTextoDashboard');
-            if(containerResumo) {
-                containerResumo.innerHTML = `<div class="flex justify-between border-b border-slate-800/80 pb-1.5"><span class="text-slate-400">Total de Blocos:</span><span class="font-bold text-white">${totalBlocos}</span></div>`;
-
-                for(const [tag, mins] of Object.entries(estatisticas)) {
-                    if(mins > 0) {
-                        containerResumo.innerHTML += `<div class="flex justify-between border-b border-slate-800/80 pb-1.5"><span class="text-slate-300">#${tag}:</span><span class="font-bold text-blue-300">${(mins / 60).toFixed(1)}h</span></div>`;
-                    }
-                }
-            }
-
-            renderizarGrafico(estatisticas);
-        }
-
-        async function carregarAgenda() {
-            const inputFiltro = document.getElementById('filtroDataAgenda');
-            const dataSelecionada = inputFiltro ? inputFiltro.value : hojeIso;
-            atualizarTextoDataCabecalho(dataSelecionada);
-
-            const lista = document.getElementById('listaAgenda');
-            if(!lista) return;
-            lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Buscando programação...</p>';
-
-            try {
-                const { data, error } = await _supabase.from('meufuturo_agenda_v3').select('*').eq('data', dataSelecionada).order('hora_inicio', { ascending: true });
-
-                if(error) {
-                    lista.innerHTML = `<p class="text-xs text-rose-400 text-center py-6">Erro ao carregar dados: ${error.message}</p>`;
-                    calcularDashboard([]);
+            if (!emExecucao) {
+                // INICIAR
+                const titulo = tituloInput.value.trim();
+                if (!titulo) {
+                    alert('Por favor, informe o que você está a fazer!');
                     return;
                 }
 
-                if(!data || data.length === 0) {
-                    lista.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">Nenhum bloco encontrado para este dia.</p>`;
-                    calcularDashboard([]);
-                    return;
-                }
+                const agora = new Date();
+                dataInicioStr = agora.toISOString().split('T')[0];
+                horaInicioStr = agora.toTimeString().split(' ')[0].substring(0, 5); // HH:MM
 
-                calcularDashboard(data);
-                lista.innerHTML = '';
+                emExecucao = true;
+                segundosDecorridos = 0;
+                
+                status.innerText = `Em andamento (Início às ${horaInicioStr})`;
+                btn.innerHTML = '<i class="fa-solid fa-stop text-base"></i><span>Parar e Salvar no Caderno</span>';
+                btn.className = 'w-full bg-rose-600 hover:bg-rose-500 text-white rounded-xl py-3.5 text-sm font-bold transition shadow-lg shadow-rose-900/30 flex items-center justify-center space-x-2';
+                
+                // Desativa inputs durante a execução
+                document.getElementById('painelConfig').style.opacity = '0.5';
+                document.querySelectorAll('#painelConfig input, #painelConfig select, #painelConfig textarea').forEach(el => el.disabled = true);
 
-                data.forEach(item => {
-                    const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
-                    lista.innerHTML += `
-                        <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
-                            <div class="space-y-1">
-                                <div class="flex items-center space-x-2 flex-wrap gap-y-1">
-                                    <span class="bg-blue-900/40 border border-blue-700/50 text-blue-300 font-bold px-2 py-0.5 rounded text-[10px]">${item.hora_inicio} - ${item.hora_fim || item.hora_inicio}</span>
-                                    <span class="font-bold text-white text-sm">${item.titulo}</span>
-                                    ${item.tag ? `<span class="bg-indigo-900/40 border border-indigo-700/50 text-indigo-300 px-2 py-0.5 rounded text-[10px] font-semibold">#${item.tag}</span>` : ''}
-                                    ${item.local ? `<span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px]"><i class="fa-solid fa-location-dot text-rose-400 mr-1"></i>${item.local}</span>` : ''}
-                                </div>
-                                ${item.descricao ? `<p class="text-slate-400 pl-1">${item.descricao}</p>` : ''}
-                            </div>
-                            <div class="flex items-center space-x-1 ml-2">
-                                <button onclick="abrirModalEditar(${itemJson})" class="text-slate-400 hover:text-blue-400 p-2" title="Editar bloco"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
-                                <button onclick="excluirCompromisso('${item.id}')" class="text-rose-400 hover:text-rose-300 p-2" title="Excluir bloco"><i class="fa-solid fa-trash text-sm"></i></button>
-                            </div>
-                        </div>
-                    `;
-                });
-            } catch(e) {
-                lista.innerHTML = `<p class="text-xs text-rose-400 text-center py-6">Erro de conexão: ${e.message}</p>`;
-                calcularDashboard([]);
-            }
-        }
+                timerInterval = setInterval(() => {
+                    segundosDecorridos++;
+                    document.getElementById('displayTempo').innerText = formatarTempo(segundosDecorridos);
+                }, 1000);
 
-        function abrirModalCriar() {
-            let tagPadrao = listaTagsGlobal.length > 0 ? listaTagsGlobal[0].nome : 'Geral';
-            atualizarSelectModal(tagPadrao);
-            
-            document.getElementById('modalTituloForm').innerHTML = '<i class="fa-solid fa-calendar-plus mr-2"></i>Novo Bloco de Rotina';
-            document.getElementById('compId').value = '';
-            document.getElementById('compTitulo').value = '';
-            document.getElementById('compLocal').value = '';
-            document.getElementById('compInicio').value = '';
-            document.getElementById('compFim').value = '';
-            const filtroData = document.getElementById('filtroDataAgenda');
-            document.getElementById('compData').value = filtroData ? filtroData.value : hojeIso;
-            document.getElementById('compDesc').value = '';
-            document.getElementById('divRepetirContainer').style.display = 'block';
-            document.getElementById('modalCompromisso').classList.remove('hidden');
-        }
-
-        function abrirModalEditar(item) {
-            atualizarSelectModal(item.tag || 'Geral');
-            document.getElementById('modalTituloForm').innerHTML = '<i class="fa-solid fa-pen-to-square mr-2"></i>Editar Bloco';
-            document.getElementById('compId').value = item.id;
-            document.getElementById('compTitulo').value = item.titulo || '';
-            document.getElementById('compLocal').value = item.local || '';
-            document.getElementById('compInicio').value = item.hora_inicio || '';
-            document.getElementById('compFim').value = item.hora_fim || '';
-            document.getElementById('compData').value = item.data || '';
-            document.getElementById('compDesc').value = item.descricao || '';
-            document.getElementById('divRepetirContainer').style.display = 'none';
-            document.getElementById('modalCompromisso').classList.remove('hidden');
-        }
-
-        async function salvarCompromisso() {
-            const btn = document.getElementById('btnSalvarCompromisso');
-            btn.disabled = true;
-            btn.innerText = 'Salvando...';
-
-            const id = document.getElementById('compId').value;
-            const titulo = document.getElementById('compTitulo').value;
-            const tag = document.getElementById('compTag').value;
-            const local = document.getElementById('compLocal').value;
-            const horaInicio = document.getElementById('compInicio').value;
-            const horaFim = document.getElementById('compFim').value;
-            const dataInicial = document.getElementById('compData').value;
-            const repetir = document.getElementById('compRepetir').value;
-            const descricao = document.getElementById('compDesc').value;
-
-            if(!titulo || !horaInicio || !dataInicial) {
-                alert('Preencha ao menos o título, o horário de início e a data!');
-                btn.disabled = false;
-                btn.innerText = 'Salvar Bloco';
-                return;
-            }
-
-            if(id) {
-                const { error } = await _supabase.from('meufuturo_agenda_v3').update({
-                    titulo, tag, local, hora_inicio: horaInicio, hora_fim: horaFim || null, data: dataInicial, descricao
-                }).eq('id', id);
-
-                if(error) {
-                    alert('Erro ao atualizar: ' + error.message);
-                    btn.disabled = false;
-                    btn.innerText = 'Salvar Bloco';
-                    return;
-                }
             } else {
-                let datasParaInserir = [dataInicial];
+                // PARAR E SALVAR
+                clearInterval(timerInterval);
+                btn.disabled = true;
+                btn.innerText = 'Salvando no Histórico...';
 
-                if(repetir === 'seg_a_sex') {
-                    let dataAtual = new Date(dataInicial + 'T00:00:00');
-                    for(let i = 1; i < 28; i++) {
-                        dataAtual.setDate(dataAtual.getDate() + 1);
-                        let diaSemana = dataAtual.getDay();
-                        if(diaSemana !== 0 && diaSemana !== 6) {
-                            datasParaInserir.push(dataAtual.toISOString().split('T')[0]);
-                        }
-                    }
-                } else if(repetir === 'semanal') {
-                    let dataAtual = new Date(dataInicial + 'T00:00:00');
-                    for(let i = 1; i < 8; i++) {
-                        dataAtual.setDate(dataAtual.getDate() + 7);
-                        datasParaInserir.push(dataAtual.toISOString().split('T')[0]);
-                    }
-                }
+                const agoraFim = new Date();
+                let horaFimStr = agoraFim.toTimeString().split(' ')[0].substring(0, 5);
 
-                const registros = datasParaInserir.map(d => ({
-                    titulo, tag, local, hora_inicio: horaInicio, hora_fim: horaFim || null, data: d, descricao
-                }));
+                const titulo = tituloInput.value.trim();
+                const tag = document.getElementById('inputTag').value;
+                const local = document.getElementById('inputLocal').value.trim();
+                const descricao = document.getElementById('inputDesc').value.trim();
 
-                const { error } = await _supabase.from('meufuturo_agenda_v3').insert(registros);
+                // Salva diretamente na mesma tabela da agenda (meufuturo_agenda_v3) para integrar com o dashboard e cadernos!
+                const { error } = await _supabase.from('meufuturo_agenda_v3').insert([{
+                    titulo,
+                    tag,
+                    local: local || null,
+                    hora_inicio: horaInicioStr,
+                    hora_fim: horaFimStr,
+                    data: dataInicioStr,
+                    descricao: descricao ? `${descricao} (Registrado via Cronômetro Agora)` : 'Registrado via Cronômetro Agora'
+                }]);
 
                 if(error) {
-                    alert('Erro ao salvar: ' + error.message);
+                    alert('Erro ao salvar atividade: ' + error.message);
                     btn.disabled = false;
-                    btn.innerText = 'Salvar Bloco';
                     return;
                 }
+
+                alert('Atividade registrada e salva com sucesso no seu histórico!');
+                
+                // Reseta a tela
+                emExecucao = false;
+                segundosDecorridos = 0;
+                document.getElementById('displayTempo').innerText = '00:00:00';
+                status.innerText = 'Nenhuma atividade em andamento';
+                tituloInput.value = '';
+                document.getElementById('inputLocal').value = '';
+                document.getElementById('inputDesc').value = '';
+                
+                document.getElementById('painelConfig').style.opacity = '1';
+                document.querySelectorAll('#painelConfig input, #painelConfig select, #painelConfig textarea').forEach(el => el.disabled = false);
+
+                btn.innerHTML = '<i class="fa-solid fa-play text-base"></i><span>Iniciar Agora</span>';
+                btn.className = 'w-full bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-3.5 text-sm font-bold transition shadow-lg shadow-emerald-900/30 flex items-center justify-center space-x-2';
+                btn.disabled = false;
             }
-
-            fecharModalCompromisso();
-            carregarAgenda();
-            
-            btn.disabled = false;
-            btn.innerText = 'Salvar Bloco';
         }
 
-        async function excluirCompromisso(id) {
-            if(!confirm('Deseja remover este bloco da agenda?')) return;
-            await _supabase.from('meufuturo_agenda_v3').delete().eq('id', id);
-            carregarAgenda();
-        }
-
-        function fecharModalCompromisso() { document.getElementById('modalCompromisso').classList.add('hidden'); }
-
-        // Inicializa o aplicativo corretamente
-        inicializarApp();
+        carregarTagsNoSelect();
     </script>
 </body>
 </html>
