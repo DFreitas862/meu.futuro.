@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Futuro - Agenda & Caderno de Tags</title>
+    <title>Meu Futuro - Agenda & Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -22,10 +22,10 @@
         <div class="max-w-4xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <button onclick="window.location.href='home.html'" class="text-slate-400 hover:text-blue-400 transition" title="Voltar ao Menu"><i class="fa-solid fa-arrow-left text-lg"></i></button>
-                <h1 class="text-lg font-bold text-blue-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Caderno de Tags & Agenda</span></h1>
+                <h1 class="text-lg font-bold text-blue-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Agenda & Dashboard</span></h1>
             </div>
             <div class="flex items-center space-x-2">
-                <button onclick="abrirModalGerenciarTags()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg transition" title="Cadastrar Nova Tag"><i class="fa-solid fa-tags mr-1"></i> Nova Tag</button>
+                <button onclick="window.location.href='tags.html'" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg transition" title="Gerenciar Tags"><i class="fa-solid fa-tags mr-1"></i> Tags</button>
                 <button onclick="abrirModalCriar()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition shadow-lg shadow-blue-900/30"><i class="fa-solid fa-plus mr-1"></i> Novo Bloco</button>
             </div>
         </div>
@@ -34,14 +34,14 @@
     <!-- Conteúdo Principal -->
     <main class="max-w-4xl mx-auto p-4 md:p-6 space-y-6">
 
-        <!-- Barra de Filtro por Tag (Estilo Caderno / Hashtag) -->
+        <!-- Barra de Filtro por Tag (Caderno / Hashtag) -->
         <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-lg space-y-2">
             <div class="flex justify-between items-center">
                 <span class="text-xs font-bold text-slate-400 uppercase tracking-wider"><i class="fa-solid fa-filter mr-1.5 text-blue-400"></i>Filtrar Assunto (Caderno)</span>
                 <span id="filtroAtivoTexto" class="text-xs text-blue-400 font-bold">Exibindo: Tudo</span>
             </div>
             <div id="barraFiltroTags" class="flex flex-wrap gap-2 pt-1">
-                <!-- Preenchido dinamicamente via JS -->
+                <!-- Preenchido via JS -->
             </div>
         </div>
 
@@ -85,30 +85,6 @@
         </section>
 
     </main>
-
-    <!-- Modal Gerenciar / Cadastrar Tags no Banco -->
-    <div id="modalTags" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full space-y-4 shadow-2xl">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="text-lg font-bold text-blue-400"><i class="fa-solid fa-tags mr-2"></i>Cadastrar Nova Tag</h3>
-                <button onclick="fecharModalGerenciarTags()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <div class="space-y-3">
-                <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Nome da Tag (Ex: Igreja, Projeto X...)</label>
-                    <input type="text" id="novaTagNome" placeholder="Digite o assunto..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                </div>
-                <button type="button" onclick="salvarNovaTagBanco()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-2.5 text-xs font-bold transition shadow-lg">Salvar Tag na Nuvem</button>
-                
-                <div class="pt-2 border-t border-slate-800">
-                    <span class="text-[10px] text-slate-400 block mb-2">Tags Cadastradas no Sistema:</span>
-                    <div id="listaTagsCadastradas" class="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto">
-                        <!-- Preenchido via JS -->
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Modal Compromisso (Criar / Editar) -->
     <div id="modalCompromisso" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
@@ -218,49 +194,6 @@
                 opt.innerText = t.nome;
                 if(t.nome === selecionada) opt.selected = true;
                 select.appendChild(opt);
-            });
-        }
-
-        async function salvarNovaTagBanco() {
-            const input = document.getElementById('novaTagNome');
-            const nome = input.value.trim();
-            if(!nome) return alert('Digite o nome da tag!');
-
-            const { error } = await _supabase.from('meufuturo_tags').insert([{ nome }]);
-            if(error) return alert('Erro ao salvar tag (talvez já exista): ' + error.message);
-
-            input.value = '';
-            carregarTagsDoBanco();
-            renderizarListaTagsModal();
-        }
-
-        async function deletarTagBanco(id, nome) {
-            if(!confirm(`Deseja excluir a tag #${nome}?`)) return;
-            await _supabase.from('meufuturo_tags').delete().eq('id', id);
-            carregarTagsDoBanco();
-            renderizarListaTagsModal();
-        }
-
-        function abrirModalGerenciarTags() {
-            renderizarListaTagsModal();
-            document.getElementById('modalTags').classList.remove('hidden');
-        }
-
-        function fecharModalGerenciarTags() {
-            document.getElementById('modalTags').classList.add('hidden');
-            carregarAgenda();
-        }
-
-        function renderizarListaTagsModal() {
-            const container = document.getElementById('listaTagsCadastradas');
-            container.innerHTML = '';
-            listaTagsGlobal.forEach(t => {
-                container.innerHTML += `
-                    <span class="bg-slate-800 border border-slate-700 text-slate-200 px-2.5 py-1 rounded-lg text-xs flex items-center space-x-1">
-                        <span>#${t.nome}</span>
-                        <button onclick="deletarTagBanco('${t.id}', '${t.nome}')" class="text-rose-400 hover:text-rose-300 ml-1.5"><i class="fa-solid fa-xmark"></i></button>
-                    </span>
-                `;
             });
         }
 
@@ -388,7 +321,7 @@
         }
 
         function abrirModalCriar() {
-            atualizarSelectModal('Trabalho');
+            atualizarSelectModal(tagFiltroAtual !== 'TODAS' ? tagFiltroAtual : '');
             document.getElementById('modalTituloForm').innerHTML = '<i class="fa-solid fa-calendar-plus mr-2"></i>Novo Bloco de Rotina';
             document.getElementById('compId').value = '';
             document.getElementById('compTitulo').value = '';
@@ -402,7 +335,7 @@
         }
 
         function abrirModalEditar(item) {
-            atualizarSelectModal(item.tag || 'Trabalho');
+            atualizarSelectModal(item.tag || '');
             document.getElementById('modalTituloForm').innerHTML = '<i class="fa-solid fa-pen-to-square mr-2"></i>Editar Bloco';
             document.getElementById('compId').value = item.id;
             document.getElementById('compTitulo').value = item.titulo || '';
@@ -497,7 +430,6 @@
 
         function fecharModalCompromisso() { document.getElementById('modalCompromisso').classList.add('hidden'); }
 
-        // Inicialização
         carregarTagsDoBanco().then(() => {
             carregarAgenda();
         });
