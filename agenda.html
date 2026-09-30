@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Futuro - Agenda & Propósito</title>
+    <title>Meu Futuro - Agenda & Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -21,7 +21,7 @@
         <div class="max-w-4xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <button onclick="window.location.href='home.html'" class="text-slate-400 hover:text-blue-400 transition" title="Voltar ao Menu"><i class="fa-solid fa-arrow-left text-lg"></i></button>
-                <h1 class="text-lg font-bold text-blue-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Agenda & Propósito</span></h1>
+                <h1 class="text-lg font-bold text-blue-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Agenda & Dashboard</span></h1>
             </div>
             <button onclick="abrirModalCriar()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition shadow-lg shadow-blue-900/30"><i class="fa-solid fa-plus mr-1"></i> Novo Bloco</button>
         </div>
@@ -30,13 +30,35 @@
     <!-- Conteúdo Principal -->
     <main class="max-w-4xl mx-auto p-4 md:p-6 space-y-6">
 
-        <!-- Card de Intenção / Propósito do Dia -->
-        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg space-y-3">
-            <div class="flex justify-between items-center">
-                <h3 class="text-sm font-bold text-blue-400 uppercase tracking-wide"><i class="fa-solid fa-compass mr-1.5"></i> Propósito do Dia</h3>
+        <!-- Dashboard do Dia (Substituiu o propósito) -->
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-chart-pie text-blue-400"></i>
+                    <h3 class="text-sm font-bold text-blue-400 uppercase tracking-wide">Dashboard do Dia</h3>
+                </div>
                 <span id="dataAtualTexto" class="text-xs text-slate-400"></span>
             </div>
-            <input type="text" id="propositoDia" placeholder="Qual é a intenção ou o foco principal para hoje? (Ex: Fazer as coisas com calma e presença)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-blue-500 transition">
+            
+            <!-- Cards de Resumo Rápido -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="bg-slate-950/80 border border-slate-800 p-3 rounded-xl text-center">
+                    <span class="text-[10px] text-slate-400 block uppercase">Total de Blocos</span>
+                    <span id="dashTotalBlocos" class="text-lg font-extrabold text-white">0</span>
+                </div>
+                <div class="bg-slate-950/80 border border-slate-800 p-3 rounded-xl text-center">
+                    <span class="text-[10px] text-amber-400 block uppercase">Trabalho</span>
+                    <span id="dashTotalTrabalho" class="text-lg font-extrabold text-amber-300">0h</span>
+                </div>
+                <div class="bg-slate-950/80 border border-slate-800 p-3 rounded-xl text-center">
+                    <span class="text-[10px] text-emerald-400 block uppercase">Empreendimentos</span>
+                    <span id="dashTotalEmpreendimento" class="text-lg font-extrabold text-emerald-300">0h</span>
+                </div>
+                <div class="bg-slate-950/80 border border-slate-800 p-3 rounded-xl text-center">
+                    <span class="text-[10px] text-purple-400 block uppercase">Espiritualidade</span>
+                    <span id="dashTotalEspiritualidade" class="text-lg font-extrabold text-purple-300">0h</span>
+                </div>
+            </div>
         </div>
 
         <!-- Seção da Linha do Tempo / Horários do Dia com Navegação de Dias -->
@@ -165,6 +187,31 @@
             }
         }
 
+        function calcularDashboard(data) {
+            let totalBlocos = data.length;
+            let minutosTrabalho = 0;
+            let minutosEmpreendimento = 0;
+            let minutosEspiritualidade = 0;
+
+            data.forEach(item => {
+                if(item.hora_inicio && item.hora_fim) {
+                    const [hIni, mIni] = item.hora_inicio.split(':').map(Number);
+                    const [hFim, mFim] = item.hora_fim.split(':').map(Number);
+                    let diff = (hFim * 60 + mFim) - (hIni * 60 + mIni);
+                    if(diff > 0) {
+                        if(item.tag === 'Trabalho') minutosTrabalho += diff;
+                        if(item.tag === 'Empreendimento') minutosEmpreendimento += diff;
+                        if(item.tag === 'Espiritualidade') minutosEspiritualidade += diff;
+                    }
+                }
+            });
+
+            document.getElementById('dashTotalBlocos').innerText = totalBlocos;
+            document.getElementById('dashTotalTrabalho').innerText = (minutosTrabalho / 60).toFixed(1) + 'h';
+            document.getElementById('dashTotalEmpreendimento').innerText = (minutosEmpreendimento / 60).toFixed(1) + 'h';
+            document.getElementById('dashTotalEspiritualidade').innerText = (minutosEspiritualidade / 60).toFixed(1) + 'h';
+        }
+
         async function carregarAgenda() {
             const dataSelecionada = document.getElementById('filtroDataAgenda').value;
             atualizarTextoDataCabecalho(dataSelecionada);
@@ -174,11 +221,14 @@
 
             const { data, error } = await _supabase.from('meufuturo_agenda_v3').select('*').eq('data', dataSelecionada).order('hora_inicio', { ascending: true });
 
-            lista.innerHTML = '';
             if(error || !data || data.length === 0) {
-                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Nenhum bloco programado para este dia. Aproveite para planejar seu propósito!</p>';
+                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Nenhum bloco programado para este dia. Aproveite para planejar sua rotina!</p>';
+                calcularDashboard([]);
                 return;
             }
+
+            calcularDashboard(data);
+            lista.innerHTML = '';
 
             data.forEach(item => {
                 const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
