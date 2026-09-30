@@ -25,7 +25,7 @@
                 <h1 class="text-lg font-bold text-blue-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Agenda & Dashboard</span></h1>
             </div>
             <div class="flex items-center space-x-2">
-                <button onclick="window.location.href='tags.html'" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg transition" title="Gerenciar Cadernos"><i class="fa-solid fa-book mr-1"></i> Cadernos</button>
+                <button onclick="window.location.href='tags.html'" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg transition" title="Ir para Cadernos"><i class="fa-solid fa-book mr-1"></i> Cadernos</button>
                 <button onclick="abrirModalCriar()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition shadow-lg shadow-blue-900/30"><i class="fa-solid fa-plus mr-1"></i> Novo Bloco</button>
             </div>
         </div>
@@ -33,17 +33,6 @@
 
     <!-- Conteúdo Principal -->
     <main class="max-w-4xl mx-auto p-4 md:p-6 space-y-6">
-
-        <!-- Barra de Filtro por Caderno (Tags) -->
-        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-lg space-y-2">
-            <div class="flex justify-between items-center">
-                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider"><i class="fa-solid fa-filter mr-1.5 text-blue-400"></i>Filtrar por Caderno</span>
-                <span id="filtroAtivoTexto" class="text-xs text-blue-400 font-bold">Exibindo: Tudo</span>
-            </div>
-            <div id="barraFiltroTags" class="flex flex-wrap gap-2 pt-1">
-                <!-- Preenchido via JS -->
-            </div>
-        </div>
 
         <!-- Dashboard Gráfico do Dia -->
         <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg space-y-4">
@@ -154,35 +143,13 @@
         
         let meuGrafico = null;
         let listaTagsGlobal = [];
-        let tagFiltroAtual = 'TODAS';
 
         async function carregarTagsDoBanco() {
             const { data, error } = await _supabase.from('meufuturo_tags').select('*').order('nome', { ascending: true });
             if(!error && data) {
                 listaTagsGlobal = data;
-                atualizarBarraFiltros();
                 atualizarSelectModal();
             }
-        }
-
-        function atualizarBarraFiltros() {
-            const barra = document.getElementById('barraFiltroTags');
-            barra.innerHTML = `
-                <button onclick="filtrarPorTag('TODAS')" class="px-3 py-1 rounded-xl text-xs font-bold transition ${tagFiltroAtual === 'TODAS' ? 'bg-blue-600 text-white shadow' : 'bg-slate-950 text-slate-400 border border-slate-800 hover:border-slate-700'}">Todos os Cadernos</button>
-            `;
-            listaTagsGlobal.forEach(t => {
-                let ativo = tagFiltroAtual === t.nome;
-                barra.innerHTML += `
-                    <button onclick="filtrarPorTag('${t.nome}')" class="px-3 py-1 rounded-xl text-xs font-bold transition ${ativo ? 'bg-blue-600 text-white shadow' : 'bg-slate-950 text-slate-400 border border-slate-800 hover:border-slate-700'}">#${t.nome}</button>
-                `;
-            });
-            document.getElementById('filtroAtivoTexto').innerText = tagFiltroAtual === 'TODAS' ? 'Exibindo: Tudo' : `Filtrando por Caderno: #${tagFiltroAtual}`;
-        }
-
-        function filtrarPorTag(nomeTag) {
-            tagFiltroAtual = nomeTag;
-            atualizarBarraFiltros();
-            carregarAgenda();
         }
 
         function atualizarSelectModal(selecionada = '') {
@@ -291,15 +258,10 @@
             const lista = document.getElementById('listaAgenda');
             lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Buscando programação...</p>';
 
-            let query = _supabase.from('meufuturo_agenda_v3').select('*').eq('data', dataSelecionada);
-            if(tagFiltroAtual !== 'TODAS') {
-                query = query.eq('tag', tagFiltroAtual);
-            }
-
-            const { data, error } = await query.order('hora_inicio', { ascending: true });
+            const { data, error } = await _supabase.from('meufuturo_agenda_v3').select('*').eq('data', dataSelecionada).order('hora_inicio', { ascending: true });
 
             if(error || !data || data.length === 0) {
-                lista.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">Nenhum bloco encontrado ${tagFiltroAtual !== 'TODAS' ? 'no caderno #' + tagFiltroAtual : 'para este dia'}.</p>`;
+                lista.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">Nenhum bloco encontrado para este dia.</p>`;
                 calcularDashboard([]);
                 return;
             }
@@ -330,7 +292,7 @@
         }
 
         function abrirModalCriar() {
-            let tagPadrao = tagFiltroAtual !== 'TODAS' ? tagFiltroAtual : (listaTagsGlobal.length > 0 ? listaTagsGlobal[0].nome : '');
+            let tagPadrao = listaTagsGlobal.length > 0 ? listaTagsGlobal[0].nome : '';
             atualizarSelectModal(tagPadrao);
             
             document.getElementById('modalTituloForm').innerHTML = '<i class="fa-solid fa-calendar-plus mr-2"></i>Novo Bloco de Rotina';
