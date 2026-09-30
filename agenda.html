@@ -86,7 +86,7 @@
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalCompromisso()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="button" onclick="salvarCompromisso()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition">Salvar Bloco</button>
+                    <button type="button" id="btnSalvarCompromisso" onclick="salvarCompromisso()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition">Salvar Bloco</button>
                 </div>
             </div>
         </div>
@@ -95,7 +95,6 @@
     <script src="supabase.js"></script>
 
     <script>
-        // Define a data de hoje por padrão nos inputs
         const hojeIso = new Date().toISOString().split('T')[0];
         document.getElementById('filtroDataAgenda').value = hojeIso;
         
@@ -108,7 +107,7 @@
             const lista = document.getElementById('listaAgenda');
             lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Buscando programação...</p>';
 
-            const { data, error } = await _supabase.from('meufuturo_agenda').select('*').eq('data', dataSelecionada).order('hora_inicio', { ascending: true });
+            const { data, error } = await _supabase.from('meufuturo_agenda_v2').select('*').eq('data', dataSelecionada).order('hora_inicio', { ascending: true });
 
             lista.innerHTML = '';
             if(error || !data || data.length === 0) {
@@ -121,7 +120,7 @@
                     <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
                         <div class="space-y-1">
                             <div class="flex items-center space-x-2">
-                                <span class="bg-blue-900/40 border border-blue-700/50 text-blue-300 font-bold px-2 py-0.5 rounded text-[10px]">${item.hora_inicio} - ${item.hora_fim}</span>
+                                <span class="bg-blue-900/40 border border-blue-700/50 text-blue-300 font-bold px-2 py-0.5 rounded text-[10px]">${item.hora_inicio} - ${item.hora_fim || item.hora_inicio}</span>
                                 <span class="font-bold text-white text-sm">${item.titulo}</span>
                             </div>
                             ${item.descricao ? `<p class="text-slate-400 pl-1">${item.descricao}</p>` : ''}
@@ -133,33 +132,52 @@
         }
 
         async function salvarCompromisso() {
+            const btn = document.getElementById('btnSalvarCompromisso');
+            btn.disabled = true;
+            btn.innerText = 'Salvando...';
+
             const titulo = document.getElementById('compTitulo').value;
             const horaInicio = document.getElementById('compInicio').value;
             const horaFim = document.getElementById('compFim').value;
             const data = document.getElementById('compData').value;
             const descricao = document.getElementById('compDesc').value;
 
-            if(!titulo || !horaInicio || !data) return alert('Preencha ao menos o título, o horário de início e a data!');
+            if(!titulo || !horaInicio || !data) {
+                alert('Preencha ao menos o título, o horário de início e a data!');
+                btn.disabled = false;
+                btn.innerText = 'Salvar Bloco';
+                return;
+            }
 
-            const { error } = await _supabase.from('meufuturo_agenda').insert([{
+            const { error } = await _supabase.from('meufuturo_agenda_v2').insert([{
                 titulo,
                 hora_inicio: horaInicio,
-                hora_fim: horaFim || horaInicio,
+                hora_fim: horaFim || null,
                 data,
                 descricao
             }]);
 
-            if(error) return alert('Erro ao salvar: ' + error.message);
+            if(error) {
+                alert('Erro ao salvar: ' + error.message);
+                btn.disabled = false;
+                btn.innerText = 'Salvar Bloco';
+                return;
+            }
 
             fecharModalCompromisso();
             document.getElementById('compTitulo').value = '';
             document.getElementById('compDesc').value = '';
+            document.getElementById('compInicio').value = '';
+            document.getElementById('compFim').value = '';
             carregarAgenda();
+            
+            btn.disabled = false;
+            btn.innerText = 'Salvar Bloco';
         }
 
         async function excluirCompromisso(id) {
             if(!confirm('Deseja remover este bloco da agenda?')) return;
-            await _supabase.from('meufuturo_agenda').delete().eq('id', id);
+            await _supabase.from('meufuturo_agenda_v2').delete().eq('id', id);
             carregarAgenda();
         }
 
@@ -169,4 +187,4 @@
         carregarAgenda();
     </script>
 </body>
-</html> 
+</html>
