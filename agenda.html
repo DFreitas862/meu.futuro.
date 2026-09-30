@@ -119,18 +119,12 @@
             document.getElementById('dataAtualTexto').innerText = dataObj.toLocaleDateString('pt-BR', options);
         }
 
-        // Funções de navegação de dias
-        function mudarDias(dias) {
+        function mudarDia(dias) {
             const inputData = document.getElementById('filtroDataAgenda');
             const dataAtual = new Date(inputData.value + 'T00:00:00');
             dataAtual.setDate(dataAtual.getDate() + dias);
-            const novaDataIso = dataAtual.toISOString().split('T')[0];
-            inputData.value = novaDataIso;
+            inputData.value = dataAtual.toISOString().split('T')[0];
             carregarAgenda();
-        }
-
-        function mudarDia(dias) {
-            mudarDias(dias);
         }
 
         function irParaHoje() {
@@ -146,7 +140,7 @@
             const lista = document.getElementById('listaAgenda');
             lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Buscando programação...</p>';
 
-            const { data, error } = await _supabase.from('meufuturo_agenda').select('*').eq('data', dataSelecionada).order('hora_inicio', { ascending: true });
+            const { data, error } = await _supabase.from('meufuturo_agenda_v3').select('*').eq('data', dataSelecionada).order('hora_inicio', { ascending: true });
 
             lista.innerHTML = '';
             if(error || !data || data.length === 0) {
@@ -190,7 +184,7 @@
                 return;
             }
 
-            const { error } = await _supabase.from('meufuturo_agenda').insert([{
+            const { error } = await _supabase.from('meufuturo_agenda_v3').insert([{
                 titulo,
                 local,
                 hora_inicio: horaInicio,
@@ -220,7 +214,7 @@
 
         async function excluirCompromisso(id) {
             if(!confirm('Deseja remover este bloco da agenda?')) return;
-            await _supabase.from('meufuturo_agenda').delete().eq('id', id);
+            await _supabase.from('meufuturo_agenda_v3').delete().eq('id', id);
             carregarAgenda();
         }
 
