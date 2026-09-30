@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Futuro - Agenda & Dashboard</title>
+    <title>Meu Futuro - Agenda & Dashboard Gráfico</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Importando o Chart.js para os gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen pb-12">
 
@@ -21,7 +23,7 @@
         <div class="max-w-4xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <button onclick="window.location.href='home.html'" class="text-slate-400 hover:text-blue-400 transition" title="Voltar ao Menu"><i class="fa-solid fa-arrow-left text-lg"></i></button>
-                <h1 class="text-lg font-bold text-blue-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Agenda & Dashboard</span></h1>
+                <h1 class="text-lg font-bold text-blue-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Agenda & Gráficos</span></h1>
             </div>
             <button onclick="abrirModalCriar()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition shadow-lg shadow-blue-900/30"><i class="fa-solid fa-plus mr-1"></i> Novo Bloco</button>
         </div>
@@ -30,33 +32,43 @@
     <!-- Conteúdo Principal -->
     <main class="max-w-4xl mx-auto p-4 md:p-6 space-y-6">
 
-        <!-- Dashboard do Dia (Substituiu o propósito) -->
+        <!-- Dashboard Gráfico do Dia -->
         <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg space-y-4">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div class="flex items-center space-x-2">
                     <i class="fa-solid fa-chart-pie text-blue-400"></i>
-                    <h3 class="text-sm font-bold text-blue-400 uppercase tracking-wide">Dashboard do Dia</h3>
+                    <h3 class="text-sm font-bold text-blue-400 uppercase tracking-wide">Distribuição do Tempo (Dashboard)</h3>
                 </div>
                 <span id="dataAtualTexto" class="text-xs text-slate-400"></span>
             </div>
             
-            <!-- Cards de Resumo Rápido -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div class="bg-slate-950/80 border border-slate-800 p-3 rounded-xl text-center">
-                    <span class="text-[10px] text-slate-400 block uppercase">Total de Blocos</span>
-                    <span id="dashTotalBlocos" class="text-lg font-extrabold text-white">0</span>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                <!-- Canvas do Gráfico -->
+                <div class="relative w-full h-48 flex justify-center">
+                    <canvas id="graficoDashboard"></canvas>
                 </div>
-                <div class="bg-slate-950/80 border border-slate-800 p-3 rounded-xl text-center">
-                    <span class="text-[10px] text-amber-400 block uppercase">Trabalho</span>
-                    <span id="dashTotalTrabalho" class="text-lg font-extrabold text-amber-300">0h</span>
-                </div>
-                <div class="bg-slate-950/80 border border-slate-800 p-3 rounded-xl text-center">
-                    <span class="text-[10px] text-emerald-400 block uppercase">Empreendimentos</span>
-                    <span id="dashTotalEmpreendimento" class="text-lg font-extrabold text-emerald-300">0h</span>
-                </div>
-                <div class="bg-slate-950/80 border border-slate-800 p-3 rounded-xl text-center">
-                    <span class="text-[10px] text-purple-400 block uppercase">Espiritualidade</span>
-                    <span id="dashTotalEspiritualidade" class="text-lg font-extrabold text-purple-300">0h</span>
+                <!-- Resumo em Texto ao Lado -->
+                <div class="space-y-2 bg-slate-950/60 p-4 rounded-xl border border-slate-800 text-xs">
+                    <div class="flex justify-between border-b border-slate-800/80 pb-1.5">
+                        <span class="text-slate-400">Total de Blocos:</span>
+                        <span id="dashTotalBlocos" class="font-bold text-white">0</span>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-800/80 pb-1.5">
+                        <span class="text-amber-400">💼 Trabalho:</span>
+                        <span id="dashTotalTrabalho" class="font-bold text-amber-300">0h</span>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-800/80 pb-1.5">
+                        <span class="text-emerald-400">🚀 Empreendimento:</span>
+                        <span id="dashTotalEmpreendimento" class="font-bold text-emerald-300">0h</span>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-800/80 pb-1.5">
+                        <span class="text-purple-400">🙏 Espiritualidade:</span>
+                        <span id="dashTotalEspiritualidade" class="font-bold text-purple-300">0h</span>
+                    </div>
+                    <div class="flex justify-between pb-1">
+                        <span class="text-sky-400">📚 Outros / Leitura:</span>
+                        <span id="dashTotalOutros" class="font-bold text-sky-300">0h</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -77,7 +89,7 @@
 
             <!-- Lista de Blocos do Dia -->
             <div class="space-y-3" id="listaAgenda">
-                <p class="text-xs text-slate-500 text-center py-6">Carregando compromissos...</p>
+                <p class="text-xs text-slate-500 text-center py-6">Carregando programação...</p>
             </div>
         </section>
 
@@ -110,7 +122,7 @@
                     </div>
                     <div>
                         <label class="text-[10px] text-slate-400 block mb-1">Local (Opcional)</label>
-                        <input type="text" id="compLocal" placeholder="Ex: Escritório, Casa..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none">
+                        <input type="text" id="compLocal" placeholder="Ex: Escritório, Casa..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white outline-none">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
@@ -154,6 +166,8 @@
         document.getElementById('filtroDataAgenda').value = hojeIso;
         document.getElementById('compData').value = hojeIso;
         
+        let meuGrafico = null;
+
         atualizarTextoDataCabecalho(hojeIso);
 
         function atualizarTextoDataCabecalho(dataStr) {
@@ -187,29 +201,72 @@
             }
         }
 
-        function calcularDashboard(data) {
-            let totalBlocos = data.length;
-            let minutosTrabalho = 0;
-            let minutosEmpreendimento = 0;
-            let minutosEspiritualidade = 0;
+        function renderizarGrafico(minTrabalho, minEmpreendimento, minEspiritualidade, minOutros) {
+            const ctx = document.getElementById('graficoDashboard').getContext('2d');
+            
+            if (meuGrafico) {
+                meuGrafico.destroy();
+            }
 
-            data.forEach(item => {
-                if(item.hora_inicio && item.hora_fim) {
-                    const [hIni, mIni] = item.hora_inicio.split(':').map(Number);
-                    const [hFim, mFim] = item.hora_fim.split(':').map(Number);
-                    let diff = (hFim * 60 + mFim) - (hIni * 60 + mIni);
-                    if(diff > 0) {
-                        if(item.tag === 'Trabalho') minutosTrabalho += diff;
-                        if(item.tag === 'Empreendimento') minutosEmpreendimento += diff;
-                        if(item.tag === 'Espiritualidade') minutosEspiritualidade += diff;
+            // Converte minutos para horas decimais
+            const hTrab = (minTrabalho / 60).toFixed(1);
+            const hEmp = (minEmpreendimento / 60).toFixed(1);
+            const hEsp = (minEspiritualidade / 60).toFixed(1);
+            const hOut = (minOutros / 60).toFixed(1);
+
+            meuGrafico = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Trabalho', 'Empreendimento', 'Espiritualidade', 'Outros/Família'],
+                    datasets: [{
+                        data: [hTrab, hEmp, hEsp, hOut],
+                        backgroundColor: ['#f59e0b', '#10b981', '#a855f7', '#0ea5e9'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#94a3b8',
+                                font: { size: 10 },
+                                boxWidth: 12
+                            }
+                        }
                     }
                 }
             });
+        }
+
+        function calcularDashboard(data) {
+            let totalBlocos = data.length;
+            let minTrabalho = 0, minEmpreendimento = 0, minEspiritualidade = 0, minOutros = 0;
+
+            data.forEach(item => {
+                let diff = 60; // padrão de 1 hora caso não tenha fim definido
+                if(item.hora_inicio && item.hora_fim) {
+                    const [hIni, mIni] = item.hora_inicio.split(':').map(Number);
+                    const [hFim, mFim] = item.hora_fim.split(':').map(Number);
+                    let calc = (hFim * 60 + mFim) - (hIni * 60 + mIni);
+                    if(calc > 0) diff = calc;
+                }
+
+                if(item.tag === 'Trabalho') minTrabalho += diff;
+                else if(item.tag === 'Empreendimento') minEmpreendimento += diff;
+                else if(item.tag === 'Espiritualidade') minEspiritualidade += diff;
+                else minOutros += diff;
+            });
 
             document.getElementById('dashTotalBlocos').innerText = totalBlocos;
-            document.getElementById('dashTotalTrabalho').innerText = (minutosTrabalho / 60).toFixed(1) + 'h';
-            document.getElementById('dashTotalEmpreendimento').innerText = (minutosEmpreendimento / 60).toFixed(1) + 'h';
-            document.getElementById('dashTotalEspiritualidade').innerText = (minutosEspiritualidade / 60).toFixed(1) + 'h';
+            document.getElementById('dashTotalTrabalho').innerText = (minTrabalho / 60).toFixed(1) + 'h';
+            document.getElementById('dashTotalEmpreendimento').innerText = (minEmpreendimento / 60).toFixed(1) + 'h';
+            document.getElementById('dashTotalEspiritualidade').innerText = (minEspiritualidade / 60).toFixed(1) + 'h';
+            document.getElementById('dashTotalOutros').innerText = (minOutros / 60).toFixed(1) + 'h';
+
+            renderizarGrafico(minTrabalho, minEmpreendimento, minEspiritualidade, minOutros);
         }
 
         async function carregarAgenda() {
