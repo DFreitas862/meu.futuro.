@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Futuro - Gestão de Tags (Caderno)</title>
+    <title>Meu Futuro - Cadernos de Assuntos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -21,7 +21,7 @@
         <div class="max-w-2xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <button onclick="window.location.href='home.html'" class="text-slate-400 hover:text-blue-400 transition" title="Voltar ao Menu"><i class="fa-solid fa-arrow-left text-lg"></i></button>
-                <h1 class="text-lg font-bold text-blue-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Caderno de Tags</span></h1>
+                <h1 class="text-lg font-bold text-blue-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Cadernos de Assuntos</span></h1>
             </div>
             <button onclick="window.location.href='agenda.html'" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg transition"><i class="fa-solid fa-calendar-days mr-1"></i> Ir para Agenda</button>
         </div>
@@ -30,68 +30,125 @@
     <!-- Conteúdo Principal -->
     <main class="max-w-2xl mx-auto p-4 md:p-6 space-y-6">
 
-        <!-- Card de Cadastro de Nova Tag -->
+        <!-- Card de Cadastro de Novo Caderno -->
         <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg space-y-4">
-            <h3 class="text-sm font-bold text-blue-400 uppercase tracking-wide"><i class="fa-solid fa-tag mr-1.5"></i> Criar Nova Tag / Assunto</h3>
+            <h3 class="text-sm font-bold text-blue-400 uppercase tracking-wide"><i class="fa-solid fa-book-medical mr-1.5"></i> Criar Novo Caderno</h3>
             <div class="space-y-3">
                 <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Nome da Tag (Ex: Igreja, Projeto X, Estudos...)</label>
+                    <label class="text-[10px] text-slate-400 block mb-1">Nome do Caderno (Ex: Igreja, Trabalho, Projetos...)</label>
                     <input type="text" id="novaTagNome" placeholder="Digite o nome do assunto..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-blue-500 transition">
                 </div>
-                <button type="button" onclick="salvarNovaTag()" class="w-full bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-3 text-xs font-bold transition shadow-lg shadow-blue-900/30">Salvar Nova Tag na Nuvem</button>
+                <button type="button" onclick="salvarNovaTag()" class="w-full bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-3 text-xs font-bold transition shadow-lg shadow-blue-900/30">Salvar Caderno na Nuvem</button>
             </div>
         </div>
 
-        <!-- Lista de Tags Cadastradas -->
+        <!-- Lista de Cadernos Ativos -->
         <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg space-y-4">
-            <h3 class="text-base font-bold text-white flex items-center"><i class="fa-solid fa-tags mr-2 text-blue-400"></i>Suas Tags / Cadernos Ativos</h3>
+            <h3 class="text-base font-bold text-white flex items-center"><i class="fa-solid fa-books mr-2 text-blue-400"></i>Seus Cadernos</h3>
             
-            <div id="listaTagsContainer" class="space-y-2">
-                <p class="text-xs text-slate-500 text-center py-6">Carregando tags...</p>
+            <div id="listaTagsContainer" class="space-y-3">
+                <p class="text-xs text-slate-500 text-center py-6">Carregando cadernos...</p>
             </div>
         </div>
 
     </main>
+
+    <!-- Modal de Visualização de Anotações do Caderno -->
+    <div id="modalDetalhesCaderno" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-lg w-full space-y-4 shadow-2xl max-h-[85vh] flex flex-col">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 id="tituloModalCaderno" class="text-base font-bold text-blue-400"><i class="fa-solid fa-book-open mr-2"></i>Histórico do Caderno</h3>
+                <button onclick="fecharModalDetalhes()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div id="conteudoDetalhesCaderno" class="space-y-3 overflow-y-auto flex-1 pr-1">
+                <!-- Preenchido via JS -->
+            </div>
+        </div>
+    </div>
 
     <script src="supabase.js"></script>
 
     <script>
         async function carregarTags() {
             const container = document.getElementById('listaTagsContainer');
-            container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Buscando tags...</p>';
+            container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Buscando cadernos...</p>';
 
             const { data, error } = await _supabase.from('meufuturo_tags').select('*').order('nome', { ascending: true });
 
             if(error || !data || data.length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Nenhuma tag cadastrada ainda.</p>';
+                container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Nenhum caderno cadastrado ainda.</p>';
                 return;
             }
 
             container.innerHTML = '';
             data.forEach(t => {
                 container.innerHTML += `
-                    <div class="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
-                        <span class="font-bold text-white text-sm flex items-center"><i class="fa-solid fa-hashtag text-blue-400 mr-1.5"></i>${t.nome}</span>
-                        <button onclick="deletarTag('${t.id}', '${t.nome}')" class="text-rose-400 hover:text-rose-300 p-2" title="Excluir tag"><i class="fa-solid fa-trash text-sm"></i></button>
+                    <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-blue-900/40 text-blue-300 px-2.5 py-1 rounded-lg font-bold"><i class="fa-solid fa-hashtag mr-1"></i>${t.nome}</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="abrirDetalhesCaderno('${t.nome}')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg font-bold transition flex items-center space-x-1.5" title="Ver anotações do caderno">
+                                <i class="fa-solid fa-book-open text-blue-400"></i>
+                                <span>Abrir Caderno</span>
+                            </button>
+                            <button onclick="deletarTag('${t.id}', '${t.nome}')" class="text-rose-400 hover:text-rose-300 p-2" title="Excluir caderno"><i class="fa-solid fa-trash text-sm"></i></button>
+                        </div>
                     </div>
                 `;
             });
         }
 
+        async function abrirDetalhesCaderno(nomeTag) {
+            document.getElementById('tituloModalCaderno.innerHTML` = `<i class="fa-solid fa-book-open mr-2"></i>Caderno: #${nomeTag}`;
+            document.getElementById('tituloModalCaderno').innerHTML = `<i class="fa-solid fa-book-open mr-2"></i>Caderno: #${nomeTag}`;
+            const container = document.getElementById('conteudoDetalhesCaderno');
+            container.innerHTML = '<p class="text-xs text-slate-400 text-center py-6">Buscando anotações do caderno...</p>';
+            
+            document.getElementById('modalDetalhesCaderno').classList.remove('hidden');
+
+            const { data, error } = await _supabase.from('meufuturo_agenda_v3').select('*').eq('tag', nomeTag).order('data', { ascending: false });
+
+            if(error || !data || data.length === 0) {
+                container.innerHTML = '<p class="text-xs text-slate-500 text-center py-8">Nenhuma anotação ou compromisso registrado neste caderno ainda.</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            data.forEach(item => {
+                container.innerHTML += `
+                    <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-1 text-xs">
+                        <div class="flex justify-between items-center text-slate-400 border-b border-slate-800/60 pb-1">
+                            <span class="font-bold text-blue-300"><i class="fa-regular fa-calendar mr-1"></i>${item.data.split('-').reverse().join('/')}</span>
+                            <span>${item.hora_inicio} ${item.hora_fim ? '- ' + item.hora_fim : ''}</span>
+                        </div>
+                        <div class="font-bold text-white text-sm pt-1">${item.titulo}</div>
+                        ${item.local ? `<div class="text-slate-400"><i class="fa-solid fa-location-dot text-rose-400 mr-1"></i>${item.local}</div>` : ''}
+                        ${item.descricao ? `<div class="text-slate-300 bg-slate-900/80 p-2 rounded-lg mt-1 italic">${item.descricao}</div>` : ''}
+                    </div>
+                `;
+            });
+        }
+
+        function fecharModalDetalhes() {
+            document.getElementById('modalDetalhesCaderno').classList.add('hidden');
+        }
+
         async function salvarNovaTag() {
             const input = document.getElementById('novaTagNome');
             const nome = input.value.trim();
-            if(!nome) return alert('Digite o nome da tag!');
+            if(!nome) return alert('Digite o nome do caderno!');
 
             const { error } = await _supabase.from('meufuturo_tags').insert([{ nome }]);
-            if(error) return alert('Erro ao salvar tag (talvez já exista): ' + error.message);
+            if(error) return alert('Erro ao salvar caderno (talvez já exista): ' + error.message);
 
             input.value = '';
             carregarTags();
         }
 
         async function deletarTag(id, nome) {
-            if(!confirm(`Deseja remover a tag #${nome}?`)) return;
+            if(!confirm(`Deseja remover o caderno #${nome}?`)) return;
             const { error } = await _supabase.from('meufuturo_tags').delete().eq('id', id);
             if(error) return alert('Erro ao excluir: ' + error.message);
             carregarTags();
