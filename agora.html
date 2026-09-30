@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Futuro - Acontecendo Agora</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen pb-12">
+
+    <script>
+        if (localStorage.getItem('meufuturo_logado') !== 'true') {
+            window.location.href = 'index.html';
+        }
+    </script>
+
+    <!-- Header -->
+    <header class="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-50 shadow-md">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <button onclick="window.location.href='home.html'" class="text-slate-400 hover:text-blue-400 transition" title="Voltar ao Menu"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+                <h1 class="text-lg font-bold text-blue-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Agora</span></h1>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="window.location.href='tags.html'" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg transition" title="Cadernos"><i class="fa-solid fa-book mr-1"></i> Cadernos</button>
+                <button onclick="window.location.href='agenda.html'" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition" title="Agenda"><i class="fa-solid fa-calendar-days mr-1"></i> Agenda</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="max-w-md mx-auto p-4 md:p-6 space-y-6">
+
+        <!-- Card do Cronômetro / Registro Atual -->
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-5 text-center">
+            <div class="space-y-1">
+                <span class="text-xs font-bold text-blue-400 uppercase tracking-widest"><i class="fa-solid fa-stopwatch mr-1"></i> Cronômetro de Atividade</span>
+                <h2 id="statusAtividade" class="text-sm text-slate-400">Nenhuma atividade em andamento</h2>
+            </div>
+
+            <!-- Display do Relógio / Cronômetro -->
+            <div id="displayTempo" class="text-5xl font-extrabold text-white font-mono tracking-wider py-4">
+                00:00:00
+            </div>
+
+            <!-- Formulário de Configuração (Antes de Iniciar) -->
+            <div id="painelConfig" class="space-y-3 text-left">
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">O que você está a fazer?</label>
+                    <input type="text" id="inputTitulo" placeholder="Ex: Atendimento ao cliente, Leitura..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-blue-500 transition">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Caderno (Assunto)</label>
+                        <select id="inputTag" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none">
+                            <option value="Geral">Geral</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Local (Opcional)</label>
+                        <input type="text" id="inputLocal" placeholder="Ex: Casa, Escritório..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Detalhes / Anotações</label>
+                    <textarea id="inputDesc" rows="2" placeholder="Notas sobre o que está a ser feito..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none"></textarea>
+                </div>
+            </div>
+
+            <!-- Botões de Ação -->
+            <div class="pt-2">
+                <button id="btnAcao" onclick="alternarCronometro()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-3.5 text-sm font-bold transition shadow-lg shadow-emerald-900/30 flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-play text-base"></i>
+                    <span>Iniciar Agora</span>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="supabase.js"></script>
+
+    <script>
+        let timerInterval = null;
+        let segundosDecorridos = 0;
+        let horaInicioStr = '';
+        let dataInicioStr = '';
+        let emExecucao = false;
+
+        async function carregarTagsNoSelect() {
+            try {
+                const { data, error } = await _supabase.from('meufuturo_tags').select('*').order('nome', { ascending: true });
+                const select = document.getElementById('inputTag');
+                if(!select) return;
+                select.innerHTML = '';
+
+                if(!error && data && data.length > 0) {
+                    data.forEach(t => {
+                        select.innerHTML += `<option value="${t.nome}">${t.nome}</option>`;
+                    });
+                } else {
+                    select.innerHTML = '<option value="Geral">Geral</option>';
+                }
+            } catch(e) {
+                console.error("Erro ao carregar tags:", e);
+            }
+        }
+
+        function formatarTempo(segundos) {
+            const h = Math.floor(segundos / 3600).toString().padStart(2, '0');
+            const m = Math.floor((segundos % 3600) / 60).toString().padStart(2, '0');
+            const s = (segundos % 60).toString().padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        }
+
+        async function alternarCronometro() {
+            const btn = document.getElementById('btnAcao');
+            const status = document.getElementById('statusAtividade');
+            const tituloInput = document.getElementById('inputTitulo');
+
+            if (!emExecucao) {
+                const titulo = tituloInput.value.trim();
+                if (!titulo) {
+                    alert('Por favor, informe o que você está a fazer!');
+                    return;
+                }
+
+                const agora = new Date();
+                dataInicioStr = agora.toISOString().split('T')[0];
+                horaInicioStr = agora.toTimeString().split(' ')[0].substring(0, 5);
+
+                emExecucao = true;
+                segundosDecorridos = 0;
+                
+                status.innerText = `Em andamento (Início às ${horaInicioStr})`;
+                btn.innerHTML = '<i class="fa-solid fa-stop text-base"></i><span>Parar e Salvar no Caderno</span>';
+                btn.className = 'w-full bg-rose-600 hover:bg-rose-500 text-white rounded-xl py-3.5 text-sm font-bold transition shadow-lg shadow-rose-900/30 flex items-center justify-center space-x-2';
+                
+                document.getElementById('painelConfig').style.opacity = '0.5';
+                document.querySelectorAll('#painelConfig input, #painelConfig select, #painelConfig textarea').forEach(el => el.disabled = true);
+
+                timerInterval = setInterval(() => {
+                    segundosDecorridos++;
+                    document.getElementById('displayTempo').innerText = formatarTempo(segundosDecorridos);
+                }, 1000);
+
+            } else {
+                clearInterval(timerInterval);
+                btn.disabled = true;
+                btn.innerText = 'Salvando no Histórico...';
+
+                const agoraFim = new Date();
+                let horaFimStr = agoraFim.toTimeString().split(' ')[0].substring(0, 5);
+
+                const titulo = tituloInput.value.trim();
+                const tag = document.getElementById('inputTag').value;
+                const local = document.getElementById('inputLocal').value.trim();
+                const descricao = document.getElementById('inputDesc').value.trim();
+
+                const { error } = await _supabase.from('meufuturo_agenda_v3').insert([{
+                    titulo,
+                    tag,
+                    local: local || null,
+                    hora_inicio: horaInicioStr,
+                    hora_fim: horaFimStr,
+                    data: dataInicioStr,
+                    descricao: descricao ? `${descricao} (Registrado via Cronômetro Agora)` : 'Registrado via Cronômetro Agora'
+                }]);
+
+                if(error) {
+                    alert('Erro ao salvar atividade: ' + error.message);
+                    btn.disabled = false;
+                    return;
+                }
+
+                alert('Atividade registrada e salva com sucesso no seu histórico!');
+                
+                emExecucao = false;
+                segundosDecorridos = 0;
+                document.getElementById('displayTempo').innerText = '00:00:00';
+                status.innerText = 'Nenhuma atividade em andamento';
+                tituloInput.value = '';
+                document.getElementById('inputLocal').value = '';
+                document.getElementById('inputDesc').value = '';
+                
+                document.getElementById('painelConfig').style.opacity = '1';
+                document.querySelectorAll('#painelConfig input, #painelConfig select, #painelConfig textarea').forEach(el => el.disabled = false);
+
+                btn.innerHTML = '<i class="fa-solid fa-play text-base"></i><span>Iniciar Agora</span>';
+                btn.className = 'w-full bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-3.5 text-sm font-bold transition shadow-lg shadow-emerald-900/30 flex items-center justify-center space-x-2';
+                btn.disabled = false;
+            }
+        }
+
+        carregarTagsNoSelect();
+    </script>
+</body>
+</html>
