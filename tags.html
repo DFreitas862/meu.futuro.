@@ -21,7 +21,7 @@
         <div class="max-w-2xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <button onclick="window.location.href='home.html'" class="text-slate-400 hover:text-blue-400 transition" title="Voltar ao Menu"><i class="fa-solid fa-arrow-left text-lg"></i></button>
-                <h1 class="text-lg font-bold text-blue-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Cadernos de Assuntos</span></h1>
+                <h1 class="text-lg font-bold text-blue-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Cadernos</span></h1>
             </div>
             <button onclick="window.location.href='agenda.html'" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg transition"><i class="fa-solid fa-calendar-days mr-1"></i> Ir para Agenda</button>
         </div>
@@ -44,7 +44,7 @@
 
         <!-- Lista de Cadernos Ativos -->
         <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg space-y-4">
-            <h3 class="text-base font-bold text-white flex items-center"><i class="fa-solid fa-books mr-2 text-blue-400"></i>Seus Cadernos</h3>
+            <h3 class="text-base font-bold text-white flex items-center"><i class="fa-solid fa-book mr-2 text-blue-400"></i>Seus Cadernos</h3>
             
             <div id="listaTagsContainer" class="space-y-3">
                 <p class="text-xs text-slate-500 text-center py-6">Carregando cadernos...</p>
@@ -74,34 +74,42 @@
             const container = document.getElementById('listaTagsContainer');
             container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Buscando cadernos...</p>';
 
-            const { data, error } = await _supabase.from('meufuturo_tags').select('*').order('nome', { ascending: true });
+            try {
+                const { data, error } = await _supabase.from('meufuturo_tags').select('*').order('nome', { ascending: true });
 
-            if(error || !data || data.length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Nenhum caderno cadastrado ainda.</p>';
-                return;
+                if(error) {
+                    container.innerHTML = `<p class="text-xs text-rose-400 text-center py-6">Erro ao carregar: ${error.message}</p>`;
+                    return;
+                }
+
+                if(!data || data.length === 0) {
+                    container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Nenhum caderno cadastrado ainda.</p>';
+                    return;
+                }
+
+                container.innerHTML = '';
+                data.forEach(t => {
+                    container.innerHTML += `
+                        <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+                            <div class="flex items-center space-x-2">
+                                <span class="bg-blue-900/40 text-blue-300 px-2.5 py-1 rounded-lg font-bold"><i class="fa-solid fa-hashtag mr-1"></i>${t.nome}</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button onclick="abrirDetalhesCaderno('${t.nome}')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg font-bold transition flex items-center space-x-1.5" title="Ver anotações do caderno">
+                                    <i class="fa-solid fa-book-open text-blue-400"></i>
+                                    <span>Abrir Caderno</span>
+                                </button>
+                                <button onclick="deletarTag('${t.id}', '${t.nome}')" class="text-rose-400 hover:text-rose-300 p-2" title="Excluir caderno"><i class="fa-solid fa-trash text-sm"></i></button>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch(e) {
+                container.innerHTML = `<p class="text-xs text-rose-400 text-center py-6">Erro de conexão: ${e.message}</p>`;
             }
-
-            container.innerHTML = '';
-            data.forEach(t => {
-                container.innerHTML += `
-                    <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
-                        <div class="flex items-center space-x-2">
-                            <span class="bg-blue-900/40 text-blue-300 px-2.5 py-1 rounded-lg font-bold"><i class="fa-solid fa-hashtag mr-1"></i>${t.nome}</span>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <button onclick="abrirDetalhesCaderno('${t.nome}')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg font-bold transition flex items-center space-x-1.5" title="Ver anotações do caderno">
-                                <i class="fa-solid fa-book-open text-blue-400"></i>
-                                <span>Abrir Caderno</span>
-                            </button>
-                            <button onclick="deletarTag('${t.id}', '${t.nome}')" class="text-rose-400 hover:text-rose-300 p-2" title="Excluir caderno"><i class="fa-solid fa-trash text-sm"></i></button>
-                        </div>
-                    </div>
-                `;
-            });
         }
 
         async function abrirDetalhesCaderno(nomeTag) {
-            document.getElementById('tituloModalCaderno.innerHTML` = `<i class="fa-solid fa-book-open mr-2"></i>Caderno: #${nomeTag}`;
             document.getElementById('tituloModalCaderno').innerHTML = `<i class="fa-solid fa-book-open mr-2"></i>Caderno: #${nomeTag}`;
             const container = document.getElementById('conteudoDetalhesCaderno');
             container.innerHTML = '<p class="text-xs text-slate-400 text-center py-6">Buscando anotações do caderno...</p>';
@@ -154,6 +162,7 @@
             carregarTags();
         }
 
+        // Inicializa a página
         carregarTags();
     </script>
 </body>
