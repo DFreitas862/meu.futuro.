@@ -122,7 +122,7 @@
 
     <!-- ================= MODAIS ================= -->
 
-    <!-- Modal PDV / Carrinho Atualizado com Quantidade, Valor Unitário e Total -->
+    <!-- Modal PDV / Carrinho -->
     <div id="modalPDV" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-lg w-full space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -136,8 +136,6 @@
                         <option value="">Forma de Pagamento</option>
                     </select>
                 </div>
-
-                <!-- Adicionar Item com Qtd, Valor Unitário e Cálculo Automático do Total -->
                 <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-2">
                     <p class="text-xs font-bold text-slate-400 uppercase">Adicionar Item</p>
                     <input type="text" id="itemNome" placeholder="Produto (Ex: Energético)" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none">
@@ -160,7 +158,6 @@
                     <button type="button" onclick="adicionarItemCarrinho()" class="w-full bg-slate-800 hover:bg-slate-700 text-indigo-400 font-bold text-xs py-2 rounded-lg border border-slate-700 transition mt-1">+ Adicionar ao Carrinho</button>
                 </div>
 
-                <!-- Lista do Carrinho -->
                 <div class="max-h-36 overflow-y-auto space-y-2 border border-slate-800 p-2 rounded-xl bg-slate-950/30" id="listaCarrinho">
                     <p class="text-xs text-slate-500 text-center py-4">Nenhum item adicionado ainda.</p>
                 </div>
@@ -178,14 +175,16 @@
         </div>
     </div>
 
-    <!-- Modal Extrato -->
+    <!-- Modal Extrato Específico por Conta -->
     <div id="modalExtrato" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-xl w-full space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <h3 id="extratoTitulo" class="text-lg font-bold text-emerald-400">Extrato</h3>
                 <button onclick="fecharModalExtrato()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div class="space-y-2 max-h-80 overflow-y-auto" id="extratoLista"></div>
+            <div class="space-y-2 max-h-80 overflow-y-auto" id="extratoLista">
+                <p class="text-xs text-slate-400 text-center py-4">Carregando...</p>
+            </div>
         </div>
     </div>
 
@@ -310,7 +309,7 @@
             data?.forEach(c => {
                 soma += Number(c.saldo_inicial);
                 lista.innerHTML += `
-                    <div onclick="abrirExtrato('${c.id}', '${c.nome_banco}', 'conta')" class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-emerald-500 transition">
+                    <div onclick="abrirExtrato('${c.id}', '${c.nome_banco}')" class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-emerald-500 transition">
                         <div>
                             <p class="font-bold text-sm text-white"><i class="fa-solid fa-wallet text-emerald-400 mr-1.5"></i>${c.nome_banco}</p>
                             <span class="text-xs text-slate-400">Ver extrato</span>
@@ -337,7 +336,7 @@
             lista.innerHTML = '';
             data?.forEach(v => {
                 lista.innerHTML += `
-                    <div onclick="abrirExtrato('${v.id}', '${v.nome}', 'vr')" class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-cyan-500 transition">
+                    <div onclick="abrirExtrato('${v.id}', '${v.nome}')" class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-cyan-500 transition">
                         <div>
                             <p class="font-bold text-sm text-white"><i class="fa-solid fa-utensils text-cyan-400 mr-1.5"></i>${v.nome}</p>
                             <span class="text-xs text-slate-400">Ver extrato</span>
@@ -394,7 +393,7 @@
             });
         }
 
-        // --- PDV CARRINHO COM QTD E VALOR UNITÁRIO ---
+        // --- PDV CARRINHO ---
         function calcularTotalItem() {
             const qtd = parseFloat(document.getElementById('itemQtd').value) || 0;
             const valorUnit = parseFloat(document.getElementById('itemValorUnit').value) || 0;
@@ -407,12 +406,11 @@
             const qtd = parseInt(document.getElementById('itemQtd').value) || 1;
             const valorUnit = parseFloat(document.getElementById('itemValorUnit').value);
 
-            if(!nome || isNaN(valorUnit) || valorUnit <= 0) return alert('Informe o nome do produto e o valor unitário!');
+            if(!nome || isNaN(valorUnit) || valorUnit <= 0) return alert('Informe o produto e o valor unitário!');
 
             const totalItem = qtd * valorUnit;
             carrinhoItens.push({ nome, qtd, valorUnit, total: totalItem });
 
-            // Limpa os campos do item
             document.getElementById('itemNome').value = '';
             document.getElementById('itemQtd').value = '1';
             document.getElementById('itemValorUnit').value = '';
@@ -458,17 +456,19 @@
         async function finalizarPDV() {
             const estab = document.getElementById('pdvEstabelecimento').value || 'Compra PDV';
             const contaInfo = document.getElementById('pdvConta').value;
-            if(!contaInfo || carrinhoItens.length === 0) return alert('Selecione a forma de pagamento e adicione itens ao carrinho!');
+            if(!contaInfo || carrinhoItens.length === 0) return alert('Selecione a forma de pagamento e adicione itens!');
             
             const [tipoConta, contaId] = contaInfo.split(':');
             const totalCompra = carrinhoItens.reduce((acc, item) => acc + item.total, 0);
             const dataHoje = new Date().toISOString().split('T')[0];
 
+            // Salva a transação vinculada ao conta_id correto
             await _supabase.from('meufuturo_transacoes').insert([{ 
                 descricao: `${estab} (${carrinhoItens.length} itens)`, 
                 valor: totalCompra, 
                 tipo: 'despesa', 
-                data: dataHoje 
+                data: dataHoje,
+                conta_id: contaId
             }]);
 
             if(tipoConta === 'conta') {
@@ -482,21 +482,32 @@
             carrinhoItens = [];
             fecharModalPDV();
             carregarTudo();
-            alert('Compra finalizada e saldo atualizado com sucesso!');
+            alert('Compra finalizada com sucesso!');
         }
 
+        // --- EXTRATO ESPECÍFICO POR ID DE CONTA ---
         async function abrirExtrato(id, nome) {
             document.getElementById('extratoTitulo').innerText = `Extrato: ${nome}`;
             const lista = document.getElementById('extratoLista');
             lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Carregando...</p>';
             document.getElementById('modalExtrato').classList.remove('hidden');
 
-            const { data } = await _supabase.from('meufuturo_transacoes').select('*').order('data', { ascending: false });
+            // Busca apenas as transações desta conta específica
+            const { data, error } = await _supabase.from('meufuturo_transacoes').select('*').eq('conta_id', id).order('data', { ascending: false });
+            
             lista.innerHTML = '';
-            data?.forEach(t => {
+            if(error || !data || data.length === 0) {
+                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhuma movimentação registrada nesta conta.</p>';
+                return;
+            }
+
+            data.forEach(t => {
                 lista.innerHTML += `
                     <div class="flex justify-between items-center bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-xs">
-                        <div><p class="font-bold text-white">${t.descricao}</p><span class="text-slate-500">${t.data}</span></div>
+                        <div>
+                            <p class="font-bold text-white">${t.descricao}</p>
+                            <span class="text-slate-500">${new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                        </div>
                         <span class="${t.tipo === 'receita' ? 'text-blue-400' : 'text-amber-400'} font-bold">R$ ${Number(t.valor).toFixed(2)}</span>
                     </div>
                 `;
@@ -588,8 +599,16 @@
             const contaInfo = document.getElementById('transContaId').value;
             const data = document.getElementById('transData').value;
             if(!desc || isNaN(valor) || !contaInfo) return alert('Preencha tudo!');
+            
             const [tipoConta, contaId] = contaInfo.split(':');
-            await _supabase.from('meufuturo_transacoes').insert([{ descricao: desc, valor, tipo, data }]);
+            
+            await _supabase.from('meufuturo_transacoes').insert([{ 
+                descricao: desc, 
+                valor, 
+                tipo, 
+                data,
+                conta_id: contaId
+            }]);
             
             if(tipoConta === 'conta') {
                 const { data: c } = await _supabase.from('meufuturo_contas').select('saldo_inicial').eq('id', contaId).single();
