@@ -72,11 +72,24 @@
                 <input type="hidden" id="compId">
                 <div>
                     <label class="text-[10px] text-slate-400 block mb-1">Título da Atividade</label>
-                    <input type="text" id="compTitulo" placeholder="Ex: Trabalho, Oração, Leitura, Uber..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    <input type="text" id="compTitulo" placeholder="Ex: Trabalho CLT, Oração, Leitura..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 </div>
-                <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Local (Opcional)</label>
-                    <input type="text" id="compLocal" placeholder="Ex: Supermercado, Escritório, Casa..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Tag / Categoria</label>
+                        <select id="compTag" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none">
+                            <option value="Trabalho">💼 Trabalho</option>
+                            <option value="Espiritualidade">🙏 Espiritualidade</option>
+                            <option value="Empreendimento">🚀 Empreendimento</option>
+                            <option value="Estudo/Leitura">📚 Estudo/Leitura</option>
+                            <option value="Pessoal/Família">👨‍👩‍👦 Pessoal/Família</option>
+                            <option value="Outros">📌 Outros</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Local (Opcional)</label>
+                        <input type="text" id="compLocal" placeholder="Ex: Escritório, Casa..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none">
+                    </div>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
@@ -141,6 +154,17 @@
             carregarAgenda();
         }
 
+        function obterCorTag(tag) {
+            switch(tag) {
+                case 'Trabalho': return 'bg-amber-900/40 text-amber-300 border-amber-700/50';
+                case 'Espiritualidade': return 'bg-purple-900/40 text-purple-300 border-purple-700/50';
+                case 'Empreendimento': return 'bg-emerald-900/40 text-emerald-300 border-emerald-700/50';
+                case 'Estudo/Leitura': return 'bg-sky-900/40 text-sky-300 border-sky-700/50';
+                case 'Pessoal/Família': return 'bg-pink-900/40 text-pink-300 border-pink-700/50';
+                default: return 'bg-slate-800 text-slate-300 border-slate-700';
+            }
+        }
+
         async function carregarAgenda() {
             const dataSelecionada = document.getElementById('filtroDataAgenda').value;
             atualizarTextoDataCabecalho(dataSelecionada);
@@ -157,14 +181,16 @@
             }
 
             data.forEach(item => {
-                // Passa os dados em formato seguro para o botão de editar
                 const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
+                const tagClass = obterCorTag(item.tag);
+
                 lista.innerHTML += `
                     <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
                         <div class="space-y-1">
                             <div class="flex items-center space-x-2 flex-wrap gap-y-1">
                                 <span class="bg-blue-900/40 border border-blue-700/50 text-blue-300 font-bold px-2 py-0.5 rounded text-[10px]">${item.hora_inicio} - ${item.hora_fim || item.hora_inicio}</span>
                                 <span class="font-bold text-white text-sm">${item.titulo}</span>
+                                ${item.tag ? `<span class="border px-2 py-0.5 rounded text-[10px] font-semibold ${tagClass}">${item.tag}</span>` : ''}
                                 ${item.local ? `<span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px]"><i class="fa-solid fa-location-dot text-rose-400 mr-1"></i>${item.local}</span>` : ''}
                             </div>
                             ${item.descricao ? `<p class="text-slate-400 pl-1">${item.descricao}</p>` : ''}
@@ -182,6 +208,7 @@
             document.getElementById('modalTituloForm').innerHTML = '<i class="fa-solid fa-calendar-plus mr-2"></i>Novo Bloco de Rotina';
             document.getElementById('compId').value = '';
             document.getElementById('compTitulo').value = '';
+            document.getElementById('compTag').value = 'Trabalho';
             document.getElementById('compLocal').value = '';
             document.getElementById('compInicio').value = '';
             document.getElementById('compFim').value = '';
@@ -195,12 +222,12 @@
             document.getElementById('modalTituloForm').innerHTML = '<i class="fa-solid fa-pen-to-square mr-2"></i>Editar Bloco';
             document.getElementById('compId').value = item.id;
             document.getElementById('compTitulo').value = item.titulo || '';
+            document.getElementById('compTag').value = item.tag || 'Trabalho';
             document.getElementById('compLocal').value = item.local || '';
             document.getElementById('compInicio').value = item.hora_inicio || '';
             document.getElementById('compFim').value = item.hora_fim || '';
             document.getElementById('compData').value = item.data || '';
             document.getElementById('compDesc').value = item.descricao || '';
-            // Na edição, escondemos a repetição para focar em alterar apenas aquele bloco específico
             document.getElementById('divRepetirContainer').style.display = 'none';
             document.getElementById('modalCompromisso').classList.remove('hidden');
         }
@@ -212,6 +239,7 @@
 
             const id = document.getElementById('compId').value;
             const titulo = document.getElementById('compTitulo').value;
+            const tag = document.getElementById('compTag').value;
             const local = document.getElementById('compLocal').value;
             const horaInicio = document.getElementById('compInicio').value;
             const horaFim = document.getElementById('compFim').value;
@@ -227,9 +255,9 @@
             }
 
             if(id) {
-                // MODO EDIÇÃO: Atualiza o registro existente
                 const { error } = await _supabase.from('meufuturo_agenda_v3').update({
                     titulo,
+                    tag,
                     local,
                     hora_inicio: horaInicio,
                     hora_fim: horaFim || null,
@@ -244,7 +272,6 @@
                     return;
                 }
             } else {
-                // MODO CRIAÇÃO (com suporte a repetição)
                 let datasParaInserir = [dataInicial];
 
                 if(repetir === 'seg_a_sex') {
@@ -266,6 +293,7 @@
 
                 const registros = datasParaInserir.map(d => ({
                     titulo,
+                    tag,
                     local,
                     hora_inicio: horaInicio,
                     hora_fim: horaFim || null,
