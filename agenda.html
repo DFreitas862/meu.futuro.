@@ -23,7 +23,7 @@
                 <button onclick="window.location.href='home.html'" class="text-slate-400 hover:text-blue-400 transition" title="Voltar ao Menu"><i class="fa-solid fa-arrow-left text-lg"></i></button>
                 <h1 class="text-lg font-bold text-blue-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Agenda & Propósito</span></h1>
             </div>
-            <button onclick="abrirModalCompromisso()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition shadow-lg shadow-blue-900/30"><i class="fa-solid fa-plus mr-1"></i> Novo Compromisso</button>
+            <button onclick="abrirModalCompromisso()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition shadow-lg shadow-blue-900/30"><i class="fa-solid fa-plus mr-1"></i> Novo Bloco</button>
         </div>
     </header>
 
@@ -39,11 +39,18 @@
             <input type="text" id="propositoDia" placeholder="Qual é a intenção ou o foco principal para hoje? (Ex: Fazer as coisas com calma e presença)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-blue-500 transition">
         </div>
 
-        <!-- Seção da Linha do Tempo / Horários do Dia -->
+        <!-- Seção da Linha do Tempo / Horários do Dia com Navegação de Dias -->
         <section class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg space-y-4">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="text-base font-bold text-white"><i class="fa-solid fa-calendar-day mr-2 text-blue-400"></i>Agenda Diária</h3>
-                <input type="date" id="filtroDataAgenda" onchange="carregarAgenda()" class="bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white outline-none">
+            <div class="flex flex-col sm:flex-row justify-between items-center border-b border-slate-800 pb-3 gap-3">
+                <h3 class="text-base font-bold text-white flex items-center"><i class="fa-solid fa-calendar-day mr-2 text-blue-400"></i>Agenda Diária</h3>
+                
+                <!-- Barra de Navegação de Dias -->
+                <div class="flex items-center space-x-2">
+                    <button onclick="mudarDia(-1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl text-xs font-bold transition" title="Dia Anterior"><i class="fa-solid fa-chevron-left"></i></button>
+                    <input type="date" id="filtroDataAgenda" onchange="carregarAgenda()" class="bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white outline-none">
+                    <button onclick="mudarDia(1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl text-xs font-bold transition" title="Próximo Dia"><i class="fa-solid fa-chevron-right"></i></button>
+                    <button onclick="irParaHoje()" class="bg-blue-900/40 border border-blue-700/50 hover:bg-blue-900/60 text-blue-300 px-3 py-1.5 rounded-xl text-xs font-bold transition">Hoje</button>
+                </div>
             </div>
 
             <!-- Lista de Blocos do Dia -->
@@ -65,6 +72,10 @@
                 <div>
                     <label class="text-[10px] text-slate-400 block mb-1">Título da Atividade</label>
                     <input type="text" id="compTitulo" placeholder="Ex: Trabalho, Oração, Leitura, Uber..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Local (Opcional)</label>
+                    <input type="text" id="compLocal" placeholder="Ex: Supermercado, Escritório, Casa..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
@@ -97,17 +108,45 @@
     <script>
         const hojeIso = new Date().toISOString().split('T')[0];
         document.getElementById('filtroDataAgenda').value = hojeIso;
-        
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        document.getElementById('dataAtualTexto').innerText = new Date().toLocaleDateString('pt-BR', options);
         document.getElementById('compData').value = hojeIso;
+        
+        atualizarTextoDataCabecalho(hojeIso);
+
+        function atualizarTextoDataCabecalho(dataStr) {
+            const [ano, mes, dia] = dataStr.split('-');
+            const dataObj = new Date(ano, mes - 1, dia);
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('dataAtualTexto').innerText = dataObj.toLocaleDateString('pt-BR', options);
+        }
+
+        // Funções de navegação de dias
+        function mudarDias(dias) {
+            const inputData = document.getElementById('filtroDataAgenda');
+            const dataAtual = new Date(inputData.value + 'T00:00:00');
+            dataAtual.setDate(dataAtual.getDate() + dias);
+            const novaDataIso = dataAtual.toISOString().split('T')[0];
+            inputData.value = novaDataIso;
+            carregarAgenda();
+        }
+
+        function mudarDia(dias) {
+            mudarDias(dias);
+        }
+
+        function irParaHoje() {
+            document.getElementById('filtroDataAgenda').value = hojeIso;
+            carregarAgenda();
+        }
 
         async function carregarAgenda() {
             const dataSelecionada = document.getElementById('filtroDataAgenda').value;
+            atualizarTextoDataCabecalho(dataSelecionada);
+            document.getElementById('compData').value = dataSelecionada;
+
             const lista = document.getElementById('listaAgenda');
             lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Buscando programação...</p>';
 
-            const { data, error } = await _supabase.from('meufuturo_agenda_v2').select('*').eq('data', dataSelecionada).order('hora_inicio', { ascending: true });
+            const { data, error } = await _supabase.from('meufuturo_agenda').select('*').eq('data', dataSelecionada).order('hora_inicio', { ascending: true });
 
             lista.innerHTML = '';
             if(error || !data || data.length === 0) {
@@ -119,13 +158,14 @@
                 lista.innerHTML += `
                     <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
                         <div class="space-y-1">
-                            <div class="flex items-center space-x-2">
+                            <div class="flex items-center space-x-2 flex-wrap gap-y-1">
                                 <span class="bg-blue-900/40 border border-blue-700/50 text-blue-300 font-bold px-2 py-0.5 rounded text-[10px]">${item.hora_inicio} - ${item.hora_fim || item.hora_inicio}</span>
                                 <span class="font-bold text-white text-sm">${item.titulo}</span>
+                                ${item.local ? `<span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px]"><i class="fa-solid fa-location-dot text-rose-400 mr-1"></i>${item.local}</span>` : ''}
                             </div>
                             ${item.descricao ? `<p class="text-slate-400 pl-1">${item.descricao}</p>` : ''}
                         </div>
-                        <button onclick="excluirCompromisso('${item.id}')" class="text-rose-400 hover:text-rose-300 p-2" title="Excluir bloco"><i class="fa-solid fa-trash text-sm"></i></button>
+                        <button onclick="excluirCompromisso('${item.id}')" class="text-rose-400 hover:text-rose-300 p-2 ml-2" title="Excluir bloco"><i class="fa-solid fa-trash text-sm"></i></button>
                     </div>
                 `;
             });
@@ -137,6 +177,7 @@
             btn.innerText = 'Salvando...';
 
             const titulo = document.getElementById('compTitulo').value;
+            const local = document.getElementById('compLocal').value;
             const horaInicio = document.getElementById('compInicio').value;
             const horaFim = document.getElementById('compFim').value;
             const data = document.getElementById('compData').value;
@@ -149,8 +190,9 @@
                 return;
             }
 
-            const { error } = await _supabase.from('meufuturo_agenda_v2').insert([{
+            const { error } = await _supabase.from('meufuturo_agenda').insert([{
                 titulo,
+                local,
                 hora_inicio: horaInicio,
                 hora_fim: horaFim || null,
                 data,
@@ -166,6 +208,7 @@
 
             fecharModalCompromisso();
             document.getElementById('compTitulo').value = '';
+            document.getElementById('compLocal').value = '';
             document.getElementById('compDesc').value = '';
             document.getElementById('compInicio').value = '';
             document.getElementById('compFim').value = '';
@@ -177,7 +220,7 @@
 
         async function excluirCompromisso(id) {
             if(!confirm('Deseja remover este bloco da agenda?')) return;
-            await _supabase.from('meufuturo_agenda_v2').delete().eq('id', id);
+            await _supabase.from('meufuturo_agenda').delete().eq('id', id);
             carregarAgenda();
         }
 
