@@ -23,7 +23,10 @@
                 <button onclick="window.location.href='home.html'" class="text-slate-400 hover:text-blue-400 transition" title="Voltar ao Menu"><i class="fa-solid fa-arrow-left text-lg"></i></button>
                 <h1 class="text-lg font-bold text-blue-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Agora</span></h1>
             </div>
-            <button onclick="window.location.href='agenda.html'" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg transition"><i class="fa-solid fa-calendar-days mr-1"></i> Agenda</button>
+            <div class="flex items-center space-x-2">
+                <button onclick="window.location.href='tags.html'" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg transition" title="Cadernos"><i class="fa-solid fa-book mr-1"></i> Cadernos</button>
+                <button onclick="window.location.href='agenda.html'" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition" title="Agenda"><i class="fa-solid fa-calendar-days mr-1"></i> Agenda</button>
+            </div>
         </div>
     </header>
 
@@ -45,7 +48,7 @@
             <!-- Formulário de Configuração (Antes de Iniciar) -->
             <div id="painelConfig" class="space-y-3 text-left">
                 <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">O que você está fazendo?</label>
+                    <label class="text-[10px] text-slate-400 block mb-1">O que você está a fazer?</label>
                     <input type="text" id="inputTitulo" placeholder="Ex: Atendimento ao cliente, Leitura..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-blue-500 transition">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
@@ -57,7 +60,7 @@
                     </div>
                     <div>
                         <label class="text-[10px] text-slate-400 block mb-1">Local (Opcional)</label>
-                        <input type="text" id="inputLocal" placeholder="Ex: Casa, Escritório..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none">
+                        <input type="text" id="inputLocal" placeholder="Ex: Casa, Escritório..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white outline-none">
                     </div>
                 </div>
                 <div>
@@ -118,7 +121,6 @@
             const tituloInput = document.getElementById('inputTitulo');
 
             if (!emExecucao) {
-                // INICIAR
                 const titulo = tituloInput.value.trim();
                 if (!titulo) {
                     alert('Por favor, informe o que você está a fazer!');
@@ -127,7 +129,7 @@
 
                 const agora = new Date();
                 dataInicioStr = agora.toISOString().split('T')[0];
-                horaInicioStr = agora.toTimeString().split(' ')[0].substring(0, 5); // HH:MM
+                horaInicioStr = agora.toTimeString().split(' ')[0].substring(0, 5);
 
                 emExecucao = true;
                 segundosDecorridos = 0;
@@ -136,7 +138,6 @@
                 btn.innerHTML = '<i class="fa-solid fa-stop text-base"></i><span>Parar e Salvar no Caderno</span>';
                 btn.className = 'w-full bg-rose-600 hover:bg-rose-500 text-white rounded-xl py-3.5 text-sm font-bold transition shadow-lg shadow-rose-900/30 flex items-center justify-center space-x-2';
                 
-                // Desativa inputs durante a execução
                 document.getElementById('painelConfig').style.opacity = '0.5';
                 document.querySelectorAll('#painelConfig input, #painelConfig select, #painelConfig textarea').forEach(el => el.disabled = true);
 
@@ -146,7 +147,6 @@
                 }, 1000);
 
             } else {
-                // PARAR E SALVAR
                 clearInterval(timerInterval);
                 btn.disabled = true;
                 btn.innerText = 'Salvando no Histórico...';
@@ -159,7 +159,6 @@
                 const local = document.getElementById('inputLocal').value.trim();
                 const descricao = document.getElementById('inputDesc').value.trim();
 
-                // Salva diretamente na mesma tabela da agenda (meufuturo_agenda_v3) para integrar com o dashboard e cadernos!
                 const { error } = await _supabase.from('meufuturo_agenda_v3').insert([{
                     titulo,
                     tag,
@@ -178,7 +177,6 @@
 
                 alert('Atividade registrada e salva com sucesso no seu histórico!');
                 
-                // Reseta a tela
                 emExecucao = false;
                 segundosDecorridos = 0;
                 document.getElementById('displayTempo').innerText = '00:00:00';
