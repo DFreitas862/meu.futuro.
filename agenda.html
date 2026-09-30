@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Futuro - Agenda & Propósito</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen pb-12">
+
+    <script>
+        if (localStorage.getItem('meufuturo_logado') !== 'true') {
+            window.location.href = 'index.html';
+        }
+    </script>
+
+    <!-- Header -->
+    <header class="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-50 shadow-md">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <button onclick="window.location.href='home.html'" class="text-slate-400 hover:text-blue-400 transition" title="Voltar ao Menu"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+                <h1 class="text-lg font-bold text-blue-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Agenda & Propósito</span></h1>
+            </div>
+            <button onclick="abrirModalCompromisso()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition shadow-lg shadow-blue-900/30"><i class="fa-solid fa-plus mr-1"></i> Novo Compromisso</button>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="max-w-4xl mx-auto p-4 md:p-6 space-y-6">
+
+        <!-- Card de Intenção / Propósito do Dia -->
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg space-y-3">
+            <div class="flex justify-between items-center">
+                <h3 class="text-sm font-bold text-blue-400 uppercase tracking-wide"><i class="fa-solid fa-compass mr-1.5"></i> Propósito do Dia</h3>
+                <span id="dataAtualTexto" class="text-xs text-slate-400"></span>
+            </div>
+            <input type="text" id="propositoDia" placeholder="Qual é a intenção ou o foco principal para hoje? (Ex: Fazer as coisas com calma e presença)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-blue-500 transition">
+        </div>
+
+        <!-- Seção da Linha do Tempo / Horários do Dia -->
+        <section class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-base font-bold text-white"><i class="fa-solid fa-calendar-day mr-2 text-blue-400"></i>Agenda Diária</h3>
+                <input type="date" id="filtroDataAgenda" onchange="carregarAgenda()" class="bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white outline-none">
+            </div>
+
+            <!-- Lista de Blocos do Dia -->
+            <div class="space-y-3" id="listaAgenda">
+                <p class="text-xs text-slate-500 text-center py-6">Carregando compromissos...</p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal Novo Compromisso -->
+    <div id="modalCompromisso" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-bold text-blue-400"><i class="fa-solid fa-calendar-plus mr-2"></i>Novo Bloco de Rotina</h3>
+                <button onclick="fecharModalCompromisso()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Título da Atividade</label>
+                    <input type="text" id="compTitulo" placeholder="Ex: Trabalho, Oração, Leitura, Uber..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Início</label>
+                        <input type="time" id="compInicio" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Término</label>
+                        <input type="time" id="compFim" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Data</label>
+                    <input type="date" id="compData" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Descrição / Detalhes</label>
+                    <textarea id="compDesc" rows="2" placeholder="O que vai rolar nesse bloco?" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none"></textarea>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="fecharModalCompromisso()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
+                    <button type="button" onclick="salvarCompromisso()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition">Salvar Bloco</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="supabase.js"></script>
+
+    <script>
+        // Define a data de hoje por padrão nos inputs
+        const hojeIso = new Date().toISOString().split('T')[0];
+        document.getElementById('filtroDataAgenda').value = hojeIso;
+        
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('dataAtualTexto').innerText = new Date().toLocaleDateString('pt-BR', options);
+        document.getElementById('compData').value = hojeIso;
+
+        async function carregarAgenda() {
+            const dataSelecionada = document.getElementById('filtroDataAgenda').value;
+            const lista = document.getElementById('listaAgenda');
+            lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Buscando programação...</p>';
+
+            const { data, error } = await _supabase.from('meufuturo_agenda').select('*').eq('data', dataSelecionada).order('hora_inicio', { ascending: true });
+
+            lista.innerHTML = '';
+            if(error || !data || data.length === 0) {
+                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Nenhum bloco programado para este dia. Aproveite para planejar seu propósito!</p>';
+                return;
+            }
+
+            data.forEach(item => {
+                lista.innerHTML += `
+                    <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+                        <div class="space-y-1">
+                            <div class="flex items-center space-x-2">
+                                <span class="bg-blue-900/40 border border-blue-700/50 text-blue-300 font-bold px-2 py-0.5 rounded text-[10px]">${item.hora_inicio} - ${item.hora_fim}</span>
+                                <span class="font-bold text-white text-sm">${item.titulo}</span>
+                            </div>
+                            ${item.descricao ? `<p class="text-slate-400 pl-1">${item.descricao}</p>` : ''}
+                        </div>
+                        <button onclick="excluirCompromisso('${item.id}')" class="text-rose-400 hover:text-rose-300 p-2" title="Excluir bloco"><i class="fa-solid fa-trash text-sm"></i></button>
+                    </div>
+                `;
+            });
+        }
+
+        async function salvarCompromisso() {
+            const titulo = document.getElementById('compTitulo').value;
+            const horaInicio = document.getElementById('compInicio').value;
+            const horaFim = document.getElementById('compFim').value;
+            const data = document.getElementById('compData').value;
+            const descricao = document.getElementById('compDesc').value;
+
+            if(!titulo || !horaInicio || !data) return alert('Preencha ao menos o título, o horário de início e a data!');
+
+            const { error } = await _supabase.from('meufuturo_agenda').insert([{
+                titulo,
+                hora_inicio: horaInicio,
+                hora_fim: horaFim || horaInicio,
+                data,
+                descricao
+            }]);
+
+            if(error) return alert('Erro ao salvar: ' + error.message);
+
+            fecharModalCompromisso();
+            document.getElementById('compTitulo').value = '';
+            document.getElementById('compDesc').value = '';
+            carregarAgenda();
+        }
+
+        async function excluirCompromisso(id) {
+            if(!confirm('Deseja remover este bloco da agenda?')) return;
+            await _supabase.from('meufuturo_agenda').delete().eq('id', id);
+            carregarAgenda();
+        }
+
+        function abrirModalCompromisso() { document.getElementById('modalCompromisso').classList.remove('hidden'); }
+        function fecharModalCompromisso() { document.getElementById('modalCompromisso').classList.add('hidden'); }
+
+        carregarAgenda();
+    </script>
+</body>
+</html>
