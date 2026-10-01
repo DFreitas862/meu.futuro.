@@ -83,6 +83,14 @@
     <script src="supabase.js"></script>
 
     <script>
+        function obterDataLocalIso() {
+            const agora = new Date();
+            const ano = agora.getFullYear();
+            const mes = String(agora.getMonth() + 1).padStart(2, '0');
+            const dia = String(agora.getDate()).padStart(2, '0');
+            return `${ano}-${mes}-${dia}`;
+        }
+
         let timerInterval = null;
         let tempoInicioMs = 0;
         let horaInicioStr = '';
@@ -147,9 +155,9 @@
                 }
 
                 const agora = new Date();
-                dataInicioStr = agora.toISOString().split('T')[0];
+                dataInicioStr = obterDataLocalIso();
                 horaInicioStr = agora.toTimeString().split(' ')[0].substring(0, 5);
-                tempoInicioMs = agora.getTime(); // Marca o milissegundo exato do início
+                tempoInicioMs = agora.getTime();
 
                 emExecucao = true;
                 
@@ -164,7 +172,6 @@
                 document.getElementById('inputTag').style.opacity = '0.5';
                 document.getElementById('inputLocal').style.opacity = '0.5';
 
-                // Atualiza a cada segundo e também recalcula se a tela voltar do modo de suspensão
                 timerInterval = setInterval(atualizarRelogio, 1000);
                 document.addEventListener('visibilitychange', () => {
                     if (!document.hidden && emExecucao) {
@@ -180,7 +187,6 @@
                 const agoraFim = new Date();
                 let horaFimStr = agoraFim.toTimeString().split(' ')[0].substring(0, 5);
 
-                // Calcula os segundos totais com base na diferença real do relógio do sistema
                 const segundosTotais = Math.floor((agoraFim.getTime() - tempoInicioMs) / 1000);
 
                 const titulo = tituloInput.value.trim();
