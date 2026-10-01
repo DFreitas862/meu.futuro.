@@ -84,7 +84,7 @@
 
     <script>
         let timerInterval = null;
-        let segundosDecorridos = 0;
+        let tempoInicioMs = 0;
         let horaInicioStr = '';
         let dataInicioStr = '';
         let emExecucao = false;
@@ -127,6 +127,13 @@
             return texto;
         }
 
+        function atualizarRelogio() {
+            if (!emExecucao) return;
+            const agoraMs = Date.now();
+            const segundosDecorridos = Math.floor((agoraMs - tempoInicioMs) / 1000);
+            document.getElementById('displayTempo').innerText = formatarTempo(segundosDecorridos);
+        }
+
         async function alternarCronometro() {
             const btn = document.getElementById('btnAcao');
             const status = document.getElementById('statusAtividade');
@@ -142,15 +149,14 @@
                 const agora = new Date();
                 dataInicioStr = agora.toISOString().split('T')[0];
                 horaInicioStr = agora.toTimeString().split(' ')[0].substring(0, 5);
+                tempoInicioMs = agora.getTime(); // Marca o milissegundo exato do início
 
                 emExecucao = true;
-                segundosDecorridos = 0;
                 
                 status.innerText = `Em andamento (Início às ${horaInicioStr})`;
                 btn.innerHTML = '<i class="fa-solid fa-stop text-base"></i><span>Parar e Salvar no Caderno</span>';
                 btn.className = 'w-full bg-rose-600 hover:bg-rose-500 text-white rounded-xl py-3.5 text-sm font-bold transition shadow-lg shadow-rose-900/30 flex items-center justify-center space-x-2';
                 
-                // Trava os campos principais, mas mantém a observação livre
                 document.getElementById('inputTitulo').disabled = true;
                 document.getElementById('inputTag').disabled = true;
                 document.getElementById('inputLocal').disabled = true;
@@ -158,10 +164,13 @@
                 document.getElementById('inputTag').style.opacity = '0.5';
                 document.getElementById('inputLocal').style.opacity = '0.5';
 
-                timerInterval = setInterval(() => {
-                    segundosDecorridos++;
-                    document.getElementById('displayTempo').innerText = formatarTempo(segundosDecorridos);
-                }, 1000);
+                // Atualiza a cada segundo e também recalcula se a tela voltar do modo de suspensão
+                timerInterval = setInterval(atualizarRelogio, 1000);
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden && emExecucao) {
+                        atualizarRelogio();
+                    }
+                });
 
             } else {
                 clearInterval(timerInterval);
@@ -171,13 +180,15 @@
                 const agoraFim = new Date();
                 let horaFimStr = agoraFim.toTimeString().split(' ')[0].substring(0, 5);
 
+                // Calcula os segundos totais com base na diferença real do relógio do sistema
+                const segundosTotais = Math.floor((agoraFim.getTime() - tempoInicioMs) / 1000);
+
                 const titulo = tituloInput.value.trim();
                 const tag = document.getElementById('inputTag').value;
                 const local = document.getElementById('inputLocal').value.trim();
                 const notaUsuario = document.getElementById('inputDesc').value.trim();
 
-                // Monta o resumo incluindo a duração exata calculada pelo cronômetro
-                const duracaoFormatada = calcularDuracaoTexto(segundosDecorridos);
+                const duracaoFormatada = calcularDuracaoTexto(segundosTotais);
                 let descricaoFinal = duracaoFormatada;
                 if (notaUsuario) {
                     descricaoFinal = `${notaUsuario} | ${duracaoFormatada}`;
@@ -203,14 +214,12 @@
                 alert(`Atividade salva com sucesso!\n${duracaoFormatada}`);
                 
                 emExecucao = false;
-                segundosDecorridos = 0;
                 document.getElementById('displayTempo').innerText = '00:00:00';
                 status.innerText = 'Nenhuma atividade em andamento';
                 tituloInput.value = '';
                 document.getElementById('inputLocal').value = '';
                 document.getElementById('inputDesc').value = '';
                 
-                // Libera os campos novamente
                 document.getElementById('inputTitulo').disabled = false;
                 document.getElementById('inputTag').disabled = false;
                 document.getElementById('inputLocal').disabled = false;
