@@ -140,7 +140,15 @@
     <script src="supabase.js"></script>
 
     <script>
-        const hojeIso = new Date().toISOString().split('T')[0];
+        function obterDataLocalIso() {
+            const agora = new Date();
+            const ano = agora.getFullYear();
+            const mes = String(agora.getMonth() + 1).padStart(2, '0');
+            const dia = String(agora.getDate()).padStart(2, '0');
+            return `${ano}-${mes}-${dia}`;
+        }
+
+        const hojeIso = obterDataLocalIso();
         
         const inputFiltroData = document.getElementById('filtroDataAgenda');
         const inputCompData = document.getElementById('compData');
@@ -210,7 +218,7 @@
 
         function irParaHoje() {
             const inputData = document.getElementById('filtroDataAgenda');
-            if(inputData) inputData.value = hojeIso;
+            if(inputData) inputData.value = obterDataLocalIso();
             carregarAgenda();
         }
 
@@ -281,7 +289,7 @@
 
         async function carregarAgenda() {
             const inputFiltro = document.getElementById('filtroDataAgenda');
-            const dataSelecionada = inputFiltro ? inputFiltro.value : hojeIso;
+            const dataSelecionada = inputFiltro ? inputFiltro.value : obterDataLocalIso();
             atualizarTextoDataCabecalho(dataSelecionada);
 
             const lista = document.getElementById('listaAgenda');
@@ -343,7 +351,7 @@
             document.getElementById('compInicio').value = '';
             document.getElementById('compFim').value = '';
             const filtroData = document.getElementById('filtroDataAgenda');
-            document.getElementById('compData').value = filtroData ? filtroData.value : hojeIso;
+            document.getElementById('compData').value = filtroData ? filtroData.value : obterDataLocalIso();
             document.getElementById('compDesc').value = '';
             document.getElementById('divRepetirContainer').style.display = 'block';
             document.getElementById('modalCompromisso').classList.remove('hidden');
