@@ -100,7 +100,7 @@
                     </div>
                     <div>
                         <label class="text-[10px] text-slate-400 block mb-1">Local (Opcional)</label>
-                        <input type="text" id="compLocal" placeholder="Ex: Templo, Escritório..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none">
+                        <input type="text" id="compLocal" placeholder="Ex: Templo, Escritório..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white outline-none">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
@@ -142,10 +142,7 @@
     <script>
         function obterDataLocalIso() {
             const agora = new Date();
-            const ano = agora.getFullYear();
-            const mes = String(agora.getMonth() + 1).padStart(2, '0');
-            const dia = String(agora.getDate()).padStart(2, '0');
-            return `${ano}-${mes}-${dia}`;
+            return agora.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
         }
 
         const hojeIso = obterDataLocalIso();
@@ -212,7 +209,11 @@
             if(!inputData) return;
             const dataAtual = new Date(inputData.value + 'T00:00:00');
             dataAtual.setDate(dataAtual.getDate() + dias);
-            inputData.value = dataAtual.toISOString().split('T')[0];
+            
+            const ano = dataAtual.getFullYear();
+            const mes = String(dataAtual.getMonth() + 1).padStart(2, '0');
+            const dia = String(dataAtual.getDate()).padStart(2, '0');
+            inputData.value = `${ano}-${mes}-${dia}`;
             carregarAgenda();
         }
 
@@ -413,14 +414,20 @@
                         dataAtual.setDate(dataAtual.getDate() + 1);
                         let diaSemana = dataAtual.getDay();
                         if(diaSemana !== 0 && diaSemana !== 6) {
-                            datasParaInserir.push(dataAtual.toISOString().split('T')[0]);
+                            const a = dataAtual.getFullYear();
+                            const m = String(dataAtual.getMonth() + 1).padStart(2, '0');
+                            const d = String(dataAtual.getDate()).padStart(2, '0');
+                            datasParaInserir.push(`${a}-${m}-${d}`);
                         }
                     }
                 } else if(repetir === 'semanal') {
                     let dataAtual = new Date(dataInicial + 'T00:00:00');
                     for(let i = 1; i < 8; i++) {
                         dataAtual.setDate(dataAtual.getDate() + 7);
-                        datasParaInserir.push(dataAtual.toISOString().split('T')[0]);
+                        const a = dataAtual.getFullYear();
+                        const m = String(dataAtual.getMonth() + 1).padStart(2, '0');
+                        const d = String(dataAtual.getDate()).padStart(2, '0');
+                        datasParaInserir.push(`${a}-${m}-${d}`);
                     }
                 }
 
