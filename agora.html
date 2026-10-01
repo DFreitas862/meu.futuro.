@@ -45,7 +45,7 @@
                 00:00:00
             </div>
 
-            <!-- Formulário de Configuração (Antes de Iniciar) -->
+            <!-- Formulário de Configuração -->
             <div id="painelConfig" class="space-y-3 text-left">
                 <div>
                     <label class="text-[10px] text-slate-400 block mb-1">O que você está a fazer?</label>
@@ -64,8 +64,8 @@
                     </div>
                 </div>
                 <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Detalhes / Anotações</label>
-                    <textarea id="inputDesc" rows="2" placeholder="Notas sobre o que está a ser feito..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none"></textarea>
+                    <label class="text-[10px] text-slate-400 block mb-1">Detalhes / Anotações (Pode escrever durante o cronômetro)</label>
+                    <textarea id="inputDesc" rows="2" placeholder="Notas sobre o que está a ser feito..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-blue-500 transition"></textarea>
                 </div>
             </div>
 
@@ -138,8 +138,13 @@
                 btn.innerHTML = '<i class="fa-solid fa-stop text-base"></i><span>Parar e Salvar no Caderno</span>';
                 btn.className = 'w-full bg-rose-600 hover:bg-rose-500 text-white rounded-xl py-3.5 text-sm font-bold transition shadow-lg shadow-rose-900/30 flex items-center justify-center space-x-2';
                 
-                document.getElementById('painelConfig').style.opacity = '0.5';
-                document.querySelectorAll('#painelConfig input, #painelConfig select, #painelConfig textarea').forEach(el => el.disabled = true);
+                // Trava apenas os campos principais, mantendo a observação (inputDesc) LIVRE para edição!
+                document.getElementById('inputTitulo').disabled = true;
+                document.getElementById('inputTag').disabled = true;
+                document.getElementById('inputLocal').disabled = true;
+                document.getElementById('inputTitulo').style.opacity = '0.5';
+                document.getElementById('inputTag').style.opacity = '0.5';
+                document.getElementById('inputLocal').style.opacity = '0.5';
 
                 timerInterval = setInterval(() => {
                     segundosDecorridos++;
@@ -172,6 +177,7 @@
                 if(error) {
                     alert('Erro ao salvar atividade: ' + error.message);
                     btn.disabled = false;
+                    btn.innerText = 'Parar e Salvar no Caderno';
                     return;
                 }
 
@@ -185,8 +191,13 @@
                 document.getElementById('inputLocal').value = '';
                 document.getElementById('inputDesc').value = '';
                 
-                document.getElementById('painelConfig').style.opacity = '1';
-                document.querySelectorAll('#painelConfig input, #painelConfig select, #painelConfig textarea').forEach(el => el.disabled = false);
+                // Libera todos os campos novamente
+                document.getElementById('inputTitulo').disabled = false;
+                document.getElementById('inputTag').disabled = false;
+                document.getElementById('inputLocal').disabled = false;
+                document.getElementById('inputTitulo').style.opacity = '1';
+                document.getElementById('inputTag').style.opacity = '1';
+                document.getElementById('inputLocal').style.opacity = '1';
 
                 btn.innerHTML = '<i class="fa-solid fa-play text-base"></i><span>Iniciar Agora</span>';
                 btn.className = 'w-full bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-3.5 text-sm font-bold transition shadow-lg shadow-emerald-900/30 flex items-center justify-center space-x-2';
