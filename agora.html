@@ -86,8 +86,8 @@
 
     </main>
 
-    <!-- Modal Pop-up de Resumo Final -->
-    <div id="modalResumo" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <!-- Modal Pop-up de Resumo Final (Forçado com style="display: none;" para evitar bloqueio de classe) -->
+    <div id="modalResumo" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full space-y-4 shadow-2xl text-center">
             <div class="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto text-xl">
                 <i class="fa-solid fa-check"></i>
@@ -143,11 +143,10 @@
             return `${h}:${m}:${s}`;
         }
 
-        // Função para obter o endereço legível via Coordenadas (GPS do telemóvel)
         async function obterEnderecoAtual() {
             return new Promise((resolve) => {
                 if (!navigator.geolocation) {
-                    resolve("Geolocalização não suportada");
+                    resolve({ endereco: "Geolocalização não suportada", lat: null, lon: null });
                     return;
                 }
                 navigator.geolocation.getCurrentPosition(async (position) => {
@@ -168,10 +167,9 @@
             });
         }
 
-        // Cálculo aproximado de distância em KM entre dois pontos geográficos (Fórmula de Haversine)
         function calcularDistanciaKm(lat1, lon1, lat2, lon2) {
             if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
-            const R = 6371; // Raio da terra em km
+            const R = 6371; 
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -187,7 +185,6 @@
             document.getElementById('displayTempo').innerText = formatarTempo(segundosDecorridos);
         }
 
-        // Máquina de Estados das 3 Etapas
         async function executarEtapa() {
             const btn = document.getElementById('btnAcao');
             const badge = document.getElementById('badgeEtapa');
@@ -195,7 +192,6 @@
             const tituloInput = document.getElementById('inputTitulo');
 
             if (etapaAtual === 1) {
-                // ETAPA 1: INICIAR DESLOCAMENTO
                 const titulo = tituloInput.value.trim();
                 if (!titulo) {
                     alert('Por favor, informe o título da atividade!');
@@ -203,7 +199,7 @@
                 }
 
                 btn.disabled = true;
-                btn.innerText = 'Acapturando GPS de origem...';
+                btn.innerText = 'Capturando GPS de origem...';
 
                 const dadosGps = await obterEnderecoAtual();
                 latInicio = dadosGps.lat;
@@ -232,7 +228,6 @@
                 btn.className = 'w-full bg-amber-600 hover:bg-amber-500 text-white rounded-xl py-3.5 text-sm font-bold transition shadow-lg shadow-amber-900/30 flex items-center justify-center space-x-2';
 
             } else if (etapaAtual === 2) {
-                // ETAPA 2: CHEGADA AO DESTINO (INICIA PERMANÊNCIA)
                 btn.disabled = true;
                 btn.innerText = 'Capturando GPS de chegada...';
 
@@ -247,7 +242,6 @@
                 const agora = new Date();
                 horaChegadaLocal = agora.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', hour12: false });
                 
-                // Reinicia o cronômetro para contar o tempo de permanência no local
                 tempoInicioMs = agora.getTime();
                 segundosPermanencia = 0;
 
@@ -260,7 +254,6 @@
                 btn.className = 'w-full bg-rose-600 hover:bg-rose-500 text-white rounded-xl py-3.5 text-sm font-bold transition shadow-lg shadow-rose-900/30 flex items-center justify-center space-x-2';
 
             } else if (etapaAtual === 3) {
-                // ETAPA 3: FINALIZAR E SALVAR
                 clearInterval(timerInterval);
                 btn.disabled = true;
                 btn.innerText = 'A salvar no histórico...';
@@ -271,9 +264,8 @@
                 const agora = new Date();
                 horaFimTotal = agora.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', hour12: false });
 
-                // Calcula Quilometragem percorrida
                 const distanciaKm = calcularDistanciaKm(latInicio, lonInicio, latChegada, lonChegada);
-                const kmFormatado = distanciaKm > 0 ? distanciaKm.toFixed(2) : "Calculado aprox.";
+                const kmFormatado = distanciaKm > 0 ? distanciaKm.toFixed(2) : "0.00";
 
                 const titulo = tituloInput.value.trim();
                 const tag = document.getElementById('inputTag').value;
@@ -300,10 +292,11 @@
                 if(error) {
                     alert('Erro ao salvar: ' + error.message);
                     btn.disabled = false;
+                    btn.innerText = '3. Finalizar Atividade';
                     return;
                 }
 
-                // Monta o Pop-up de Resumo Final
+                // Exibe o Pop-up de Resumo Final garantindo que o estilo mude para flex
                 const containerResumo = document.getElementById('conteudoResumo');
                 containerResumo.innerHTML = `
                     <div><strong>Atividade:</strong> ${titulo}</div>
@@ -311,13 +304,13 @@
                     <div><strong>Permanência no Local:</strong> ${textoPermanencia}</div>
                     <div><strong>Distância Percorrida:</strong> ${kmFormatado} km</div>
                 `;
-                document.getElementById('modalResumo').classList.remove('hidden');
+                document.getElementById('modalResumo').style.display = 'flex';
             }
         }
 
         function fecharModalResumo() {
-            document.getElementById('modalResumo').classList.add('hidden');
-            window.location.reload(); // Reinicia a página limpa para um novo ciclo
+            document.getElementById('modalResumo').style.display = 'none';
+            window.location.reload(); 
         }
 
         carregarTagsNoSelect();
