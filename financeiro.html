@@ -42,7 +42,7 @@
             </div>
             <div class="flex items-center space-x-2">
                 <button onclick="mudarMes(-1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition"><i class="fa-solid fa-chevron-left mr-1"></i> Anterior</button>
-                <span id="labelMesAno" class="text-sm font-extrabold text-amber-400 px-3 py-1 bg-slate-950 rounded-xl border border-slate-800 min-w-[160px] text-center">Carregando...</span>
+                <span id="labelMesAno" class="text-sm font-extrabold text-amber-400 px-3 py-1 bg-slate-950 rounded-xl border border-slate-800 min-w-[160px] text-center">Outubro de 2026</span>
                 <button onclick="mudarMes(1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">Próximo <i class="fa-solid fa-chevron-right ml-1"></i></button>
             </div>
         </div>
@@ -102,7 +102,7 @@
                     <button onclick="abrirModalCarne()" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 transition">+ Novo Carnê</button>
                 </div>
                 <div class="space-y-3 max-h-80 overflow-y-auto" id="listaCarnes">
-                    <p class="text-xs text-slate-500 text-center py-4">Carregando parcela do mês...</p>
+                    <p class="text-xs text-slate-500 text-center py-4">A carregar carnês...</p>
                 </div>
             </section>
 
@@ -170,13 +170,13 @@
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalPagarCarne()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="button" id="btnConfirmarPagamentoCarne" onclick="confirmarPagamentoCarne()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition">Confirmar</button>
+                    <button type="button" onclick="confirmarPagamentoCarne()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition">Confirmar</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal Novo Carnê Direto -->
+    <!-- Modal Novo Carnê -->
     <div id="modalCarne" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-amber-400">Cadastrar Carnê / Financiamento</h3>
@@ -193,15 +193,9 @@
                         <input type="number" id="carneTotal" placeholder="41" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Dia Vencimento (Ex: 20)</label>
-                        <input type="number" id="carneVencimento" placeholder="20" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                    </div>
-                    <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Mês Atual (Ex: Out/26)</label>
-                        <input type="month" id="carneMesBase" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none">
-                    </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Dia do Vencimento (Ex: 20)</label>
+                    <input type="number" id="carneVencimento" placeholder="20" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalCarne()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
@@ -290,7 +284,7 @@
                 <input type="date" id="transData" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalTransacao()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="button" id="btnSalvarTransacao" onclick="salvarTransacao()" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold transition">Salvar</button>
+                    <button type="button" onclick="salvarTransacao()" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold transition">Salvar</button>
                 </div>
             </div>
         </div>
@@ -304,7 +298,7 @@
                 <button onclick="fecharModalExtrato()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <div class="space-y-2 max-h-80 overflow-y-auto" id="extratoLista">
-                <p class="text-xs text-slate-400 text-center py-4">Carregando...</p>
+                <p class="text-xs text-slate-400 text-center py-4">A carregar...</p>
             </div>
         </div>
     </div>
@@ -328,10 +322,8 @@
         }
 
         async function carregarTudo() {
-            if(!document.getElementById('labelMesAno').innerText.includes('de')) {
-                document.getElementById('labelMesAno').innerText = formatarMesAnoLabel(dataAtualNavegacao);
-            }
-            await Promise.all([carregarContas(), carregarVR(), carregarCartoes(), carregarCarnesDoMes(), carregarDividas(), carregarTransacoes()]);
+            document.getElementById('labelMesAno').innerText = formatarMesAnoLabel(dataAtualNavegacao);
+            await Promise.all([carregarContas(), carregarVR(), carregarCartoes(), carregarCarnes(), carregarDividas(), carregarTransacoes()]);
         }
 
         async function carregarContas() {
@@ -343,7 +335,7 @@
             data?.forEach(c => {
                 soma += Number(c.saldo_inicial);
                 lista.innerHTML += `
-                    <div onclick="abrirExtrato('${c.id}', '${c.nome_banco}', 'conta')" class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-emerald-500 transition">
+                    <div onclick="abrirExtrato('${c.id}', '${c.nome_banco}')" class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-emerald-500 transition">
                         <div>
                             <p class="font-bold text-sm text-white"><i class="fa-solid fa-wallet text-emerald-400 mr-1.5"></i>${c.nome_banco}</p>
                             <span class="text-xs text-slate-400">Ver extrato</span>
@@ -361,7 +353,7 @@
             const saldo = parseFloat(document.getElementById('contaSaldo').value);
             if(!nome || isNaN(saldo)) return alert('Preencha os campos!');
             const { error } = await _supabase.from('meufuturo_contas').insert([{ nome_banco: nome, saldo_inicial: saldo }]);
-            if(!error) { fecharModalConta(); carregarContas(); document.getElementById('contaBanco'].value=''; document.getElementById('contaSaldo').value=''; }
+            if(!error) { fecharModalConta(); carregarContas(); document.getElementById('contaBanco').value=''; document.getElementById('contaSaldo').value=''; }
         }
 
         async function carregarVR() {
@@ -371,7 +363,7 @@
             lista.innerHTML = '';
             data?.forEach(v => {
                 lista.innerHTML += `
-                    <div onclick="abrirExtrato('${v.id}', '${v.nome}', 'vr')" class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-cyan-500 transition">
+                    <div onclick="abrirExtrato('${v.id}', '${v.nome}')" class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-cyan-500 transition">
                         <div>
                             <p class="font-bold text-sm text-white"><i class="fa-solid fa-utensils text-cyan-400 mr-1.5"></i>${v.nome}</p>
                             <span class="text-xs text-slate-400">Ver extrato</span>
@@ -438,56 +430,36 @@
             });
         }
 
-        // --- SALVAR CARNÊ COM CONTROLE DIRETO E SIMPLES ---
+        // --- CARNÊS DIRETO E SEM COMPLICAÇÃO ---
         async function salvarCarne() {
             const credor = document.getElementById('carneCredor').value;
             const valor = parseFloat(document.getElementById('carneValor').value);
             const atual = parseInt(document.getElementById('carneAtual').value);
             const total = parseInt(document.getElementById('carneTotal').value);
             const venc = parseInt(document.getElementById('carneVencimento').value) || 20;
-            const mesBaseStr = document.getElementById('carneMesBase').value; // Ex: '2026-10'
 
             if(!credor || isNaN(valor) || isNaN(atual) || isNaN(total)) return alert('Preencha todos os campos!');
 
-            let anoBase, mesBase;
-            if(mesBaseStr) {
-                [anoBase, mesBase] = mesBaseStr.split('-').map(Number);
-            } else {
-                let hoje = new Date();
-                anoBase = hoje.getFullYear();
-                mesBase = hoje.getMonth() + 1;
-            }
-
-            let dataIso = `${anoBase}-${String(mesBase).padStart(2, '0')}-${String(venc).padStart(2, '0')}`;
-
+            // Apaga duplicados anteriores e guarda o carnê ativo atual
             await _supabase.from('meufuturo_carnes').delete().eq('credor', credor);
 
-            let { error } = await _supabase.from('meufuturo_carnes').insert([{
+            const { error } = await _supabase.from('meufuturo_carnes').insert([{
                 credor: credor,
                 valor_parcela: valor,
                 parcela_atual: atual,
                 total_parcelas: total,
-                dia_vencimento: dataIso,
+                dia_vencimento: venc,
                 status: 'pendente'
             }]);
 
-            if(error) {
-                await _supabase.from('meufuturo_carnes').insert([{
-                    credor: credor,
-                    valor_parcela: valor,
-                    parcela_atual: atual,
-                    total_parcelas: total,
-                    dia_vencimento: venc
-                }]);
-            }
+            if(error) return alert('Erro ao salvar carnê: ' + error.message);
 
             fecharModalCarne();
             carregarTudo();
             alert('Carnê cadastrado com sucesso!');
         }
 
-        // --- CARREGAR CARNÊ EXIBINDO SEMPRE O MÊS ATUAL NAVEGADO ---
-        async function carregarCarnesDoMes() {
+        async function carregarCarnes() {
             const { data } = await _supabase.from('meufuturo_carnes').select('*');
             const lista = document.getElementById('listaCarnes');
             lista.innerHTML = '';
@@ -497,54 +469,33 @@
                 return;
             }
 
-            let anoSel = dataAtualNavegacao.getFullYear();
-            let mesSel = dataAtualNavegacao.getMonth() + 1;
-
-            let encontrouAlguma = false;
-
             data.forEach(c => {
-                let parcelaCalculada = Number(c.parcela_atual);
-                let diaExibicao = c.dia_vencimento;
+                let jaPago = c.status === 'pago';
+                let corCard = jaPago ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-slate-950/60 border-slate-800 text-slate-300';
+                
+                let badgeStatus = jaPago 
+                    ? `<span class="bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-check mr-1"></i> Pago</span>` 
+                    : `<button onclick="abrirPagarCarne('${c.id}', '${c.credor}', ${c.parcela_atual}, ${c.total_parcelas}, ${c.valor_parcela})" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">Pagar Parcela</button>`;
 
-                if (c.dia_vencimento && c.dia_vencimento.length >= 7) {
-                    let [anoBase, mesBase] = c.dia_vencimento.split('-').map(Number);
-                    let diffMeses = (anoSel - anoBase) * 12 + (mesSel - mesBase);
-                    parcelaCalculada = Number(c.parcela_atual) + diffMeses;
-                }
-
-                if (parcelaCalculada >= 1 && parcelaCalculada <= Number(c.total_parcelas)) {
-                    encontrouAlguma = true;
-                    let jaPaga = c.status === 'pago' && parcelaCalculada < Number(c.parcela_atual);
-                    let corCard = jaPaga ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-slate-950/60 border-slate-800 text-slate-300';
-                    
-                    let badgeStatus = jaPaga 
-                        ? `<span class="bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-check mr-1"></i> Pago</span>` 
-                        : `<button onclick="abrirPagarCarne('${c.id}', '${c.credor}', ${parcelaCalculada}, ${c.total_parcelas}, ${c.valor_parcela})" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">Pagar Parcela</button>`;
-
-                    lista.innerHTML += `
-                        <div class="p-4 rounded-2xl border ${corCard} space-y-3 shadow">
-                            <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
-                                <h4 class="font-bold text-white text-sm"><i class="fa-solid fa-file-invoice text-amber-400 mr-2"></i>${c.credor}</h4>
-                                <button onclick="excluirGrupoCarne('${c.credor}')" class="text-rose-400 hover:text-rose-300 text-xs" title="Excluir carnê"><i class="fa-solid fa-trash"></i> Excluir</button>
+                lista.innerHTML += `
+                    <div class="p-4 rounded-2xl border ${corCard} space-y-3 shadow">
+                        <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
+                            <h4 class="font-bold text-white text-sm"><i class="fa-solid fa-file-invoice text-amber-400 mr-2"></i>${c.credor}</h4>
+                            <button onclick="excluirCarne('${c.credor}')" class="text-rose-400 hover:text-rose-300 text-xs" title="Excluir"><i class="fa-solid fa-trash"></i> Excluir</button>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-sm font-extrabold text-white">Parcela ${c.parcela_atual} de ${c.total_parcelas}</p>
+                                <p class="text-xs text-slate-400 mt-0.5">Vencimento: <strong class="text-slate-200">Dia ${c.dia_vencimento || 20}</strong></p>
+                                <p class="text-base font-extrabold text-amber-400 mt-1">R$ ${Number(c.valor_parcela).toFixed(2)}</p>
                             </div>
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <p class="text-sm font-extrabold text-white">Parcela ${parcelaCalculada} de ${c.total_parcelas}</p>
-                                    <p class="text-xs text-slate-400 mt-0.5">Vencimento: <strong class="text-slate-200">Dia do Mês</strong></p>
-                                    <p class="text-base font-extrabold text-amber-400 mt-1">R$ ${Number(c.valor_parcela).toFixed(2)}</p>
-                                </div>
-                                <div>
-                                    ${badgeStatus}
-                                </div>
+                            <div>
+                                ${badgeStatus}
                             </div>
                         </div>
-                    `;
-                }
+                    </div>
+                `;
             });
-
-            if(!encontrouAlguma) {
-                lista.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">Nenhuma parcela para este mês. (Navegue pelos meses acima).</p>`;
-            }
         }
 
         function abrirPagarCarne(id, credor, atual, total, valor) {
@@ -568,24 +519,22 @@
 
             const [tipoConta, contaId] = contaInfo.split(':');
 
+            // Busca o carnê e avança para a próxima parcela automaticamente (+1)
             const { data: carneData } = await _supabase.from('meufuturo_carnes').select('*').eq('id', carneId).single();
             
             if(carneData) {
-                let novaParcelaAtual = Number(carneData.parcela_atual) + 1;
-                let [ano, mes, dia] = (carneData.dia_vencimento || '2026-10-20').split('-').map(Number);
-                mes += 1;
-                if(mes > 12) { mes = 1; ano++; }
-                let novaDataIso = `${ano}-${String(mes).padStart(2, '0')}-${String(dia || 20).padStart(2, '0')}`;
+                let novaParcela = Number(carneData.parcela_atual) + 1;
+                if(novaParcela > carneData.total_parcelas) novaParcela = carneData.total_parcelas;
 
                 await _supabase.from('meufuturo_carnes').update({
-                    parcela_atual: novaParcelaAtual,
-                    dia_vencimento: novaDataIso,
+                    parcela_atual: novaParcela,
                     status: 'pendente'
                 }).eq('id', carneId);
             }
 
+            // Regista a transação de despesa
             await _supabase.from('meufuturo_transacoes').insert([{
-                descricao: `Pgto Carnê: ${carneData.credor}`,
+                descricao: `Pgto Carnê: ${carneData.credor} (${carneData.parcela_atual}/${carneData.total_parcelas})`,
                 valor: valorReal,
                 tipo: 'despesa',
                 data: dataPagamento,
@@ -599,10 +548,10 @@
 
             fecharModalPagarCarne();
             carregarTudo();
-            alert('Pagamento registrado e carnê avançado com sucesso!');
+            alert('Pagamento registado e carnê avançado para a parcela seguinte!');
         }
 
-        async function excluirGrupoCarne(credor) {
+        async function excluirCarne(credor) {
             if(!confirm(`Deseja excluir o carnê "${credor}"?`)) return;
             await _supabase.from('meufuturo_carnes').delete().eq('credor', credor);
             carregarTudo();
@@ -663,7 +612,7 @@
             lista.innerHTML = '';
             
             if(!data || data.length === 0) {
-                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhuma transação registrada.</p>';
+                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhuma transação registada.</p>';
                 document.getElementById('totalReceitas').innerText = 'R$ 0,00';
                 document.getElementById('totalDespesas').innerText = 'R$ 0,00';
                 return;
@@ -707,13 +656,13 @@
         async function abrirExtrato(id, nome) {
             document.getElementById('extratoTitulo').innerText = `Extrato: ${nome}`;
             const lista = document.getElementById('extratoLista');
-            lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Carregando...</p>';
+            lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">A carregar...</p>';
             document.getElementById('modalExtrato').classList.remove('hidden');
 
             const { data } = await _supabase.from('meufuturo_transacoes').select('*').eq('conta_id', id).order('data', { ascending: false });
             lista.innerHTML = '';
             if(!data || data.length === 0) {
-                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhuma movimentação.</p>';
+                lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Nenhuma movimentação.</p>';
                 return;
             }
             data.forEach(t => {
