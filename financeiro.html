@@ -176,7 +176,7 @@
         </div>
     </div>
 
-    <!-- Modal Novo Carnê -->
+    <!-- Modal Novo Carnê (Geração Automática por Mês) -->
     <div id="modalCarne" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-amber-400">Cadastrar Carnê / Financiamento</h3>
@@ -185,21 +185,21 @@
                 <input type="number" step="0.01" id="carneValor" placeholder="Valor Parcela (R$)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Parcela Atual (Ex: 13)</label>
-                        <input type="number" id="carneAtual" placeholder="13" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                    </div>
-                    <div>
                         <label class="text-[10px] text-slate-400 block mb-1">Total de Parcelas (Ex: 41)</label>
                         <input type="number" id="carneTotal" placeholder="41" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                     </div>
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Dia do Vencimento (Ex: 20)</label>
+                        <input type="number" id="carneVencimento" placeholder="20" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    </div>
                 </div>
                 <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Dia do Vencimento (Ex: 20)</label>
-                    <input type="number" id="carneVencimento" placeholder="20" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    <label class="text-[10px] text-slate-400 block mb-1">Mês da 1ª Parcela (Início do Carnê)</label>
+                    <input type="month" id="carneMesInicio" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalCarne()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="button" onclick="salvarCarne()" class="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold">Salvar</button>
+                    <button type="button" onclick="salvarCarneGerado()" class="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold">Gerar Carnê</button>
                 </div>
             </div>
         </div>
@@ -323,7 +323,7 @@
 
         async function carregarTudo() {
             document.getElementById('labelMesAno').innerText = formatarMesAnoLabel(dataAtualNavegacao);
-            await Promise.all([carregarContas(), carregarVR(), carregarCartoes(), carregarCarnes(), carregarDividas(), carregarTransacoes()]);
+            await Promise.all([carregarContas(), carregarVR(), carregarCartoes(), carregarCarnesDoMes(), carregarDividas(), carregarTransacoes()]);
         }
 
         async function carregarContas() {
@@ -430,36 +430,50 @@
             });
         }
 
-        // --- CARNÊS DIRETO E SEM COMPLICAÇÃO ---
-        async function salvarCarne() {
+        // --- GERAÇÃO AUTOMÁTICA DO CARNÊ COMPLETO A PARTIR DA 1ª PARCELA ---
+        async function salvarCarneGerado() {
             const credor = document.getElementById('carneCredor').value;
             const valor = parseFloat(document.getElementById('carneValor').value);
-            const atual = parseInt(document.getElementById('carneAtual').value);
             const total = parseInt(document.getElementById('carneTotal').value);
             const venc = parseInt(document.getElementById('carneVencimento').value) || 20;
+            const mesInicioStr = document.getElementById('carneMesInicio').value; // Ex: '2025-09' (para a 1ª parcela)
 
-            if(!credor || isNaN(valor) || isNaN(atual) || isNaN(total)) return alert('Preencha todos os campos!');
+            if(!credor || isNaN(valor) || isNaN(total) || !mesInicioStr) return alert('Preencha todos os campos e o mês da 1ª parcela!');
 
-            // Apaga duplicados anteriores e guarda o carnê ativo atual
+            let [anoInicio, mesInicio] = mesInicioStr.split('-').map(Number);
+
+            // Remove carnê anterior do mesmo credor para limpar duplicados
             await _supabase.from('meufuturo_carnes').delete().eq('credor', credor);
 
-            const { error } = await _supabase.from('meufuturo_carnes').insert([{
-                credor: credor,
-                valor_parcela: valor,
-                parcela_atual: atual,
-                total_parcelas: total,
-                dia_vencimento: venc,
-                status: 'pendente'
-            }]);
+            let parcelas = [];
+            for (let i = 1; i <= total; i++) {
+                let m = mesInicio + (i - 1);
+                let a = anoInicio;
+                while (m > 12) { m -= 12; a++; }
+                while (m < 1) { m += 12; a--; }
 
-            if(error) return alert('Erro ao salvar carnê: ' + error.message);
+                let dataIso = `${a}-${String(m).padStart(2, '0')}-${String(venc).padStart(2, '0')}`;
+
+                parcelas.push({
+                    credor: credor,
+                    valor_parcela: valor,
+                    parcela_atual: i,
+                    total_parcelas: total,
+                    dia_vencimento: dataIso,
+                    status: 'pendente'
+                });
+            }
+
+            const { error } = await _supabase.from('meufuturo_carnes').insert(parcelas);
+            if(error) return alert('Erro ao gerar carnê: ' + error.message);
 
             fecharModalCarne();
             carregarTudo();
-            alert('Carnê cadastrado com sucesso!');
+            alert('Carnê gerado com sucesso para todos os meses!');
         }
 
-        async function carregarCarnes() {
+        // --- EXIBIR APENAS A PARCELA DO MÊS SELECIONADO NA NAVEGAÇÃO ---
+        async function carregarCarnesDoMes() {
             const { data } = await _supabase.from('meufuturo_carnes').select('*');
             const lista = document.getElementById('listaCarnes');
             lista.innerHTML = '';
@@ -469,33 +483,51 @@
                 return;
             }
 
-            data.forEach(c => {
-                let jaPago = c.status === 'pago';
-                let corCard = jaPago ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-slate-950/60 border-slate-800 text-slate-300';
-                
-                let badgeStatus = jaPago 
-                    ? `<span class="bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-check mr-1"></i> Pago</span>` 
-                    : `<button onclick="abrirPagarCarne('${c.id}', '${c.credor}', ${c.parcela_atual}, ${c.total_parcelas}, ${c.valor_parcela})" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">Pagar Parcela</button>`;
+            let anoSel = dataAtualNavegacao.getFullYear();
+            let mesSel = dataAtualNavegacao.getMonth() + 1;
 
-                lista.innerHTML += `
-                    <div class="p-4 rounded-2xl border ${corCard} space-y-3 shadow">
-                        <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
-                            <h4 class="font-bold text-white text-sm"><i class="fa-solid fa-file-invoice text-amber-400 mr-2"></i>${c.credor}</h4>
-                            <button onclick="excluirCarne('${c.credor}')" class="text-rose-400 hover:text-rose-300 text-xs" title="Excluir"><i class="fa-solid fa-trash"></i> Excluir</button>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="text-sm font-extrabold text-white">Parcela ${c.parcela_atual} de ${c.total_parcelas}</p>
-                                <p class="text-xs text-slate-400 mt-0.5">Vencimento: <strong class="text-slate-200">Dia ${c.dia_vencimento || 20}</strong></p>
-                                <p class="text-base font-extrabold text-amber-400 mt-1">R$ ${Number(c.valor_parcela).toFixed(2)}</p>
+            let encontrouAlguma = false;
+
+            data.forEach(c => {
+                if(!c.dia_vencimento || c.dia_vencimento.length < 7) return;
+                let [anoP, mesP] = c.dia_vencimento.split('-').map(Number);
+
+                // Compara exatamente o Ano e o Mês da parcela com o mês selecionado no topo
+                if(anoP === anoSel && mesP === mesSel) {
+                    encontrouAlguma = true;
+                    let jaPago = c.status === 'pago';
+                    let corCard = jaPago ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-slate-950/60 border-slate-800 text-slate-300';
+                    
+                    let badgeStatus = jaPago 
+                        ? `<span class="bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-check mr-1"></i> Pago</span>` 
+                        : `<button onclick="abrirPagarCarne('${c.id}', '${c.credor}', ${c.parcela_atual}, ${c.total_parcelas}, ${c.valor_parcela})" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">Pagar Parcela</button>`;
+
+                    let diaExibicao = new Date(c.dia_vencimento + 'T00:00:00').toLocaleDateString('pt-BR');
+
+                    lista.innerHTML += `
+                        <div class="p-4 rounded-2xl border ${corCard} space-y-3 shadow">
+                            <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
+                                <h4 class="font-bold text-white text-sm"><i class="fa-solid fa-file-invoice text-amber-400 mr-2"></i>${c.credor}</h4>
+                                <button onclick="excluirGrupoCarne('${c.credor}')" class="text-rose-400 hover:text-rose-300 text-xs" title="Excluir carnê inteiro"><i class="fa-solid fa-trash"></i> Excluir</button>
                             </div>
-                            <div>
-                                ${badgeStatus}
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-sm font-extrabold text-white">Parcela ${c.parcela_atual} de ${c.total_parcelas}</p>
+                                    <p class="text-xs text-slate-400 mt-0.5">Vencimento: <strong class="text-slate-200">${diaExibicao}</strong></p>
+                                    <p class="text-base font-extrabold text-amber-400 mt-1">R$ ${Number(c.valor_parcela).toFixed(2)}</p>
+                                </div>
+                                <div>
+                                    ${badgeStatus}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                }
             });
+
+            if(!encontrouAlguma) {
+                lista.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">Nenhuma parcela de carnê para este mês.</p>`;
+            }
         }
 
         function abrirPagarCarne(id, credor, atual, total, valor) {
@@ -519,20 +551,12 @@
 
             const [tipoConta, contaId] = contaInfo.split(':');
 
-            // Busca o carnê e avança para a próxima parcela automaticamente (+1)
             const { data: carneData } = await _supabase.from('meufuturo_carnes').select('*').eq('id', carneId).single();
             
             if(carneData) {
-                let novaParcela = Number(carneData.parcela_atual) + 1;
-                if(novaParcela > carneData.total_parcelas) novaParcela = carneData.total_parcelas;
-
-                await _supabase.from('meufuturo_carnes').update({
-                    parcela_atual: novaParcela,
-                    status: 'pendente'
-                }).eq('id', carneId);
+                await _supabase.from('meufuturo_carnes').update({ status: 'pago' }).eq('id', carneId);
             }
 
-            // Regista a transação de despesa
             await _supabase.from('meufuturo_transacoes').insert([{
                 descricao: `Pgto Carnê: ${carneData.credor} (${carneData.parcela_atual}/${carneData.total_parcelas})`,
                 valor: valorReal,
@@ -548,11 +572,11 @@
 
             fecharModalPagarCarne();
             carregarTudo();
-            alert('Pagamento registado e carnê avançado para a parcela seguinte!');
+            alert('Pagamento registrado com sucesso!');
         }
 
-        async function excluirCarne(credor) {
-            if(!confirm(`Deseja excluir o carnê "${credor}"?`)) return;
+        async function excluirGrupoCarne(credor) {
+            if(!confirm(`Deseja excluir o carnê "${credor}" inteiro?`)) return;
             await _supabase.from('meufuturo_carnes').delete().eq('credor', credor);
             carregarTudo();
         }
@@ -612,7 +636,7 @@
             lista.innerHTML = '';
             
             if(!data || data.length === 0) {
-                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhuma transação registada.</p>';
+                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhuma transação registrada.</p>';
                 document.getElementById('totalReceitas').innerText = 'R$ 0,00';
                 document.getElementById('totalDespesas').innerText = 'R$ 0,00';
                 return;
@@ -662,7 +686,7 @@
             const { data } = await _supabase.from('meufuturo_transacoes').select('*').eq('conta_id', id).order('data', { ascending: false });
             lista.innerHTML = '';
             if(!data || data.length === 0) {
-                lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Nenhuma movimentação.</p>';
+                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhuma movimentação.</p>';
                 return;
             }
             data.forEach(t => {
