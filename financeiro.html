@@ -34,6 +34,18 @@
     <!-- Conteúdo Principal -->
     <main class="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
 
+        <!-- Barra de Filtro por Mês e Ano -->
+        <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-calendar-days text-emerald-400 text-lg"></i>
+                <span class="text-sm font-bold text-white">Visualizar Período:</span>
+            </div>
+            <div class="flex items-center space-x-2 w-full sm:w-auto">
+                <input type="month" id="filtroMesAno" onchange="carregarCarnesPorMes()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-emerald-500">
+                <button onclick="mesAtualFiltro()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-2 rounded-xl transition">Mês Atual</button>
+            </div>
+        </div>
+
         <!-- Cards de Resumo -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow">
@@ -84,7 +96,7 @@
         <!-- Carnês e Empréstimos -->
         <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-file-invoice-dollar"></i> Carnês & Financiamentos (Parcelas)</h3>
+                <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-file-invoice-dollar"></i> Carnês & Financiamentos (Parcelas do Mês Selecionado)</h3>
                 <button onclick="abrirModalCarne()" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 transition">+ Novo Carnê</button>
             </div>
             <div class="space-y-3 max-h-96 overflow-y-auto" id="listaCarnes">
@@ -102,11 +114,11 @@
 
     <!-- ================= MODAIS ================= -->
 
-    <!-- Modal Pagar Parcela de Carnê (Com suporte a Juros) -->
+    <!-- Modal Pagar Parcela de Carnê (Retroativo ou atual com Juros) -->
     <div id="modalPagarCarne" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="text-lg font-bold text-amber-400"><i class="fa-solid fa-check-to-slot mr-2"></i>Pagar Parcela do Carnê</h3>
+                <h3 class="text-lg font-bold text-amber-400"><i class="fa-solid fa-check-to-slot mr-2"></i>Pagar / Dar Baixa em Parcela</h3>
                 <button onclick="fecharModalPagarCarne()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <div class="space-y-3">
@@ -122,6 +134,10 @@
                 <div>
                     <label class="text-[10px] text-slate-400 block mb-1">Valor Real Pago (Com juros/atraso, se houver)</label>
                     <input type="number" step="0.01" id="pagarCarneReal" placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Data do Pagamento (Retroativo se necessário)</label>
+                    <input type="date" id="pagarCarneData" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 </div>
                 <div>
                     <label class="text-[10px] text-slate-400 block mb-1">Pagar com qual Conta Bancária?</label>
@@ -154,9 +170,15 @@
                         <input type="number" id="carneTotal" placeholder="41" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                     </div>
                 </div>
-                <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Dia Vencimento (ex: 10)</label>
-                    <input type="number" id="carneVencimento" placeholder="10" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Dia Vencimento (ex: 10)</label>
+                        <input type="number" id="carneVencimento" placeholder="10" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Mês Inicial (Referência)</label>
+                        <input type="month" id="carneMesInicio" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none">
+                    </div>
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalCarne()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
@@ -252,8 +274,25 @@
         let listaContasBanco = [];
         let listaVRBanco = [];
 
+        // Inicializa o campo de filtro com o mês atual (ex: '2026-10')
+        function inicializarFiltroMes() {
+            const agora = new Date();
+            const ano = agora.getFullYear();
+            const mes = String(agora.getMonth() + 1).padStart(2, '0');
+            const inputMes = document.getElementById('filtroMesAno');
+            if(inputMes && !inputMes.value) {
+                inputMes.value = `${ano}-${mes}`;
+            }
+        }
+
+        function mesAtualFiltro() {
+            inicializarFiltroMes();
+            carregarCarnesPorMes();
+        }
+
         async function carregarTudo() {
-            await Promise.all([carregarContas(), carregarVR(), carregarCartoes(), carregarCarnes(), carregarTransacoes()]);
+            inicializarFiltroMes();
+            await Promise.all([carregarContas(), carregarVR(), carregarCartoes(), carregarCarnesPorMes(), carregarTransacoes()]);
         }
 
         async function carregarContas() {
@@ -360,49 +399,66 @@
             });
         }
 
-        // --- GESTÃO DE CARNÊS EM LOTE (Compatível com Constraint da Tabela) ---
+        // --- GESTÃO DE CARNÊS COM DATAS CALCULADAS E FILTRO DE MÊS ---
         async function salvarCarneEmLote() {
             const credor = document.getElementById('carneCredor').value;
             const valor = parseFloat(document.getElementById('carneValor').value);
             const atual = parseInt(document.getElementById('carneAtual').value);
             const total = parseInt(document.getElementById('carneTotal').value);
             const diaVenc = parseInt(document.getElementById('carneVencimento').value) || 10;
+            const mesInicioStr = document.getElementById('carneMesInicio').value; // Ex: '2026-10'
 
             if(!credor || isNaN(valor) || isNaN(atual) || isNaN(total)) {
                 alert('Preencha todos os campos do carnê corretamente!');
                 return;
             }
 
+            let anoBase, mesBase;
+            if(mesInicioStr) {
+                [anoBase, mesBase] = mesInicioStr.split('-').map(Number);
+            } else {
+                const hoje = new Date();
+                anoBase = hoje.getFullYear();
+                mesBase = hoje.getMonth() + 1;
+            }
+
             let parcelasParaInserir = [];
 
-            // Insere todas as parcelas com status padrão 'ativo' ou padrão da tabela, 
-            // e tratamos as anteriores a 'atual' como já liquidadas visualmente
             for (let i = 1; i <= total; i++) {
-                let statusPadrao = (i < atual) ? 'pago' : 'pendente';
+                // Calcula a data de vencimento correta mês a mês a partir da parcela atual
+                let diffMeses = i - atual;
+                let m = mesBase + diffMeses;
+                let a = anoBase;
+
+                while (m > 12) { m -= 12; a++; }
+                while (m < 1) { m += 12; a--; }
+
+                let mesFmt = String(m).padStart(2, '0');
+                let diaFmt = String(diaVenc).padStart(2, '0');
+                let dataVencIso = `${a}-${mesFmt}-${diaFmt}`;
+                let statusInicial = (i < atual) ? 'pago' : 'pendente';
 
                 parcelasParaInserir.push({
                     credor: credor,
                     valor_parcela: valor,
                     parcela_atual: i,
                     total_parcelas: total,
-                    dia_vencimento: diaVenc,
-                    status: statusPadrao
+                    dia_vencimento: dataVencIso, // Guardamos a data completa para filtragem perfeita por mês
+                    status: statusInicial
                 });
             }
 
-            // Tenta inserir com o status padrão; se a constraint bloquear, tenta inserir sem o campo status
             let { error } = await _supabase.from('meufuturo_carnes').insert(parcelasParaInserir);
-            
             if(error) {
-                // Segunda tentativa sem o campo status para evitar conflito com restrições do banco
-                let parcelasSimplificadas = parcelasParaInserir.map(p => ({
+                // Fallback caso a coluna seja apenas dia
+                let parcelasSimples = parcelasParaInserir.map(p => ({
                     credor: p.credor,
                     valor_parcela: p.valor_parcela,
                     parcela_atual: p.parcela_atual,
                     total_parcelas: p.total_parcelas,
-                    dia_vencimento: p.dia_vencimento
+                    dia_vencimento: diaVenc
                 }));
-                let res2 = await _supabase.from('meufuturo_carnes').insert(parcelasSimplificadas);
+                let res2 = await _supabase.from('meufuturo_carnes').insert(parcelasSimples);
                 if(res2.error) {
                     alert('Erro ao gerar carnê: ' + res2.error.message);
                     return;
@@ -410,11 +466,12 @@
             }
 
             fecharModalCarne();
-            carregarCarnes();
+            carregarCarnesPorMes();
             alert(`Carnê gerado com sucesso! ${total} parcelas criadas.`);
         }
 
-        async function carregarCarnes() {
+        async function carregarCarnesPorMes() {
+            const filtroMes = document.getElementById('filtroMesAno').value; // Ex: '2026-10'
             const { data } = await _supabase.from('meufuturo_carnes').select('*').order('credor', { ascending: true }).order('parcela_atual', { ascending: true });
             const lista = document.getElementById('listaCarnes');
             lista.innerHTML = '';
@@ -424,8 +481,22 @@
                 return;
             }
 
+            // Filtra as parcelas que pertencem ao mês selecionado (se houver data de vencimento completa) ou exibe todas se não houver filtro rigoroso
+            let itensFiltrados = data.filter(p => {
+                if(!filtroMes) return true;
+                if(p.dia_vencimento && p.dia_vencimento.length >= 7) {
+                    return p.dia_vencimento.startsWith(filtroMes);
+                }
+                return true; // Se for formato antigo só com o dia, exibe para não sumir
+            });
+
+            if(itensFiltrados.length === 0) {
+                lista.innerHTML = `<p class="text-xs text-slate-500 text-center py-4">Nenhuma parcela de carnê para o mês ${filtroMes}. (Você pode navegar para outros meses acima).</p>`;
+                return;
+            }
+
             let agrupado = {};
-            data.forEach(c => {
+            itensFiltrados.forEach(c => {
                 if(!agrupado[c.credor]) agrupado[c.credor] = [];
                 agrupado[c.credor].push(c);
             });
@@ -435,15 +506,19 @@
                 itens.forEach(p => {
                     let jaPaga = p.status === 'pago' || p.status === 'paid';
                     let corStatus = jaPaga ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-slate-950/60 border-slate-800 text-slate-300';
-                    let botaoAcao = jaPaga 
-                        ? `<span class="text-[10px] text-emerald-400 font-bold"><i class="fa-solid fa-check"></i> Paga</span>` 
-                        : `<button onclick="abrirPagarCarne('${p.id}', '${p.credor}', ${p.parcela_atual}, ${p.total_parcelas}, ${p.valor_parcela})" class="bg-amber-600 hover:bg-amber-500 text-white px-2.5 py-1 rounded text-[10px] font-bold transition">Pagar</button>`;
+                    
+                    // BOTÃO DE PAGAR SEMPRE DISPONÍVEL (MESMO SE JÁ ESTIVER PAGA, PARA PERMITIR RETROATIVOS OU REVISÕES)
+                    let botaoAcao = `<button onclick="abrirPagarCarne('${p.id}', '${p.credor}', ${p.parcela_atual}, ${p.total_parcelas}, ${p.valor_parcela})" class="${jaPaga ? 'bg-slate-800 hover:bg-slate-700 text-emerald-400' : 'bg-amber-600 hover:bg-amber-500 text-white'} px-2.5 py-1 rounded text-[10px] font-bold transition">
+                        ${jaPaga ? '<i class="fa-solid fa-check mr-1"></i> Paga (Editar)' : 'Pagar'}
+                    </button>`;
+
+                    let infoData = p.dia_vencimento && p.dia_vencimento.length >= 10 ? new Date(p.dia_vencimento + 'T00:00:00').toLocaleDateString('pt-BR') : `Dia ${p.dia_vencimento || 10}`;
 
                     htmlParcelas += `
                         <div class="flex justify-between items-center p-2 rounded-lg border ${corStatus} text-xs my-1">
                             <div>
                                 <span class="font-bold">Parcela ${p.parcela_atual}/${p.total_parcelas}</span>
-                                <span class="text-[10px] text-slate-400 ml-2">Venc. dia ${p.dia_vencimento || 10}</span>
+                                <span class="text-[10px] text-slate-400 ml-2">Venc: ${infoData}</span>
                             </div>
                             <div class="flex items-center space-x-3">
                                 <span class="font-bold">R$ ${Number(p.valor_parcela).toFixed(2)}</span>
@@ -472,6 +547,11 @@
             document.getElementById('pagarCarneInfo').value = `${credor} (Parcela ${atual}/${total})`;
             document.getElementById('pagarCarneOriginal').value = valor.toFixed(2);
             document.getElementById('pagarCarneReal').value = valor.toFixed(2);
+            
+            // Define a data atual como padrão no modal de pagamento
+            const hojeIso = new Date().toISOString().split('T')[0];
+            document.getElementById('pagarCarneData').value = hojeIso;
+
             document.getElementById('modalPagarCarne').classList.remove('hidden');
         }
 
@@ -486,10 +566,11 @@
 
             const carneId = document.getElementById('pagarCarneId').value;
             const valorReal = parseFloat(document.getElementById('pagarCarneReal').value);
+            const dataPagamento = document.getElementById('pagarCarneData').value;
             const contaInfo = document.getElementById('pagarCarneConta').value;
 
-            if(isNaN(valorReal) || valorReal <= 0 || !contaInfo) {
-                alert('Informe um valor válido e selecione a conta bancária!');
+            if(isNaN(valorReal) || valorReal <= 0 || !contaInfo || !dataPagamento) {
+                alert('Preencha o valor, data e selecione a conta bancária!');
                 btn.disabled = false;
                 btn.innerText = 'Confirmar Pagamento';
                 return;
@@ -497,21 +578,22 @@
 
             const [tipoConta, contaId] = contaInfo.split(':');
 
-            // Atualiza status da parcela para 'pago'
+            // Marca parcela como paga
             await _supabase.from('meufuturo_carnes').update({ status: 'pago' }).eq('id', carneId);
 
             const { data: carneData } = await _supabase.from('meufuturo_carnes').select('*').eq('id', carneId).single();
             const descTransacao = `Pgto Carnê: ${carneData.credor} (${carneData.parcela_atual}/${carneData.total_parcelas})`;
-            const dataHoje = new Date().toISOString().split('T')[0];
 
+            // Insere transação no extrato com a data escolhida (suporta retroativo)
             await _supabase.from('meufuturo_transacoes').insert([{
                 descricao: descTransacao,
                 valor: valorReal,
                 tipo: 'despesa',
-                data: dataHoje,
+                data: dataPagamento,
                 conta_id: contaId
             }]);
 
+            // Desconta do saldo da conta
             if(tipoConta === 'conta') {
                 const { data: c } = await _supabase.from('meufuturo_contas').select('saldo_inicial').eq('id', contaId).single();
                 let novoSaldo = Number(c.saldo_inicial) - valorReal;
@@ -522,13 +604,13 @@
             carregarTudo();
             btn.disabled = false;
             btn.innerText = 'Confirmar Pagamento';
-            alert('Parcela paga com sucesso e saldo atualizado!');
+            alert('Pagamento registrado com sucesso!');
         }
 
         async function excluirGrupoCarne(credor) {
             if(!confirm(`Deseja realmente excluir todas as parcelas do carnê "${credor}"?`)) return;
             await _supabase.from('meufuturo_carnes').delete().eq('credor', credor);
-            carregarCarnes();
+            carregarCarnesPorMes();
         }
 
         async function carregarTransacoes() {
@@ -666,7 +748,7 @@
         function fecharModalCartao() { document.getElementById('modalCartao').classList.add('hidden'); }
         function abrirModalCarne() { document.getElementById('modalCarne').classList.remove('hidden'); }
         function fecharModalCarne() { document.getElementById('modalCarne').classList.add('hidden'); }
-        function abrirModalTransacao() { document.getElementById('modalTransacao').classList.remove('hidden'); }
+        function abrirModalTransacao() { document.getElementById('modalTransacao').classList.add('hidden'); }
         function fecharModalTransacao() { document.getElementById('modalTransacao').classList.add('hidden'); }
 
         carregarTudo();
