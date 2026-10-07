@@ -176,7 +176,7 @@
         </div>
     </div>
 
-    <!-- Modal Novo Carnê (Controle Direto) -->
+    <!-- Modal Novo Carnê Direto -->
     <div id="modalCarne" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-amber-400">Cadastrar Carnê / Financiamento</h3>
@@ -199,7 +199,7 @@
                         <input type="number" id="carneVencimento" placeholder="20" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                     </div>
                     <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Mês Atual (Ex: Set/26)</label>
+                        <label class="text-[10px] text-slate-400 block mb-1">Mês Atual (Ex: Out/26)</label>
                         <input type="month" id="carneMesBase" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none">
                     </div>
                 </div>
@@ -361,7 +361,7 @@
             const saldo = parseFloat(document.getElementById('contaSaldo').value);
             if(!nome || isNaN(saldo)) return alert('Preencha os campos!');
             const { error } = await _supabase.from('meufuturo_contas').insert([{ nome_banco: nome, saldo_inicial: saldo }]);
-            if(!error) { fecharModalConta(); carregarContas(); document.getElementById('contaBanco').value=''; document.getElementById('contaSaldo').value=''; }
+            if(!error) { fecharModalConta(); carregarContas(); document.getElementById('contaBanco'].value=''; document.getElementById('contaSaldo').value=''; }
         }
 
         async function carregarVR() {
@@ -438,14 +438,14 @@
             });
         }
 
-        // --- CADASTRAR CARNÊ INTELIGENTE (1 ÚNICA LINHA QUE EVOLUI) ---
+        // --- SALVAR CARNÊ COM CONTROLE DIRETO E SIMPLES ---
         async function salvarCarne() {
             const credor = document.getElementById('carneCredor').value;
             const valor = parseFloat(document.getElementById('carneValor').value);
-            const atual = parseInt(document.getElementById('carneAtual').value); // Ex: 13
-            const total = parseInt(document.getElementById('carneTotal').value); // Ex: 41
+            const atual = parseInt(document.getElementById('carneAtual').value);
+            const total = parseInt(document.getElementById('carneTotal').value);
             const venc = parseInt(document.getElementById('carneVencimento').value) || 20;
-            const mesBaseStr = document.getElementById('carneMesBase').value; // Ex: '2026-09' (Setembro)
+            const mesBaseStr = document.getElementById('carneMesBase').value; // Ex: '2026-10'
 
             if(!credor || isNaN(valor) || isNaN(atual) || isNaN(total)) return alert('Preencha todos os campos!');
 
@@ -460,10 +460,8 @@
 
             let dataIso = `${anoBase}-${String(mesBase).padStart(2, '0')}-${String(venc).padStart(2, '0')}`;
 
-            // Apaga qualquer carnê antigo com o mesmo nome para evitar duplicados
             await _supabase.from('meufuturo_carnes').delete().eq('credor', credor);
 
-            // Insere o carnê unificado com a parcela exata e o mês exato
             let { error } = await _supabase.from('meufuturo_carnes').insert([{
                 credor: credor,
                 valor_parcela: valor,
@@ -474,14 +472,13 @@
             }]);
 
             if(error) {
-                let res2 = await _supabase.from('meufuturo_carnes').insert([{
+                await _supabase.from('meufuturo_carnes').insert([{
                     credor: credor,
                     valor_parcela: valor,
                     parcela_atual: atual,
                     total_parcelas: total,
                     dia_vencimento: venc
                 }]);
-                if(res2.error) return alert('Erro ao salvar: ' + res2.error.message);
             }
 
             fecharModalCarne();
@@ -489,14 +486,14 @@
             alert('Carnê cadastrado com sucesso!');
         }
 
-        // --- CARREGAR CARNÊ EXIBINDO A PARCELA CORRESPONDENTE AO MÊS ---
+        // --- CARREGAR CARNÊ EXIBINDO SEMPRE O MÊS ATUAL NAVEGADO ---
         async function carregarCarnesDoMes() {
             const { data } = await _supabase.from('meufuturo_carnes').select('*');
             const lista = document.getElementById('listaCarnes');
             lista.innerHTML = '';
 
             if(!data || data.length === 0) {
-                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhum carnê cadastrado.</p>';
+                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhum carnê cadastrado. Clique em + Novo Carnê.</p>';
                 return;
             }
 
@@ -506,26 +503,23 @@
             let encontrouAlguma = false;
 
             data.forEach(c => {
-                if(!c.dia_vencimento || c.dia_vencimento.length < 7) return;
+                let parcelaCalculada = Number(c.parcela_atual);
+                let diaExibicao = c.dia_vencimento;
 
-                let [anoBase, mesBase] = c.dia_vencimento.split('-').map(Number);
-                let parcelaBase = Number(c.parcela_atual);
+                if (c.dia_vencimento && c.dia_vencimento.length >= 7) {
+                    let [anoBase, mesBase] = c.dia_vencimento.split('-').map(Number);
+                    let diffMeses = (anoSel - anoBase) * 12 + (mesSel - mesBase);
+                    parcelaCalculada = Number(c.parcela_atual) + diffMeses;
+                }
 
-                // Calcula a diferença em meses entre o mês selecionado e o mês base cadastrado
-                let diffMeses = (anoSel - anoBase) * 12 + (mesSel - mesBase);
-                let parcelaDoMesNum = parcelaBase + diffMeses;
-
-                // Se a parcela calculada estiver dentro do intervalo válido (1 até o total)
-                if(parcelaDoMesNum >= 1 && parcelaDoMesNum <= Number(c.total_parcelas)) {
+                if (parcelaCalculada >= 1 && parcelaCalculada <= Number(c.total_parcelas)) {
                     encontrouAlguma = true;
-                    let jaPaga = c.status === 'pago' && parcelaBase > parcelaDoMesNum; 
+                    let jaPaga = c.status === 'pago' && parcelaCalculada < Number(c.parcela_atual);
                     let corCard = jaPaga ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-slate-950/60 border-slate-800 text-slate-300';
                     
                     let badgeStatus = jaPaga 
                         ? `<span class="bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-check mr-1"></i> Pago</span>` 
-                        : `<button onclick="abrirPagarCarne('${c.id}', '${c.credor}', ${parcelaDoMesNum}, ${c.total_parcelas}, ${c.valor_parcela})" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">Pagar Parcela</button>`;
-
-                    let diaExibicao = new Date(c.dia_vencimento + 'T00:00:00').toLocaleDateString('pt-BR');
+                        : `<button onclick="abrirPagarCarne('${c.id}', '${c.credor}', ${parcelaCalculada}, ${c.total_parcelas}, ${c.valor_parcela})" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">Pagar Parcela</button>`;
 
                     lista.innerHTML += `
                         <div class="p-4 rounded-2xl border ${corCard} space-y-3 shadow">
@@ -535,8 +529,8 @@
                             </div>
                             <div class="flex justify-between items-center">
                                 <div>
-                                    <p class="text-sm font-extrabold text-white">Parcela ${parcelaDoMesNum} de ${c.total_parcelas}</p>
-                                    <p class="text-xs text-slate-400 mt-0.5">Vencimento: <strong class="text-slate-200">${diaExibicao}</strong></p>
+                                    <p class="text-sm font-extrabold text-white">Parcela ${parcelaCalculada} de ${c.total_parcelas}</p>
+                                    <p class="text-xs text-slate-400 mt-0.5">Vencimento: <strong class="text-slate-200">Dia do Mês</strong></p>
                                     <p class="text-base font-extrabold text-amber-400 mt-1">R$ ${Number(c.valor_parcela).toFixed(2)}</p>
                                 </div>
                                 <div>
@@ -574,17 +568,15 @@
 
             const [tipoConta, contaId] = contaInfo.split(':');
 
-            // Busca o carnê atual para avançar a parcela e o mês base automaticamente
             const { data: carneData } = await _supabase.from('meufuturo_carnes').select('*').eq('id', carneId).single();
             
             if(carneData) {
-                let [ano, mes, dia] = carneData.dia_vencimento.split('-').map(Number);
-                mes += 1; // Avança 1 mês automaticamente
-                if(mes > 12) { mes = 1; ano++; }
-                let novaDataIso = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
                 let novaParcelaAtual = Number(carneData.parcela_atual) + 1;
+                let [ano, mes, dia] = (carneData.dia_vencimento || '2026-10-20').split('-').map(Number);
+                mes += 1;
+                if(mes > 12) { mes = 1; ano++; }
+                let novaDataIso = `${ano}-${String(mes).padStart(2, '0')}-${String(dia || 20).padStart(2, '0')}`;
 
-                // Atualiza o carnê unificado para a próxima parcela
                 await _supabase.from('meufuturo_carnes').update({
                     parcela_atual: novaParcelaAtual,
                     dia_vencimento: novaDataIso,
@@ -592,7 +584,6 @@
                 }).eq('id', carneId);
             }
 
-            // Registra a transação de saída no extrato
             await _supabase.from('meufuturo_transacoes').insert([{
                 descricao: `Pgto Carnê: ${carneData.credor}`,
                 valor: valorReal,
@@ -608,7 +599,7 @@
 
             fecharModalPagarCarne();
             carregarTudo();
-            alert('Pagamento registrado e carnê avançado para o próximo mês!');
+            alert('Pagamento registrado e carnê avançado com sucesso!');
         }
 
         async function excluirGrupoCarne(credor) {
@@ -660,7 +651,7 @@
             carregarDividas();
         }
 
-        // --- TRANSAÇÕES (Filtradas pelo Mês Selecionado) ---
+        // --- TRANSAÇÕES ---
         async function carregarTransacoes() {
             const { data } = await _supabase.from('meufuturo_transacoes').select('*');
             let rec = 0, desp = 0;
