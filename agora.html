@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Futuro - Acontecendo Agora</title>
+    <title>Meu Futuro - Acontecendo Agora (Deslocamento & Local)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -21,7 +21,7 @@
         <div class="max-w-md mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <button onclick="window.location.href='home.html'" class="text-slate-400 hover:text-blue-400 transition" title="Voltar ao Menu"><i class="fa-solid fa-arrow-left text-lg"></i></button>
-                <h1 class="text-lg font-bold text-blue-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Agora</span></h1>
+                <h1 class="text-lg font-bold text-blue-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Rota & Tempo</span></h1>
             </div>
             <div class="flex items-center space-x-2">
                 <button onclick="window.location.href='tags.html'" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg transition" title="Cadernos"><i class="fa-solid fa-book mr-1"></i> Cadernos</button>
@@ -33,23 +33,29 @@
     <!-- Conteúdo Principal -->
     <main class="max-w-md mx-auto p-4 md:p-6 space-y-6">
 
-        <!-- Card do Cronômetro / Registro Atual -->
+        <!-- Card de Controle de Etapas -->
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-5 text-center">
             <div class="space-y-1">
-                <span class="text-xs font-bold text-blue-400 uppercase tracking-widest"><i class="fa-solid fa-stopwatch mr-1"></i> Cronômetro de Atividade</span>
-                <h2 id="statusAtividade" class="text-sm text-slate-400">Nenhuma atividade em andamento</h2>
+                <span id="badgeEtapa" class="text-xs font-bold text-blue-400 uppercase tracking-widest"><i class="fa-solid fa-route mr-1"></i> Etapa 1: Pronto para Iniciar</span>
+                <h2 id="statusAtividade" class="text-sm text-slate-400">Insira os dados e clique em Iniciar Deslocamento</h2>
             </div>
 
-            <!-- Display do Relógio / Cronômetro -->
+            <!-- Display do Relógio / Cronômetro Principal -->
             <div id="displayTempo" class="text-5xl font-extrabold text-white font-mono tracking-wider py-4">
                 00:00:00
+            </div>
+
+            <!-- Informações de Endereços em Tempo Real -->
+            <div id="painelEnderecos" class="space-y-2 text-left bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-[11px] text-slate-300">
+                <div><strong class="text-blue-400">Origem:</strong> <span id="txtOrigem">Aguardando início...</span></div>
+                <div><strong class="text-amber-400">Destino:</strong> <span id="txtDestino">Aguardando chegada...</span></div>
             </div>
 
             <!-- Formulário de Configuração -->
             <div id="painelConfig" class="space-y-3 text-left">
                 <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">O que você está a fazer?</label>
-                    <input type="text" id="inputTitulo" placeholder="Ex: Atendimento ao cliente, Leitura..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-blue-500 transition">
+                    <label class="text-[10px] text-slate-400 block mb-1">Título da Atividade / Serviço</label>
+                    <input type="text" id="inputTitulo" placeholder="Ex: Corrida de Entrega, Visita Cliente..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-blue-500 transition">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
@@ -59,26 +65,40 @@
                         </select>
                     </div>
                     <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Local (Opcional)</label>
-                        <input type="text" id="inputLocal" placeholder="Ex: Casa, Escritório..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none">
+                        <label class="text-[10px] text-slate-400 block mb-1">Local Genérico</label>
+                        <input type="text" id="inputLocal" placeholder="Ex: São Paulo, Centro..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none">
                     </div>
                 </div>
                 <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Detalhes / Anotações (Ativo durante o cronômetro)</label>
-                    <textarea id="inputDesc" rows="2" placeholder="Notas sobre o que está a ser feito..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-blue-500 transition"></textarea>
+                    <label class="text-[10px] text-slate-400 block mb-1">Observações (Pode escrever durante o processo)</label>
+                    <textarea id="inputDesc" rows="2" placeholder="Notas adicionais..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-blue-500 transition"></textarea>
                 </div>
             </div>
 
-            <!-- Botões de Ação -->
+            <!-- Botão Dinâmico de Ação por Etapas -->
             <div class="pt-2">
-                <button id="btnAcao" onclick="alternarCronometro()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-3.5 text-sm font-bold transition shadow-lg shadow-emerald-900/30 flex items-center justify-center space-x-2">
+                <button id="btnAcao" onclick="executarEtapa()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-3.5 text-sm font-bold transition shadow-lg shadow-emerald-900/30 flex items-center justify-center space-x-2">
                     <i class="fa-solid fa-play text-base"></i>
-                    <span>Iniciar Agora</span>
+                    <span>1. Iniciar Deslocamento</span>
                 </button>
             </div>
         </div>
 
     </main>
+
+    <!-- Modal Pop-up de Resumo Final -->
+    <div id="modalResumo" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full space-y-4 shadow-2xl text-center">
+            <div class="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto text-xl">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white">Atividade Finalizada!</h3>
+            <div id="conteudoResumo" class="space-y-2 text-left bg-slate-950/60 p-4 rounded-xl border border-slate-800 text-xs text-slate-300">
+                <!-- Preenchido via JS -->
+            </div>
+            <button onclick="fecharModalResumo()" class="w-full bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-3 text-xs font-bold transition">OK, Novo Registo</button>
+        </div>
+    </div>
 
     <script src="supabase.js"></script>
 
@@ -88,11 +108,19 @@
             return agora.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
         }
 
+        let etapaAtual = 1; // 1: Pronto, 2: Em Deslocamento, 3: No Local/Permanência
         let timerInterval = null;
         let tempoInicioMs = 0;
-        let horaInicioStr = '';
-        let dataInicioStr = '';
-        let emExecucao = false;
+        
+        let horaInicioDeslocamento = '';
+        let horaChegadaLocal = '';
+        let horaFimTotal = '';
+        
+        let latInicio = null, lonInicio = null;
+        let latChegada = null, lonChegada = null;
+        
+        let segundosDeslocamento = 0;
+        let segundosPermanencia = 0;
 
         async function carregarTagsNoSelect() {
             try {
@@ -100,17 +128,12 @@
                 const select = document.getElementById('inputTag');
                 if(!select) return;
                 select.innerHTML = '';
-
                 if(!error && data && data.length > 0) {
-                    data.forEach(t => {
-                        select.innerHTML += `<option value="${t.nome}">${t.nome}</option>`;
-                    });
+                    data.forEach(t => { select.innerHTML += `<option value="${t.nome}">${t.nome}</option>`; });
                 } else {
                     select.innerHTML = '<option value="Geral">Geral</option>';
                 }
-            } catch(e) {
-                console.error("Erro ao carregar tags:", e);
-            }
+            } catch(e) { console.error(e); }
         }
 
         function formatarTempo(segundos) {
@@ -120,47 +143,80 @@
             return `${h}:${m}:${s}`;
         }
 
-        function calcularDuracaoTexto(totalSegundos) {
-            const horas = Math.floor(totalSegundos / 3600);
-            const minutos = Math.floor((totalSegundos % 3600) / 60);
-            const segundos = totalSegundos % 60;
+        // Função para obter o endereço legível via Coordenadas (GPS do telemóvel)
+        async function obterEnderecoAtual() {
+            return new Promise((resolve) => {
+                if (!navigator.geolocation) {
+                    resolve("Geolocalização não suportada");
+                    return;
+                }
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    try {
+                        const resposta = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`);
+                        const dados = await resposta.json();
+                        const rua = dados.address.road || dados.address.suburb || 'Localização atual';
+                        const cidade = dados.address.city || dados.address.town || dados.address.municipality || '';
+                        resolve({ endereco: `${rua}, ${cidade}`, lat, lon });
+                    } catch (e) {
+                        resolve({ endereco: `Lat: ${lat.toFixed(4)}, Lon: ${lon.toFixed(4)}`, lat, lon });
+                    }
+                }, () => {
+                    resolve({ endereco: "Permissão de GPS negada ou indisponível", lat: null, lon: null });
+                }, { timeout: 10000 });
+            });
+        }
 
-            let texto = 'Duração: ';
-            if (horas > 0) texto += `${horas}h `;
-            if (minutos > 0 || horas > 0) texto += `${minutos}m `;
-            texto += `${segundos}s`;
-            return texto;
+        // Cálculo aproximado de distância em KM entre dois pontos geográficos (Fórmula de Haversine)
+        function calcularDistanciaKm(lat1, lon1, lat2, lon2) {
+            if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
+            const R = 6371; // Raio da terra em km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
         }
 
         function atualizarRelogio() {
-            if (!emExecucao) return;
             const agoraMs = Date.now();
             const segundosDecorridos = Math.floor((agoraMs - tempoInicioMs) / 1000);
             document.getElementById('displayTempo').innerText = formatarTempo(segundosDecorridos);
         }
 
-        async function alternarCronometro() {
+        // Máquina de Estados das 3 Etapas
+        async function executarEtapa() {
             const btn = document.getElementById('btnAcao');
+            const badge = document.getElementById('badgeEtapa');
             const status = document.getElementById('statusAtividade');
             const tituloInput = document.getElementById('inputTitulo');
 
-            if (!emExecucao) {
+            if (etapaAtual === 1) {
+                // ETAPA 1: INICIAR DESLOCAMENTO
                 const titulo = tituloInput.value.trim();
                 if (!titulo) {
-                    alert('Por favor, informe o que você está a fazer!');
+                    alert('Por favor, informe o título da atividade!');
                     return;
                 }
 
+                btn.disabled = true;
+                btn.innerText = 'Acapturando GPS de origem...';
+
+                const dadosGps = await obterEnderecoAtual();
+                latInicio = dadosGps.lat;
+                lonInicio = dadosGps.lon;
+                document.getElementById('txtOrigem').innerText = dadosGps.endereco;
+
                 const agora = new Date();
-                dataInicioStr = obterDataLocalIso();
-                horaInicioStr = agora.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', hour12: false });
+                horaInicioDeslocamento = agora.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', hour12: false });
                 tempoInicioMs = agora.getTime();
 
-                emExecucao = true;
-                
-                status.innerText = `Em andamento (Início às ${horaInicioStr})`;
-                btn.innerHTML = '<i class="fa-solid fa-stop text-base"></i><span>Parar e Salvar no Caderno</span>';
-                btn.className = 'w-full bg-rose-600 hover:bg-rose-500 text-white rounded-xl py-3.5 text-sm font-bold transition shadow-lg shadow-rose-900/30 flex items-center justify-center space-x-2';
+                etapaAtual = 2;
+                badge.innerHTML = '<i class="fa-solid fa-car text-amber-400 mr-1"></i> Etapa 2: Em Deslocamento';
+                status.innerText = 'Cronômetro de deslocamento rodando...';
                 
                 document.getElementById('inputTitulo').disabled = true;
                 document.getElementById('inputTag').disabled = true;
@@ -170,70 +226,98 @@
                 document.getElementById('inputLocal').style.opacity = '0.5';
 
                 timerInterval = setInterval(atualizarRelogio, 1000);
-                document.addEventListener('visibilitychange', () => {
-                    if (!document.hidden && emExecucao) {
-                        atualizarRelogio();
-                    }
-                });
+                
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-map-pin text-base"></i><span>2. Cheguei ao Destino</span>';
+                btn.className = 'w-full bg-amber-600 hover:bg-amber-500 text-white rounded-xl py-3.5 text-sm font-bold transition shadow-lg shadow-amber-900/30 flex items-center justify-center space-x-2';
 
-            } else {
+            } else if (etapaAtual === 2) {
+                // ETAPA 2: CHEGADA AO DESTINO (INICIA PERMANÊNCIA)
+                btn.disabled = true;
+                btn.innerText = 'Capturando GPS de chegada...';
+
+                const agoraMs = Date.now();
+                segundosDeslocamento = Math.floor((agoraMs - tempoInicioMs) / 1000);
+
+                const dadosGps = await obterEnderecoAtual();
+                latChegada = dadosGps.lat;
+                lonChegada = dadosGps.lon;
+                document.getElementById('txtDestino').innerText = dadosGps.endereco;
+
+                const agora = new Date();
+                horaChegadaLocal = agora.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', hour12: false });
+                
+                // Reinicia o cronômetro para contar o tempo de permanência no local
+                tempoInicioMs = agora.getTime();
+                segundosPermanencia = 0;
+
+                etapaAtual = 3;
+                badge.innerHTML = '<i class="fa-solid fa-clock text-indigo-400 mr-1"></i> Etapa 3: Permanência no Local';
+                status.innerText = 'Tempo de atendimento/permanência a contar...';
+
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-flag-checkered text-base"></i><span>3. Finalizar Atividade</span>';
+                btn.className = 'w-full bg-rose-600 hover:bg-rose-500 text-white rounded-xl py-3.5 text-sm font-bold transition shadow-lg shadow-rose-900/30 flex items-center justify-center space-x-2';
+
+            } else if (etapaAtual === 3) {
+                // ETAPA 3: FINALIZAR E SALVAR
                 clearInterval(timerInterval);
                 btn.disabled = true;
-                btn.innerText = 'Salvando no Histórico...';
+                btn.innerText = 'A salvar no histórico...';
 
-                const agoraFim = new Date();
-                let horaFimStr = agoraFim.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', hour12: false });
+                const agoraMs = Date.now();
+                segundosPermanencia = Math.floor((agoraMs - tempoInicioMs) / 1000);
 
-                const segundosTotais = Math.floor((agoraFim.getTime() - tempoInicioMs) / 1000);
+                const agora = new Date();
+                horaFimTotal = agora.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', hour12: false });
+
+                // Calcula Quilometragem percorrida
+                const distanciaKm = calcularDistanciaKm(latInicio, lonInicio, latChegada, lonChegada);
+                const kmFormatado = distanciaKm > 0 ? distanciaKm.toFixed(2) : "Calculado aprox.";
 
                 const titulo = tituloInput.value.trim();
                 const tag = document.getElementById('inputTag').value;
                 const local = document.getElementById('inputLocal').value.trim();
                 const notaUsuario = document.getElementById('inputDesc').value.trim();
 
-                const duracaoFormatada = calcularDuracaoTexto(segundosTotais);
-                let descricaoFinal = duracaoFormatada;
-                if (notaUsuario) {
-                    descricaoFinal = `${notaUsuario} | ${duracaoFormatada}`;
-                }
+                const textoDeslocamento = formatarTempo(segundosDeslocamento);
+                const textoPermanencia = formatarTempo(segundosPermanencia);
+
+                const descricaoFinal = `${notaUsuario ? notaUsuario + ' | ' : ''}Deslocamento: ${textoDeslocamento} | Permanência: ${textoPermanencia} | Distância: ${kmFormatado} km`;
+
+                const dataHoje = obterDataLocalIso();
 
                 const { error } = await _supabase.from('meufuturo_agenda_v3').insert([{
                     titulo,
                     tag,
                     local: local || null,
-                    hora_inicio: horaInicioStr,
-                    hora_fim: horaFimStr,
-                    data: dataInicioStr,
+                    hora_inicio: horaInicioDeslocamento,
+                    hora_fim: horaFimTotal,
+                    data: dataHoje,
                     descricao: descricaoFinal
                 }]);
 
                 if(error) {
-                    alert('Erro ao salvar atividade: ' + error.message);
+                    alert('Erro ao salvar: ' + error.message);
                     btn.disabled = false;
-                    btn.innerText = 'Parar e Salvar no Caderno';
                     return;
                 }
 
-                alert(`Atividade salva com sucesso!\n${duracaoFormatada}`);
-                
-                emExecucao = false;
-                document.getElementById('displayTempo').innerText = '00:00:00';
-                status.innerText = 'Nenhuma atividade em andamento';
-                tituloInput.value = '';
-                document.getElementById('inputLocal').value = '';
-                document.getElementById('inputDesc').value = '';
-                
-                document.getElementById('inputTitulo').disabled = false;
-                document.getElementById('inputTag').disabled = false;
-                document.getElementById('inputLocal').disabled = false;
-                document.getElementById('inputTitulo').style.opacity = '1';
-                document.getElementById('inputTag').style.opacity = '1';
-                document.getElementById('inputLocal').style.opacity = '1';
-
-                btn.innerHTML = '<i class="fa-solid fa-play text-base"></i><span>Iniciar Agora</span>';
-                btn.className = 'w-full bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-3.5 text-sm font-bold transition shadow-lg shadow-emerald-900/30 flex items-center justify-center space-x-2';
-                btn.disabled = false;
+                // Monta o Pop-up de Resumo Final
+                const containerResumo = document.getElementById('conteudoResumo');
+                containerResumo.innerHTML = `
+                    <div><strong>Atividade:</strong> ${titulo}</div>
+                    <div><strong>Deslocamento:</strong> ${textoDeslocamento}</div>
+                    <div><strong>Permanência no Local:</strong> ${textoPermanencia}</div>
+                    <div><strong>Distância Percorrida:</strong> ${kmFormatado} km</div>
+                `;
+                document.getElementById('modalResumo').classList.remove('hidden');
             }
+        }
+
+        function fecharModalResumo() {
+            document.getElementById('modalResumo').classList.add('hidden');
+            window.location.reload(); // Reinicia a página limpa para um novo ciclo
         }
 
         carregarTagsNoSelect();
