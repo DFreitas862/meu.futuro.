@@ -142,7 +142,7 @@
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-amber-400">Cadastrar Carnê / Financiamento</h3>
             <div class="space-y-3">
-                <input type="text" id="carneCredor" placeholder="Credor / Descrição (Ex: Financiamento Carro)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <input type="text" id="carneCredor" placeholder="Credor / Descrição (Ex: Banco Pan / Carro)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <input type="number" step="0.01" id="carneValor" placeholder="Valor da Parcela (R$)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="grid grid-cols-2 gap-2">
                     <div>
@@ -154,15 +154,9 @@
                         <input type="number" id="carneTotal" placeholder="41" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Dia Vencimento (ex: 10)</label>
-                        <input type="number" id="carneVencimento" placeholder="10" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                    </div>
-                    <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Mês/Ano Início da Atual</label>
-                        <input type="month" id="carneMesAno" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none">
-                    </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Dia Vencimento (ex: 10)</label>
+                    <input type="number" id="carneVencimento" placeholder="10" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalCarne()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
@@ -172,7 +166,7 @@
         </div>
     </div>
 
-    <!-- Outros Modais básicos (Conta, VR, Cartão, Transação, Extrato) -->
+    <!-- Outros Modais básicos -->
     <div id="modalConta" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-white">Cadastrar Banco</h3>
@@ -239,7 +233,7 @@
         </div>
     </div>
 
-    <!-- Modal Extrato Específico por Conta -->
+    <!-- Modal Extrato -->
     <div id="modalExtrato" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-xl w-full space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -366,45 +360,22 @@
             });
         }
 
-        // --- GESTÃO DE CARNÊS EM LOTE ---
+        // --- GESTÃO DE CARNÊS EM LOTE (Compatível com a tabela existente) ---
         async function salvarCarneEmLote() {
             const credor = document.getElementById('carneCredor').value;
             const valor = parseFloat(document.getElementById('carneValor').value);
             const atual = parseInt(document.getElementById('carneAtual').value);
             const total = parseInt(document.getElementById('carneTotal').value);
             const diaVenc = parseInt(document.getElementById('carneVencimento').value) || 10;
-            const mesAnoStr = document.getElementById('carneMesAno').value; // Ex: '2026-10'
 
             if(!credor || isNaN(valor) || isNaN(atual) || isNaN(total)) {
                 alert('Preencha todos os campos do carnê corretamente!');
                 return;
             }
 
-            let anoBase, mesBase;
-            if(mesAnoStr) {
-                [anoBase, mesBase] = mesAnoStr.split('-').map(Number);
-            } else {
-                const hoje = new Date();
-                anoBase = hoje.getFullYear();
-                mesBase = hoje.getMonth() + 1;
-            }
-
             let parcelasParaInserir = [];
 
-            // Gera o lote completo de 1 até o total
             for (let i = 1; i <= total; i++) {
-                // Calcula o mês e ano para cada parcela com base na distância da parcela atual
-                let diffMeses = i - atual;
-                let m = mesBase + diffMeses;
-                let a = anoBase;
-
-                while (m > 12) { m -= 12; a++; }
-                while (m < 1) { m += 12; a--; }
-
-                let mesFmt = String(m).padStart(2, '0');
-                let diaFmt = String(diaVenc).padStart(2, '0');
-                let dataVencimentoIso = `${a}-${mesFmt}-${diaFmt}`;
-
                 let statusInicial = (i < atual) ? 'pago' : 'pendente';
 
                 parcelasParaInserir.push({
@@ -412,7 +383,7 @@
                     valor_parcela: valor,
                     parcela_atual: i,
                     total_parcelas: total,
-                    data_vencimento: dataVencimentoIso,
+                    dia_vencimento: diaVenc,
                     status: statusInicial
                 });
             }
@@ -438,7 +409,6 @@
                 return;
             }
 
-            // Agrupa por credor para exibir bonitinho
             let agrupado = {};
             data.forEach(c => {
                 if(!agrupado[c.credor]) agrupado[c.credor] = [];
@@ -453,13 +423,11 @@
                         ? `<span class="text-[10px] text-emerald-400 font-bold"><i class="fa-solid fa-check"></i> Paga</span>` 
                         : `<button onclick="abrirPagarCarne('${p.id}', '${p.credor}', ${p.parcela_atual}, ${p.total_parcelas}, ${p.valor_parcela})" class="bg-amber-600 hover:bg-amber-500 text-white px-2.5 py-1 rounded text-[10px] font-bold transition">Pagar</button>`;
 
-                    let dataVencFmt = p.data_vencimento ? new Date(p.data_vencimento + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-
                     htmlParcelas += `
                         <div class="flex justify-between items-center p-2 rounded-lg border ${corStatus} text-xs my-1">
                             <div>
                                 <span class="font-bold">Parcela ${p.parcela_atual}/${p.total_parcelas}</span>
-                                <span class="text-[10px] text-slate-400 ml-2">Venc: ${dataVencFmt}</span>
+                                <span class="text-[10px] text-slate-400 ml-2">Venc. dia ${p.dia_vencimento || 10}</span>
                             </div>
                             <div class="flex items-center space-x-3">
                                 <span class="font-bold">R$ ${Number(p.valor_parcela).toFixed(2)}</span>
@@ -495,7 +463,6 @@
             document.getElementById('modalPagarCarne').classList.add('hidden');
         }
 
-        // Confirma o pagamento da parcela, debitando do banco e registrando juros se houver
         async function confirmarPagamentoCarne() {
             const btn = document.getElementById('btnConfirmarPagamentoCarne');
             btn.disabled = true;
@@ -514,7 +481,6 @@
 
             const [tipoConta, contaId] = contaInfo.split(':');
 
-            // 1. Atualiza status da parcela para pago no carnê
             const { error: errCarne } = await _supabase.from('meufuturo_carnes').update({ status: 'pago' }).eq('id', carneId);
             if(errCarne) {
                 alert('Erro ao dar baixa: ' + errCarne.message);
@@ -523,12 +489,10 @@
                 return;
             }
 
-            // 2. Busca dados do carnê para a descrição da transação
             const { data: carneData } = await _supabase.from('meufuturo_carnes').select('*').eq('id', carneId).single();
             const descTransacao = `Pgto Carnê: ${carneData.credor} (${carneData.parcela_atual}/${carneData.total_parcelas})`;
             const dataHoje = new Date().toISOString().split('T')[0];
 
-            // 3. Registra a transação de despesa no extrato
             await _supabase.from('meufuturo_transacoes').insert([{
                 descricao: descTransacao,
                 valor: valorReal,
@@ -537,7 +501,6 @@
                 conta_id: contaId
             }]);
 
-            // 4. Desconta o valor real pago do saldo da conta bancária escolhida
             if(tipoConta === 'conta') {
                 const { data: c } = await _supabase.from('meufuturo_contas').select('saldo_inicial').eq('id', contaId).single();
                 let novoSaldo = Number(c.saldo_inicial) - valorReal;
