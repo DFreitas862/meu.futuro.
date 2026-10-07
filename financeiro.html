@@ -98,7 +98,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-file-invoice-dollar"></i> Carnê do Mês (Apenas a Parcela Ativa)</h3>
+                    <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-file-invoice-dollar"></i> Carnê do Mês (Parcela Ativa)</h3>
                     <button onclick="abrirModalCarne()" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 transition">+ Novo Carnê</button>
                 </div>
                 <div class="space-y-3 max-h-80 overflow-y-auto" id="listaCarnes">
@@ -176,7 +176,7 @@
         </div>
     </div>
 
-    <!-- Modal Novo Carnê -->
+    <!-- Modal Novo Carnê (Com Mês Base Exato) -->
     <div id="modalCarne" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-amber-400">Cadastrar Carnê / Financiamento</h3>
@@ -195,11 +195,11 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Dia do Vencimento (Ex: 10)</label>
-                        <input type="number" id="carneVencimento" placeholder="10" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                        <label class="text-[10px] text-slate-400 block mb-1">Dia do Vencimento (Ex: 20)</label>
+                        <input type="number" id="carneVencimento" placeholder="20" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                     </div>
                     <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Mês da Parcela Atual</label>
+                        <label class="text-[10px] text-slate-400 block mb-1">Mês da Parcela Atual (Ex: Set/26)</label>
                         <input type="month" id="carneMesBase" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none">
                     </div>
                 </div>
@@ -438,14 +438,14 @@
             });
         }
 
-        // --- CADASTRO DE CARNÊ COM DATA DE REFERÊNCIA CORRETA ---
+        // --- CADASTRO DE CARNÊ COM CÁLCULO PRECISO BASEADO NO MÊS INFORMADO ---
         async function salvarCarne() {
             const credor = document.getElementById('carneCredor').value;
             const valor = parseFloat(document.getElementById('carneValor').value);
-            const atual = parseInt(document.getElementById('carneAtual').value);
-            const total = parseInt(document.getElementById('carneTotal').value);
-            const venc = parseInt(document.getElementById('carneVencimento').value) || 10;
-            const mesBaseStr = document.getElementById('carneMesBase').value; // Ex: '2026-10'
+            const atual = parseInt(document.getElementById('carneAtual').value); // Ex: 13
+            const total = parseInt(document.getElementById('carneTotal').value); // Ex: 41
+            const venc = parseInt(document.getElementById('carneVencimento').value) || 20;
+            const mesBaseStr = document.getElementById('carneMesBase').value; // Ex: '2026-09' (Setembro)
 
             if(!credor || isNaN(valor) || isNaN(atual) || isNaN(total)) return alert('Preencha todos os campos!');
 
@@ -460,9 +460,11 @@
 
             let parcelas = [];
             for (let i = 1; i <= total; i++) {
+                // Distância em meses entre a parcela atual (ex: 13) e a parcela i
                 let diff = i - atual;
                 let m = mesBase + diff;
                 let a = anoBase;
+
                 while (m > 12) { m -= 12; a++; }
                 while (m < 1) { m += 12; a--; }
 
@@ -473,7 +475,7 @@
                     valor_parcela: valor,
                     parcela_atual: i,
                     total_parcelas: total,
-                    dia_vencimento: dataIso, // Guardamos a data completa do mês daquela parcela
+                    dia_vencimento: dataIso,
                     status: (i < atual) ? 'pago' : 'pendente'
                 });
             }
@@ -487,10 +489,10 @@
 
             fecharModalCarne();
             carregarTudo();
-            alert('Carnê cadastrado com sucesso!');
+            alert('Carnê cadastrado e parcelas mapeadas com sucesso!');
         }
 
-        // --- CARREGAR APENAS A PARCELA CORRESPONDENTE AO MÊS NAVEGADO ---
+        // --- CARREGAR EXATAMENTE A PARCELA DO MÊS NAVEGADO ---
         async function carregarCarnesDoMes() {
             const { data } = await _supabase.from('meufuturo_carnes').select('*');
             const lista = document.getElementById('listaCarnes');
@@ -502,7 +504,7 @@
             }
 
             let anoSel = dataAtualNavegacao.getFullYear();
-            let mesSel = dataAtualNavegacao.getMonth() + 1; // 1 a 12
+            let mesSel = dataAtualNavegacao.getMonth() + 1;
 
             let agrupado = {};
             data.forEach(c => {
@@ -513,7 +515,7 @@
             let encontrouAlguma = false;
 
             for(const [credor, itens] of Object.entries(agrupado)) {
-                // Filtra a parcela exata deste mês navegado
+                // Procura a parcela cujo dia_vencimento corresponda exatamente ao ano e mês selecionados na navegação
                 let parcelaDoMes = itens.find(p => {
                     if(p.dia_vencimento && p.dia_vencimento.length >= 7) {
                         let [anoP, mesP] = p.dia_vencimento.split('-').map(Number);
@@ -521,12 +523,6 @@
                     }
                     return false;
                 });
-
-                // Se o banco antigo salvou apenas o número do dia, tentamos deduzir pela ordem ou mostramos na competência
-                if(!parcelaDoMes) {
-                    // Fallback inteligente caso não tenha data completa
-                    parcelaDoMes = itens.find(p => p.parcela_atual === mesSel); 
-                }
 
                 if(parcelaDoMes) {
                     encontrouAlguma = true;
@@ -538,7 +534,7 @@
 
                     let diaExibicao = parcelaDoMes.dia_vencimento && parcelaDoMes.dia_vencimento.length >= 10 
                         ? new Date(parcelaDoMes.dia_vencimento + 'T00:00:00').toLocaleDateString('pt-BR') 
-                        : `Dia ${parcelaDoMes.dia_vencimento || 10}`;
+                        : `Dia ${parcelaDoMes.dia_vencimento || 20}`;
 
                     lista.innerHTML += `
                         <div class="p-4 rounded-2xl border ${corCard} space-y-3 shadow">
@@ -562,7 +558,7 @@
             }
 
             if(!encontrouAlguma) {
-                lista.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">Nenhuma parcela de carnê programada para este mês. (Navegue pelos meses acima ou cadastre um novo).</p>`;
+                lista.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">Nenhuma parcela de carnê programada para este mês. (Use os botões acima para navegar).</p>`;
             }
         }
 
@@ -608,7 +604,7 @@
         }
 
         async function excluirGrupoCarne(credor) {
-            if(!confirm(`Deseja excluir o carnê "${credor}" inteiro?`)) return;
+            if(!confirm(`Deseja excluir o carnê "${credor}" inteiro para recadastrar certinho?`)) return;
             await _supabase.from('meufuturo_carnes').delete().eq('credor', credor);
             carregarTudo();
         }
