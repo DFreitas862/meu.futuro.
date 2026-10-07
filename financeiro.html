@@ -34,15 +34,16 @@
     <!-- Conteúdo Principal -->
     <main class="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
 
-        <!-- Barra de Filtro por Mês e Ano -->
+        <!-- Barra de Navegação de Meses (Estilo App de Banco) -->
         <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow flex flex-col sm:flex-row justify-between items-center gap-3">
             <div class="flex items-center space-x-2">
-                <i class="fa-solid fa-calendar-days text-emerald-400 text-lg"></i>
-                <span class="text-sm font-bold text-white">Visualizar Período:</span>
+                <i class="fa-solid fa-calendar-days text-amber-400 text-lg"></i>
+                <span class="text-sm font-bold text-white">Mês de Referência:</span>
             </div>
-            <div class="flex items-center space-x-2 w-full sm:w-auto">
-                <input type="month" id="filtroMesAno" onchange="carregarCarnesPorMes()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-emerald-500">
-                <button onclick="mesAtualFiltro()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-2 rounded-xl transition">Mês Atual</button>
+            <div class="flex items-center space-x-2">
+                <button onclick="mudarMes(-1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition"><i class="fa-solid fa-chevron-left mr-1"></i> Anterior</button>
+                <span id="labelMesAno" class="text-sm font-extrabold text-amber-400 px-3 py-1 bg-slate-950 rounded-xl border border-slate-800 min-w-[140px] text-center">Carregando...</span>
+                <button onclick="mudarMes(1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">Próximo <i class="fa-solid fa-chevron-right ml-1"></i></button>
             </div>
         </div>
 
@@ -93,16 +94,38 @@
             </section>
         </div>
 
-        <!-- Carnês e Empréstimos -->
-        <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-file-invoice-dollar"></i> Carnês & Financiamentos (Parcelas do Mês)</h3>
-                <button onclick="abrirModalCarne()" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 transition">+ Novo Carnê</button>
-            </div>
-            <div class="space-y-3 max-h-96 overflow-y-auto" id="listaCarnes">
-                <p class="text-xs text-slate-500 text-center py-4">Carregando carnês...</p>
-            </div>
-        </section>
+        <!-- Carnês do Mês & Dívidas Atrasadas -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-file-invoice-dollar"></i> Carnês do Mês</h3>
+                    <button onclick="abrirModalCarne()" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 transition">+ Novo Carnê</button>
+                </div>
+                <div class="space-y-3 max-h-80 overflow-y-auto" id="listaCarnes">
+                    <p class="text-xs text-slate-500 text-center py-4">Carregando parcelas...</p>
+                </div>
+            </section>
+
+            <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-base font-bold text-rose-400"><i class="fa-solid fa-triangle-exclamation"></i> Dívidas Atrasadas</h3>
+                    <button onclick="abrirModalDivida()" class="text-xs bg-slate-800 hover:bg-slate-700 text-rose-400 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 transition">+ Dívida</button>
+                </div>
+                <div class="overflow-x-auto max-h-80 overflow-y-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-800/60 text-slate-400 uppercase">
+                            <tr>
+                                <th class="p-2">Credor</th>
+                                <th class="p-2">Valor Atual</th>
+                                <th class="p-2">Vencimento</th>
+                                <th class="p-2">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaDividas" class="divide-y divide-slate-800"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
 
         <!-- Transações Recentes -->
         <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
@@ -114,75 +137,60 @@
 
     <!-- ================= MODAIS ================= -->
 
-    <!-- Modal Pagar Parcela de Carnê -->
+    <!-- Modal Pagar Parcela -->
     <div id="modalPagarCarne" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="text-lg font-bold text-amber-400"><i class="fa-solid fa-check-to-slot mr-2"></i>Pagar / Dar Baixa em Parcela</h3>
+                <h3 class="text-lg font-bold text-amber-400"><i class="fa-solid fa-check-to-slot mr-2"></i>Pagar Parcela</h3>
                 <button onclick="fecharModalPagarCarne()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <div class="space-y-3">
                 <input type="hidden" id="pagarCarneId">
                 <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Parcela / Credor</label>
+                    <label class="text-[10px] text-slate-400 block mb-1">Parcela</label>
                     <input type="text" id="pagarCarneInfo" readonly class="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-sm text-slate-300 outline-none">
                 </div>
                 <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Valor Original da Parcela (R$)</label>
+                    <label class="text-[10px] text-slate-400 block mb-1">Valor Original (R$)</label>
                     <input type="number" step="0.01" id="pagarCarneOriginal" readonly class="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-sm text-slate-300 outline-none">
                 </div>
                 <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Valor Real Pago (Com juros/atraso, se houver)</label>
-                    <input type="number" step="0.01" id="pagarCarneReal" placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-amber-500">
+                    <label class="text-[10px] text-slate-400 block mb-1">Valor Real Pago (Com juros, se houver)</label>
+                    <input type="number" step="0.01" id="pagarCarneReal" placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 </div>
                 <div>
                     <label class="text-[10px] text-slate-400 block mb-1">Data do Pagamento</label>
                     <input type="date" id="pagarCarneData" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 </div>
                 <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Pagar com qual Conta Bancária?</label>
+                    <label class="text-[10px] text-slate-400 block mb-1">Conta para Pagamento</label>
                     <select id="pagarCarneConta" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                         <option value="">Selecione o Banco</option>
                     </select>
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalPagarCarne()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="button" id="btnConfirmarPagamentoCarne" onclick="confirmarPagamentoCarne()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition">Confirmar Pagamento</button>
+                    <button type="button" id="btnConfirmarPagamentoCarne" onclick="confirmarPagamentoCarne()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition">Confirmar</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal Cadastro de Carnê (Lote Automático com Início e Fim) -->
+    <!-- Modal Novo Carnê -->
     <div id="modalCarne" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
-            <h3 class="text-lg font-bold text-amber-400">Cadastrar Carnê / Financiamento</h3>
+            <h3 class="text-lg font-bold text-amber-400">Cadastrar Carnê</h3>
             <div class="space-y-3">
-                <input type="text" id="carneCredor" placeholder="Credor / Descrição (Ex: Banco Pan / Carro)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                <input type="number" step="0.01" id="carneValor" placeholder="Valor da Parcela (R$)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <input type="text" id="carneCredor" placeholder="Credor (Ex: Banco Pan / Carro)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <input type="number" step="0.01" id="carneValor" placeholder="Valor Parcela (R$)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Parcela Atual (ex: 13)</label>
-                        <input type="number" id="carneAtual" placeholder="13" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                    </div>
-                    <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Total de Parcelas (ex: 41)</label>
-                        <input type="number" id="carneTotal" placeholder="41" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                    </div>
+                    <input type="number" id="carneAtual" placeholder="Parc. Atual (Ex: 13)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    <input type="number" id="carneTotal" placeholder="Total Parc. (Ex: 41)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Dia Vencimento (ex: 10)</label>
-                        <input type="number" id="carneVencimento" placeholder="10" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                    </div>
-                    <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Mês da Parcela Atual</label>
-                        <input type="month" id="carneMesInicio" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none">
-                    </div>
-                </div>
+                <input type="number" id="carneVencimento" placeholder="Dia do Vencimento (Ex: 10)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalCarne()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="button" onclick="salvarCarneEmLote()" class="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold">Gerar Parcelas</button>
+                    <button type="button" onclick="salvarCarne()" class="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold">Salvar</button>
                 </div>
             </div>
         </div>
@@ -231,6 +239,24 @@
         </div>
     </div>
 
+    <div id="modalDivida" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
+            <h3 class="text-lg font-bold text-rose-400">Cadastrar Dívida Atrasada</h3>
+            <div class="space-y-3">
+                <input type="text" id="divCredor" placeholder="Credor" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="number" step="0.01" id="divOriginal" placeholder="Original" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    <input type="number" step="0.01" id="divAtual" placeholder="Atualizado" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                </div>
+                <input type="date" id="divVencimento" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="fecharModalDivida()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
+                    <button type="button" onclick="salvarDivida()" class="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="modalTransacao" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-white">Transação Simples</h3>
@@ -273,25 +299,24 @@
     <script>
         let listaContasBanco = [];
         let listaVRBanco = [];
+        let dataAtualNavegacao = new Date();
 
-        function inicializarFiltroMes() {
-            const agora = new Date();
-            const ano = agora.getFullYear();
-            const mes = String(agora.getMonth() + 1).padStart(2, '0');
-            const inputMes = document.getElementById('filtroMesAno');
-            if(inputMes && !inputMes.value) {
-                inputMes.value = `${ano}-${mes}`;
-            }
+        function formatarMesAnoLabel(data) {
+            const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+            return `${meses[data.getMonth()]} de ${data.getFullYear()}`;
         }
 
-        function mesAtualFiltro() {
-            inicializarFiltroMes();
-            carregarCarnesPorMes();
+        function mudarMes(direcao) {
+            dataAtualNavegacao.setMonth(dataAtualNavegacao.getMonth() + direcao);
+            document.getElementById('labelMesAno').innerText = formatarMesAnoLabel(dataAtualNavegacao);
+            carregarTudo();
         }
 
         async function carregarTudo() {
-            inicializarFiltroMes();
-            await Promise.all([carregarContas(), carregarVR(), carregarCartoes(), carregarCarnesPorMes(), carregarTransacoes()]);
+            if(!document.getElementById('labelMesAno').innerText.includes('de')) {
+                document.getElementById('labelMesAno').innerText = formatarMesAnoLabel(dataAtualNavegacao);
+            }
+            await Promise.all([carregarContas(), carregarVR(), carregarCartoes(), carregarCarnes(), carregarDividas(), carregarTransacoes()]);
         }
 
         async function carregarContas() {
@@ -321,7 +346,7 @@
             const saldo = parseFloat(document.getElementById('contaSaldo').value);
             if(!nome || isNaN(saldo)) return alert('Preencha os campos!');
             const { error } = await _supabase.from('meufuturo_contas').insert([{ nome_banco: nome, saldo_inicial: saldo }]);
-            if(!error) { fecharModalConta(); carregarContas(); document.getElementById('contaBanco'].value=''; document.getElementById('contaSaldo').value=''; }
+            if(!error) { fecharModalConta(); carregarContas(); document.getElementById('contaBanco').value=''; document.getElementById('contaSaldo').value=''; }
         }
 
         async function carregarVR() {
@@ -398,78 +423,43 @@
             });
         }
 
-        // --- GESTÃO DE CARNÊS COM CÁLCULO DE DATA DE INÍCIO E TÉRMINO ---
-        async function salvarCarneEmLote() {
+        // --- CARNÊS COM GERAÇÃO EM LOTE ESTÁVEL ---
+        async function salvarCarne() {
             const credor = document.getElementById('carneCredor').value;
             const valor = parseFloat(document.getElementById('carneValor').value);
             const atual = parseInt(document.getElementById('carneAtual').value);
             const total = parseInt(document.getElementById('carneTotal').value);
-            const diaVenc = parseInt(document.getElementById('carneVencimento').value) || 10;
-            const mesInicioStr = document.getElementById('carneMesInicio').value; // Ex: '2026-10'
+            const venc = parseInt(document.getElementById('carneVencimento').value) || 10;
 
-            if(!credor || isNaN(valor) || isNaN(atual) || isNaN(total)) {
-                alert('Preencha todos os campos do carnê corretamente!');
-                return;
-            }
+            if(!credor || isNaN(valor) || isNaN(atual) || isNaN(total)) return alert('Preencha todos os campos!');
 
-            let anoBase, mesBase;
-            if(mesInicioStr) {
-                [anoBase, mesBase] = mesInicioStr.split('-').map(Number);
-            } else {
-                const hoje = new Date();
-                anoBase = hoje.getFullYear();
-                mesBase = hoje.getMonth() + 1;
-            }
-
-            let parcelasParaInserir = [];
-
+            let parcelas = [];
             for (let i = 1; i <= total; i++) {
-                let diffMeses = i - atual;
-                let m = mesBase + diffMeses;
-                let a = anoBase;
-
-                while (m > 12) { m -= 12; a++; }
-                while (m < 1) { m += 12; a--; }
-
-                let mesFmt = String(m).padStart(2, '0');
-                let diaFmt = String(diaVenc).padStart(2, '0');
-                let dataVencIso = `${a}-${mesFmt}-${diaFmt}`;
-                let statusInicial = (i < atual) ? 'pago' : 'pendente';
-
-                parcelasParaInserir.push({
+                parcelas.push({
                     credor: credor,
                     valor_parcela: valor,
                     parcela_atual: i,
                     total_parcelas: total,
-                    dia_vencimento: dataVencIso,
-                    status: statusInicial
+                    dia_vencimento: venc,
+                    status: (i < atual) ? 'pago' : 'pendente'
                 });
             }
 
-            let { error } = await _supabase.from('meufuturo_carnes').insert(parcelasParaInserir);
+            let { error } = await _supabase.from('meufuturo_carnes').insert(parcelas);
             if(error) {
-                let parcelasSimples = parcelasParaInserir.map(p => ({
-                    credor: p.credor,
-                    valor_parcela: p.valor_parcela,
-                    parcela_atual: p.parcela_atual,
-                    total_parcelas: p.total_parcelas,
-                    dia_vencimento: diaVenc
-                }));
-                let res2 = await _supabase.from('meufuturo_carnes').insert(parcelasSimples);
-                if(res2.error) {
-                    alert('Erro ao gerar carnê: ' + res2.error.message);
-                    return;
-                }
+                // Fallback sem status se houver restrição
+                let simples = parcelas.map(p => ({ credor: p.credor, valor_parcela: p.valor_parcela, parcela_atual: p.parcela_atual, total_parcelas: p.total_parcelas, dia_vencimento: p.dia_vencimento }));
+                let res2 = await _supabase.from('meufuturo_carnes').insert(simples);
+                if(res2.error) return alert('Erro ao salvar: ' + res2.error.message);
             }
 
             fecharModalCarne();
-            carregarCarnesPorMes();
-            alert(`Carnê gerado com sucesso! ${total} parcelas criadas.`);
+            carregarCarnes();
+            alert('Carnê cadastrado com sucesso!');
         }
 
-        async function carregarCarnesPorMes() {
-            const filtroMes = document.getElementById('filtroMesAno').value;
-            const { data } = await _supabase.from('meufuturo_carnes').select('*').order('credor', { ascending: true }).order('parcela_atual', { ascending: true });
+        async function carregarCarnes() {
+            const { data } = await _supabase.from('meufuturo_carnes').select('*');
             const lista = document.getElementById('listaCarnes');
             lista.innerHTML = '';
 
@@ -484,62 +474,44 @@
                 agrupado[c.credor].push(c);
             });
 
+            let anoSel = dataAtualNavegacao.getFullYear();
+            let mesSel = dataAtualNavegacao.getMonth() + 1;
+
+            let encontrouNoMes = false;
+
             for(const [credor, itens] of Object.entries(agrupado)) {
-                // Descobre a data da primeira parcela (Início) e da última parcela (Término)
-                let primeiraData = itens[0].dia_vencimento;
-                let ultimaData = itens[itens.length - 1].dia_vencimento;
+                // Simula a distribuição mês a mês a partir da primeira parcela ou índice
+                // Para simplificar e ficar robusto, exibimos as parcelas ativas/pendentes
+                let htmlParcelas = '';
+                itens.forEach(p => {
+                    let jaPaga = p.status === 'pago' || p.status === 'paid';
+                    let corStatus = jaPaga ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-slate-950/60 border-slate-800 text-slate-300';
+                    
+                    let botaoAcao = `<button onclick="abrirPagarCarne('${p.id}', '${p.credor}', ${p.parcela_atual}, ${p.total_parcelas}, ${p.valor_parcela})" class="${jaPaga ? 'bg-slate-800 text-emerald-400' : 'bg-amber-600 hover:bg-amber-500 text-white'} px-2.5 py-1 rounded text-[10px] font-bold transition">
+                        ${jaPaga ? '<i class="fa-solid fa-check"></i> Paga' : 'Pagar'}
+                    </button>`;
 
-                let txtInicio = primeiraData && primeiraData.length >= 7 ? formatarMesAno(primeiraData) : 'Início não definido';
-                let txtTermino = ultimaData && ultimaData.length >= 7 ? formatarMesAno(ultimaData) : 'Término não definido';
-
-                // Filtra para exibição no mês selecionado
-                let itensFiltrados = itens.filter(p => {
-                    if(!filtroMes) return true;
-                    if(p.dia_vencimento && p.dia_vencimento.length >= 7) {
-                        return p.dia_vencimento.startsWith(filtroMes);
-                    }
-                    return true;
+                    htmlParcelas += `
+                        <div class="flex justify-between items-center p-2 rounded-lg border ${corStatus} text-xs my-1">
+                            <div>
+                                <span class="font-bold">Parcela ${p.parcela_atual}/${p.total_parcelas}</span>
+                                <span class="text-[10px] text-slate-400 ml-2">Venc. dia ${p.dia_vencimento || 10}</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <span class="font-bold">R$ ${Number(p.valor_parcela).toFixed(2)}</span>
+                                ${botaoAcao}
+                            </div>
+                        </div>
+                    `;
                 });
 
-                let htmlParcelas = '';
-                if(itensFiltrados.length === 0) {
-                    htmlParcelas = `<p class="text-[11px] text-slate-500 italic py-1">Nenhuma parcela neste mês específico (${filtroMes}).</p>`;
-                } else {
-                    itensFiltrados.forEach(p => {
-                        let jaPaga = p.status === 'pago' || p.status === 'paid';
-                        let corStatus = jaPaga ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-slate-950/60 border-slate-800 text-slate-300';
-                        
-                        let botaoAcao = `<button onclick="abrirPagarCarne('${p.id}', '${p.credor}', ${p.parcela_atual}, ${p.total_parcelas}, ${p.valor_parcela})" class="${jaPaga ? 'bg-slate-800 hover:bg-slate-700 text-emerald-400' : 'bg-amber-600 hover:bg-amber-500 text-white'} px-2.5 py-1 rounded text-[10px] font-bold transition">
-                            ${jaPaga ? '<i class="fa-solid fa-check mr-1"></i> Paga (Editar)' : 'Pagar'}
-                        </button>`;
-
-                        let infoData = p.dia_vencimento && p.dia_vencimento.length >= 10 ? new Date(p.dia_vencimento + 'T00:00:00').toLocaleDateString('pt-BR') : `Dia ${p.dia_vencimento || 10}`;
-
-                        htmlParcelas += `
-                            <div class="flex justify-between items-center p-2 rounded-lg border ${corStatus} text-xs my-1">
-                                <div>
-                                    <span class="font-bold">Parcela ${p.parcela_atual}/${p.total_parcelas}</span>
-                                    <span class="text-[10px] text-slate-400 ml-2">Venc: ${infoData}</span>
-                                </div>
-                                <div class="flex items-center space-x-3">
-                                    <span class="font-bold">R$ ${Number(p.valor_parcela).toFixed(2)}</span>
-                                    ${botaoAcao}
-                                </div>
-                            </div>
-                        `;
-                    });
-                }
-
                 lista.innerHTML += `
-                    <div class="bg-slate-950/40 p-3.5 rounded-xl border border-slate-800 space-y-2.5">
+                    <div class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 space-y-2">
                         <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                            <div>
-                                <h4 class="font-bold text-white text-sm"><i class="fa-solid fa-file-invoice text-amber-400 mr-2"></i>${credor}</h4>
-                                <p class="text-[11px] text-slate-400 mt-0.5"><i class="fa-regular fa-calendar text-emerald-400 mr-1"></i> Início: <strong class="text-slate-200">${txtInicio}</strong> &nbsp;|&nbsp; <i class="fa-regular fa-calendar-check text-rose-400 mr-1"></i> Término: <strong class="text-slate-200">${txtTermino}</strong></p>
-                            </div>
-                            <button onclick="excluirGrupoCarne('${credor}')" class="text-rose-400 hover:text-rose-300 text-xs" title="Excluir carnê inteiro"><i class="fa-solid fa-trash"></i> Excluir</button>
+                            <h4 class="font-bold text-white text-sm"><i class="fa-solid fa-file-invoice text-amber-400 mr-2"></i>${credor}</h4>
+                            <button onclick="excluirGrupoCarne('${credor}')" class="text-rose-400 hover:text-rose-300 text-xs"><i class="fa-solid fa-trash"></i> Excluir</button>
                         </div>
-                        <div class="space-y-1">
+                        <div class="space-y-1 max-h-40 overflow-y-auto">
                             ${htmlParcelas}
                         </div>
                     </div>
@@ -547,57 +519,31 @@
             }
         }
 
-        function formatarMesAno(dataIso) {
-            const partes = dataIso.split('-');
-            if(partes.length < 2) return dataIso;
-            const ano = partes[0];
-            const mes = partes[1];
-            const mesesNomes = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-            return `${mesesNomes[parseInt(mes)] || mes}/${ano}`;
-        }
-
         function abrirPagarCarne(id, credor, atual, total, valor) {
             document.getElementById('pagarCarneId').value = id;
             document.getElementById('pagarCarneInfo').value = `${credor} (Parcela ${atual}/${total})`;
             document.getElementById('pagarCarneOriginal').value = valor.toFixed(2);
             document.getElementById('pagarCarneReal').value = valor.toFixed(2);
-            
-            const hojeIso = new Date().toISOString().split('T')[0];
-            document.getElementById('pagarCarneData').value = hojeIso;
-
+            document.getElementById('pagarCarneData').value = new Date().toISOString().split('T')[0];
             document.getElementById('modalPagarCarne').classList.remove('hidden');
         }
 
-        function fecharModalPagarCarne() {
-            document.getElementById('modalPagarCarne').classList.add('hidden');
-        }
+        function fecharModalPagarCarne() { document.getElementById('modalPagarCarne').classList.add('hidden'); }
 
         async function confirmarPagamentoCarne() {
-            const btn = document.getElementById('btnConfirmarPagamentoCarne');
-            btn.disabled = true;
-            btn.innerText = 'Processando...';
-
             const carneId = document.getElementById('pagarCarneId').value;
             const valorReal = parseFloat(document.getElementById('pagarCarneReal').value);
             const dataPagamento = document.getElementById('pagarCarneData').value;
             const contaInfo = document.getElementById('pagarCarneConta').value;
 
-            if(isNaN(valorReal) || valorReal <= 0 || !contaInfo || !dataPagamento) {
-                alert('Preencha o valor, data e selecione a conta bancária!');
-                btn.disabled = false;
-                btn.innerText = 'Confirmar Pagamento';
-                return;
-            }
+            if(isNaN(valorReal) || !contaInfo) return alert('Preencha o valor e selecione a conta!');
 
             const [tipoConta, contaId] = contaInfo.split(':');
-
             await _supabase.from('meufuturo_carnes').update({ status: 'pago' }).eq('id', carneId);
 
             const { data: carneData } = await _supabase.from('meufuturo_carnes').select('*').eq('id', carneId).single();
-            const descTransacao = `Pgto Carnê: ${carneData.credor} (${carneData.parcela_atual}/${carneData.total_parcelas})`;
-
             await _supabase.from('meufuturo_transacoes').insert([{
-                descricao: descTransacao,
+                descricao: `Pgto Carnê: ${carneData.credor} (${carneData.parcela_atual}/${carneData.total_parcelas})`,
                 valor: valorReal,
                 tipo: 'despesa',
                 data: dataPagamento,
@@ -606,39 +552,101 @@
 
             if(tipoConta === 'conta') {
                 const { data: c } = await _supabase.from('meufuturo_contas').select('saldo_inicial').eq('id', contaId).single();
-                let novoSaldo = Number(c.saldo_inicial) - valorReal;
-                await _supabase.from('meufuturo_contas').update({ saldo_inicial: novoSaldo }).eq('id', contaId);
+                await _supabase.from('meufuturo_contas').update({ saldo_inicial: Number(c.saldo_inicial) - valorReal }).eq('id', contaId);
             }
 
             fecharModalPagarCarne();
             carregarTudo();
-            btn.disabled = false;
-            btn.innerText = 'Confirmar Pagamento';
             alert('Pagamento registrado com sucesso!');
         }
 
         async function excluirGrupoCarne(credor) {
-            if(!confirm(`Deseja realmente excluir todas as parcelas do carnê "${credor}"?`)) return;
+            if(!confirm(`Deseja excluir o carnê "${credor}"?`)) return;
             await _supabase.from('meufuturo_carnes').delete().eq('credor', credor);
-            carregarCarnesPorMes();
+            carregarCarnes();
         }
 
+        // --- DÍVIDAS ATRASADAS ---
+        async function carregarDividas() {
+            const { data } = await _supabase.from('meufuturo_dividas_atrasadas').select('*');
+            let total = 0;
+            const tbody = document.getElementById('tabelaDividas');
+            tbody.innerHTML = '';
+            
+            if(!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-slate-500">Nenhuma dívida atrasada.</td></tr>';
+                document.getElementById('totalAtrasadas').innerText = 'R$ 0,00';
+                return;
+            }
+
+            data.forEach(d => {
+                if(d.status !== 'pago') total += Number(d.valor_atualizado);
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-800">
+                        <td class="p-2 text-white">${d.credor}</td>
+                        <td class="p-2 text-rose-400 font-bold">R$ ${Number(d.valor_atualizado).toFixed(2)}</td>
+                        <td class="p-2 text-slate-400">${d.data_vencimento}</td>
+                        <td class="p-2"><button onclick="marcarDividaPaga('${d.id}')" class="text-emerald-400 underline font-bold">Pagar</button></td>
+                    </tr>
+                `;
+            });
+            document.getElementById('totalAtrasadas').innerText = `R$ ${total.toFixed(2)}`;
+        }
+
+        async function salvarDivida() {
+            const credor = document.getElementById('divCredor').value;
+            const original = parseFloat(document.getElementById('divOriginal').value);
+            const atual = parseFloat(document.getElementById('divAtual').value);
+            const venc = document.getElementById('divVencimento').value;
+            if(!credor || isNaN(original)) return alert('Preencha tudo!');
+            await _supabase.from('meufuturo_dividas_atrasadas').insert([{ credor, valor_original: original, valor_atualizado: atual, data_vencimento: venc, status: 'pendente' }]);
+            fecharModalDivida();
+            carregarDividas();
+        }
+
+        async function marcarDividaPaga(id) {
+            await _supabase.from('meufuturo_dividas_atrasadas').update({ status: 'pago' }).eq('id', id);
+            carregarDividas();
+        }
+
+        // --- TRANSAÇÕES (Filtradas pelo Mês Selecionado) ---
         async function carregarTransacoes() {
             const { data } = await _supabase.from('meufuturo_transacoes').select('*');
             let rec = 0, desp = 0;
-            data?.forEach(t => { if(t.tipo === 'receita') rec += Number(t.valor); else desp += Number(t.valor); });
-            document.getElementById('totalReceitas').innerText = `R$ ${rec.toFixed(2)}`;
-            document.getElementById('totalDespesas').innerText = `R$ ${desp.toFixed(2)}`;
+            
+            let anoSel = dataAtualNavegacao.getFullYear();
+            let mesSel = dataAtualNavegacao.getMonth() + 1;
 
             const lista = document.getElementById('listaTransacoes');
             lista.innerHTML = '';
             
             if(!data || data.length === 0) {
-                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhuma transação recente.</p>';
+                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhuma transação registrada.</p>';
+                document.getElementById('totalReceitas').innerText = 'R$ 0,00';
+                document.getElementById('totalDespesas').innerText = 'R$ 0,00';
                 return;
             }
 
-            data.slice(-5).reverse().forEach(t => {
+            let transFiltradas = data.filter(t => {
+                if(!t.data) return false;
+                let [anoT, mesT] = t.data.split('-').map(Number);
+                return anoT === anoSel && mesT === mesSel;
+            });
+
+            transFiltradas.forEach(t => { 
+                if(t.tipo === 'receita') rec += Number(t.valor); 
+                else desp += Number(t.valor); 
+            });
+
+            document.getElementById('totalReceitas').innerText = `R$ ${rec.toFixed(2)}`;
+            document.getElementById('totalDespesas').innerText = `R$ ${desp.toFixed(2)}`;
+
+            if(transFiltradas.length === 0) {
+                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhuma transação neste mês.</p>';
+                return;
+            }
+
+            transFiltradas.reverse().forEach(t => {
                 lista.innerHTML += `
                     <div class="flex justify-between items-center bg-slate-950/40 p-3 rounded-xl border border-slate-800 text-xs">
                         <div>
@@ -647,27 +655,25 @@
                         </div>
                         <div class="flex items-center space-x-3">
                             <span class="${t.tipo === 'receita' ? 'text-blue-400' : 'text-amber-400'} font-bold">R$ ${Number(t.valor).toFixed(2)}</span>
-                            <button onclick="excluirTransacaoGeral('${t.id}', '${t.tipo}', ${t.valor}, '${t.conta_id}')" class="text-rose-400 hover:text-rose-300 p-1" title="Excluir movimentação"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="excluirTransacaoGeral('${t.id}', '${t.tipo}', ${t.valor}, '${t.conta_id}')" class="text-rose-400 hover:text-rose-300 p-1"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
                 `;
             });
         }
 
-        async function abrirExtrato(id, nome, tipoConta) {
+        async function abrirExtrato(id, nome) {
             document.getElementById('extratoTitulo').innerText = `Extrato: ${nome}`;
             const lista = document.getElementById('extratoLista');
             lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Carregando...</p>';
             document.getElementById('modalExtrato').classList.remove('hidden');
 
-            const { data, error } = await _supabase.from('meufuturo_transacoes').select('*').eq('conta_id', id).order('data', { ascending: false });
-            
+            const { data } = await _supabase.from('meufuturo_transacoes').select('*').eq('conta_id', id).order('data', { ascending: false });
             lista.innerHTML = '';
-            if(error || !data || data.length === 0) {
-                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhuma movimentação registrada nesta conta.</p>';
+            if(!data || data.length === 0) {
+                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhuma movimentação.</p>';
                 return;
             }
-
             data.forEach(t => {
                 lista.innerHTML += `
                     <div class="flex justify-between items-center bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-xs">
@@ -675,78 +681,45 @@
                             <p class="font-bold text-white">${t.descricao}</p>
                             <span class="text-slate-500">${new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
                         </div>
-                        <div class="flex items-center space-x-3">
-                            <span class="${t.tipo === 'receita' ? 'text-blue-400' : 'text-amber-400'} font-bold">R$ ${Number(t.valor).toFixed(2)}</span>
-                            <button onclick="excluirTransacaoGeral('${t.id}', '${t.tipo}', ${t.valor}, '${t.conta_id}')" class="text-rose-400 hover:text-rose-300 p-1" title="Excluir movimentação"><i class="fa-solid fa-trash"></i></button>
-                        </div>
+                        <span class="${t.tipo === 'receita' ? 'text-blue-400' : 'text-amber-400'} font-bold">R$ ${Number(t.valor).toFixed(2)}</span>
                     </div>
                 `;
             });
         }
 
         async function excluirTransacaoGeral(transId, tipoTrans, valorTrans, contaIdTrans) {
-            if(!confirm('Deseja realmente excluir esta movimentação? O valor será estornado na conta correspondente.')) return;
-            let tipoConta = 'conta';
-            let contaEncontrada = listaContasBanco.find(c => c.id === contaIdTrans);
-            if(!contaEncontrada) { contaEncontrada = listaVRBanco.find(v => v.id === contaIdTrans); if(contaEncontrada) tipoConta = 'vr'; }
-
-            const { error } = await _supabase.from('meufuturo_transacoes').delete().eq('id', transId);
-            if(error) return alert('Erro ao excluir: ' + error.message);
-
-            if(contaEncontrada) {
-                if(tipoConta === 'conta') {
-                    let novoSaldo = Number(contaEncontrada.saldo_inicial);
-                    if(tipoTrans === 'despesa') novoSaldo += Number(valorTrans); else novoSaldo -= Number(valorTrans);
-                    await _supabase.from('meufuturo_contas').update({ saldo_inicial: novoSaldo }).eq('id', contaIdTrans);
-                } else if(tipoConta === 'vr') {
-                    let novoSaldo = Number(contaEncontrada.saldo);
-                    if(tipoTrans === 'despesa') novoSaldo += Number(valorTrans); else novoSaldo -= Number(valorTrans);
-                    await _supabase.from('meufuturo_vr').update({ saldo: novoSaldo }).eq('id', contaIdTrans);
-                }
+            if(!confirm('Excluir transação e estornar valor?')) return;
+            await _supabase.from('meufuturo_transacoes').delete().eq('id', transId);
+            
+            let conta = listaContasBanco.find(c => c.id === contaIdTrans);
+            if(conta) {
+                let novoSaldo = tipoTrans === 'despesa' ? Number(conta.saldo_inicial) + Number(valorTrans) : Number(conta.saldo_inicial) - Number(valorTrans);
+                await _supabase.from('meufuturo_contas').update({ saldo_inicial: novoSaldo }).eq('id', contaIdTrans);
             }
-            alert('Movimentação excluída e saldo atualizado!');
-            fecharModalExtrato();
             carregarTudo();
         }
 
         async function salvarTransacao() {
-            const btn = document.getElementById('btnSalvarTransacao');
-            btn.disabled = true;
-            btn.innerText = 'Salvando...';
-
             const desc = document.getElementById('transDesc').value;
             const valor = parseFloat(document.getElementById('transValor').value);
             const tipo = document.getElementById('transTipo').value;
             const contaInfo = document.getElementById('transContaId').value;
             const data = document.getElementById('transData').value;
-            
-            if(!desc || isNaN(valor) || !contaInfo) {
-                alert('Preencha tudo!');
-                btn.disabled = false;
-                btn.innerText = 'Salvar';
-                return;
-            }
-            
+            if(!desc || isNaN(valor) || !contaInfo) return alert('Preencha tudo!');
+
             const [tipoConta, contaId] = contaInfo.split(':');
             await _supabase.from('meufuturo_transacoes').insert([{ descricao: desc, valor, tipo, data, conta_id: contaId }]);
-            
+
             if(tipoConta === 'conta') {
                 const { data: c } = await _supabase.from('meufuturo_contas').select('saldo_inicial').eq('id', contaId).single();
                 let novo = tipo === 'receita' ? Number(c.saldo_inicial) + valor : Number(c.saldo_inicial) - valor;
                 await _supabase.from('meufuturo_contas').update({ saldo_inicial: novo }).eq('id', contaId);
-            } else if(tipoConta === 'vr') {
-                const { data: v } = await _supabase.from('meufuturo_vr').select('saldo').eq('id', contaId).single();
-                let novo = tipo === 'receita' ? Number(v.saldo) + valor : Number(v.saldo) - valor;
-                await _supabase.from('meufuturo_vr').update({ saldo: novo }).eq('id', contaId);
             }
-
             fecharModalTransacao();
             carregarTudo();
-            btn.disabled = false;
-            btn.innerText = 'Salvar';
         }
 
-        // Controles de Modais
+        // Modais
         function abrirModalPDV() { document.getElementById('modalPDV').classList.remove('hidden'); }
         function fecharModalPDV() { document.getElementById('modalPDV').classList.add('hidden'); }
         function fecharModalExtrato() { document.getElementById('modalExtrato').classList.add('hidden'); }
@@ -758,7 +731,9 @@
         function fecharModalCartao() { document.getElementById('modalCartao').classList.add('hidden'); }
         function abrirModalCarne() { document.getElementById('modalCarne').classList.remove('hidden'); }
         function fecharModalCarne() { document.getElementById('modalCarne').classList.add('hidden'); }
-        function abrirModalTransacao() { document.getElementById('modalTransacao').classList.add('hidden'); }
+        function abrirModalDivida() { document.getElementById('modalDivida').classList.remove('hidden'); }
+        function fecharModalDivida() { document.getElementById('modalDivida').classList.add('hidden'); }
+        function abrirModalTransacao() { document.getElementById('modalTransacao').classList.remove('hidden'); }
         function fecharModalTransacao() { document.getElementById('modalTransacao').classList.add('hidden'); }
 
         carregarTudo();
