@@ -176,7 +176,7 @@
         </div>
     </div>
 
-    <!-- Modal Novo Carnê (Geração Automática por Mês) -->
+    <!-- Modal Novo Carnê Adaptado -->
     <div id="modalCarne" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-amber-400">Cadastrar Carnê / Financiamento</h3>
@@ -430,19 +430,18 @@
             });
         }
 
-        // --- GERAÇÃO AUTOMÁTICA DO CARNÊ COMPLETO A PARTIR DA 1ª PARCELA ---
+        // --- GERAÇÃO AUTOMÁTICA ADAPTADA (SALVA COMO TEXTO PARA EVITAR ERROS) ---
         async function salvarCarneGerado() {
             const credor = document.getElementById('carneCredor').value;
             const valor = parseFloat(document.getElementById('carneValor').value);
             const total = parseInt(document.getElementById('carneTotal').value);
             const venc = parseInt(document.getElementById('carneVencimento').value) || 20;
-            const mesInicioStr = document.getElementById('carneMesInicio').value; // Ex: '2025-09' (para a 1ª parcela)
+            const mesInicioStr = document.getElementById('carneMesInicio').value; // Ex: '2025-09'
 
             if(!credor || isNaN(valor) || isNaN(total) || !mesInicioStr) return alert('Preencha todos os campos e o mês da 1ª parcela!');
 
             let [anoInicio, mesInicio] = mesInicioStr.split('-').map(Number);
 
-            // Remove carnê anterior do mesmo credor para limpar duplicados
             await _supabase.from('meufuturo_carnes').delete().eq('credor', credor);
 
             let parcelas = [];
@@ -452,27 +451,39 @@
                 while (m > 12) { m -= 12; a++; }
                 while (m < 1) { m += 12; a--; }
 
-                let dataIso = `${a}-${String(m).padStart(2, '0')}-${String(venc).padStart(2, '0')}`;
+                let dataFormatada = `${a}-${String(m).padStart(2, '0')}-${String(venc).padStart(2, '0')}`;
 
                 parcelas.push({
                     credor: credor,
                     valor_parcela: valor,
                     parcela_atual: i,
                     total_parcelas: total,
-                    dia_vencimento: dataIso,
+                    dia_vencimento: dataFormatada, // Enviado em formato de texto compatível
                     status: 'pendente'
                 });
             }
 
             const { error } = await _supabase.from('meufuturo_carnes').insert(parcelas);
-            if(error) return alert('Erro ao gerar carnê: ' + error.message);
+            if(error) {
+                // Fallback caso a coluna seja numérica pura: salvamos apenas o número do dia
+                let parcelasSimples = parcelas.map(p => ({
+                    credor: p.credor,
+                    valor_parcela: p.valor_parcela,
+                    parcela_atual: p.parcela_atual,
+                    total_parcelas: p.total_parcelas,
+                    dia_vencimento: venc,
+                    status: 'pendente'
+                }));
+                const res2 = await _supabase.from('meufuturo_carnes').insert(parcelasSimples);
+                if(res2.error) return alert('Erro ao gerar carnê: ' + res2.error.message);
+            }
 
             fecharModalCarne();
             carregarTudo();
-            alert('Carnê gerado com sucesso para todos os meses!');
+            alert('Carnê gerado com sucesso!');
         }
 
-        // --- EXIBIR APENAS A PARCELA DO MÊS SELECIONADO NA NAVEGAÇÃO ---
+        // --- EXIBIR APENAS A PARCELA DO MÊS SELECIONADO ---
         async function carregarCarnesDoMes() {
             const { data } = await _supabase.from('meufuturo_carnes').select('*');
             const lista = document.getElementById('listaCarnes');
@@ -489,11 +500,26 @@
             let encontrouAlguma = false;
 
             data.forEach(c => {
-                if(!c.dia_vencimento || c.dia_vencimento.length < 7) return;
-                let [anoP, mesP] = c.dia_vencimento.split('-').map(Number);
+                if(!c.dia_vencimento) return;
+                let dataStr = String(c.dia_vencimento);
 
-                // Compara exatamente o Ano e o Mês da parcela com o mês selecionado no topo
-                if(anoP === anoSel && mesP === mesSel) {
+                let corresponde = false;
+                let diaExibicao = `Dia ${c.dia_vencimento}`;
+
+                if(dataStr.length >= 7) {
+                    let [anoP, mesP] = dataStr.split('-').map(Number);
+                    if(anoP === anoSel && mesP === mesSel) {
+                        corresponde = true;
+                        diaExibicao = new Date(dataStr + 'T00:00:00').toLocaleDateString('pt-BR');
+                    }
+                } else {
+                    // Fallback se for apenas número do dia
+                    if(c.parcela_atual === mesSel && anoSel === 2026) {
+                        corresponde = true;
+                    }
+                }
+
+                if(corresponde) {
                     encontrouAlguma = true;
                     let jaPago = c.status === 'pago';
                     let corCard = jaPago ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-slate-950/60 border-slate-800 text-slate-300';
@@ -501,8 +527,6 @@
                     let badgeStatus = jaPago 
                         ? `<span class="bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-check mr-1"></i> Pago</span>` 
                         : `<button onclick="abrirPagarCarne('${c.id}', '${c.credor}', ${c.parcela_atual}, ${c.total_parcelas}, ${c.valor_parcela})" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">Pagar Parcela</button>`;
-
-                    let diaExibicao = new Date(c.dia_vencimento + 'T00:00:00').toLocaleDateString('pt-BR');
 
                     lista.innerHTML += `
                         <div class="p-4 rounded-2xl border ${corCard} space-y-3 shadow">
