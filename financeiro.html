@@ -44,6 +44,7 @@
                 <button onclick="mudarMes(-1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition"><i class="fa-solid fa-chevron-left mr-1"></i> Anterior</button>
                 <span id="labelMesAno" class="text-sm font-extrabold text-amber-400 px-3 py-1 bg-slate-950 rounded-xl border border-slate-800 min-w-[160px] text-center">Outubro de 2026</span>
                 <button onclick="mudarMes(1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">Próximo <i class="fa-solid fa-chevron-right ml-1"></i></button>
+                <button onclick="irParaMesAtual()" class="bg-amber-600/30 hover:bg-amber-600/50 text-amber-300 border border-amber-600/50 px-3 py-2 rounded-xl text-xs font-bold transition" title="Ir para o mês atual"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Hoje</button>
             </div>
         </div>
 
@@ -149,6 +150,51 @@
     </main>
 
     <!-- ================= MODAIS ================= -->
+
+    <!-- Modal Pagar Dívida Atrasada com Desconto -->
+    <div id="modalPagarDivida" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-bold text-rose-400"><i class="fa-solid fa-hand-holding-dollar mr-2"></i>Pagar Dívida Atrasada</h3>
+                <button onclick="fecharModalPagarDivida()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3">
+                <input type="hidden" id="pagarDividaId">
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Credor</label>
+                    <input type="text" id="pagarDividaCredor" readonly class="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-sm text-slate-300 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Valor Atualizado (R$)</label>
+                        <input type="number" step="0.01" id="pagarDividaAtual" readonly class="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-sm text-rose-400 font-bold outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Valor Real Negociado (R$)</label>
+                        <input type="number" step="0.01" id="pagarDividaRealPago" placeholder="0.00" oninput="calcularEconomiaDivida()" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-emerald-400 font-bold outline-none">
+                    </div>
+                </div>
+                <div class="bg-emerald-950/30 border border-emerald-900/50 p-3 rounded-xl text-xs text-emerald-300 flex justify-between items-center">
+                    <span>Economia obtida (Desconto):</span>
+                    <strong id="pagarDividaEconomia" class="text-sm font-extrabold text-emerald-400">R$ 0,00</strong>
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Data do Pagamento</label>
+                    <input type="date" id="pagarDividaData" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Conta para Pagamento (Banco)</label>
+                    <select id="pagarDividaConta" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                        <option value="">Selecione o Banco</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="fecharModalPagarDivida()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
+                    <button type="button" onclick="confirmarPagamentoDivida()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition">Confirmar Pagamento</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal Cadastrar Dívida Atrasada -->
     <div id="modalDivida" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
@@ -321,6 +367,12 @@
 
         function mudarMes(direcao) {
             dataAtualNavegacao.setMonth(dataAtualNavegacao.getMonth() + direcao);
+            document.getElementById('labelMesAno').innerText = formatarMesAnoLabel(dataAtualNavegacao);
+            carregarTudo();
+        }
+
+        function irParaMesAtual() {
+            dataAtualNavegacao = new Date();
             document.getElementById('labelMesAno').innerText = formatarMesAnoLabel(dataAtualNavegacao);
             carregarTudo();
         }
@@ -846,24 +898,27 @@
             carregarTudo();
         }
 
-        // --- GESTÃO DE DÍVIDAS ATRASADAS (ORDEM DECRESCENTE POR VALOR ATUAL) ---
+        // --- GESTÃO DE DÍVIDAS ATRASADAS (INDEPENDENTE, ORDENADAS E COM PAGAMENTO COM DESCONTO) ---
         async function carregarDividas() {
             const { data } = await _supabase.from('meufuturo_dividas_atrasadas').select('*');
             let total = 0;
             const tbody = document.getElementById('tabelaDividas');
             tbody.innerHTML = '';
             
-            if(!data || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="p-3 text-center text-slate-500">Nenhuma dívida atrasada.</td></tr>';
+            // Filtrar apenas dívidas pendentes
+            let dividasPendentes = (data || []).filter(d => d.status !== 'pago');
+
+            if(dividasPendentes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-3 text-center text-slate-500">Nenhuma dívida atrasada pendente.</td></tr>';
                 document.getElementById('totalAtrasadas').innerText = 'R$ 0,00';
                 return;
             }
 
             // Ordenar em ordem decrescente pelo valor atualizado (maior valor primeiro)
-            data.sort((a, b) => Number(b.valor_atualizado) - Number(a.valor_atualizado));
+            dividasPendentes.sort((a, b) => Number(b.valor_atualizado) - Number(a.valor_atualizado));
 
-            data.forEach(d => {
-                if(d.status !== 'pago') total += Number(d.valor_atualizado);
+            dividasPendentes.forEach(d => {
+                total += Number(d.valor_atualizado);
                 let dataFormatada = d.data_vencimento ? new Date(d.data_vencimento + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
                 tbody.innerHTML += `
                     <tr class="border-b border-slate-800">
@@ -871,7 +926,7 @@
                         <td class="p-2 text-slate-400">R$ ${Number(d.valor_original || 0).toFixed(2)}</td>
                         <td class="p-2 text-rose-400 font-bold">R$ ${Number(d.valor_atualizado || 0).toFixed(2)}</td>
                         <td class="p-2 text-slate-400">${dataFormatada}</td>
-                        <td class="p-2"><button onclick="marcarDividaPaga('${d.id}')" class="text-emerald-400 underline font-bold">Pagar</button></td>
+                        <td class="p-2"><button onclick="abrirPagarDivida('${d.id}', '${d.credor}', ${d.valor_atualizado})" class="text-emerald-400 underline font-bold">Pagar</button></td>
                     </tr>
                 `;
             });
@@ -886,7 +941,7 @@
 
             if(!credor || isNaN(original) || isNaN(atual)) return alert('Preencha os campos obrigatórios!');
 
-            await _supabase.from('meufuturo_dividas_atrasadas').insert([{ 
+            const { error } = await _supabase.from('meufuturo_dividas_atrasadas').insert([{ 
                 credor, 
                 valor_original: original, 
                 valor_atualizado: atual, 
@@ -894,15 +949,77 @@
                 status: 'pendente' 
             }]);
 
+            if(error) return alert('Erro ao salvar dívida: ' + error.message);
+
             fecharModalDivida();
             carregarDividas();
+            document.getElementById('divCredor').value = '';
+            document.getElementById('divOriginal').value = '';
+            document.getElementById('divAtual').value = '';
+            document.getElementById('divVencimento').value = '';
             alert('Dívida atrasada cadastrada com sucesso!');
         }
 
-        async function marcarDividaPaga(id) {
-            if(!confirm('Deseja marcar esta dívida como paga?')) return;
-            await _supabase.from('meufuturo_dividas_atrasadas').update({ status: 'pago' }).eq('id', id);
-            carregarDividas();
+        function abrirPagarDivida(id, credor, valorAtual) {
+            document.getElementById('pagarDividaId').value = id;
+            document.getElementById('pagarDividaCredor').value = credor;
+            document.getElementById('pagarDividaAtual').value = valorAtual.toFixed(2);
+            document.getElementById('pagarDividaRealPago').value = valorAtual.toFixed(2);
+            document.getElementById('pagarDividaEconomia').innerText = 'R$ 0,00';
+            document.getElementById('pagarDividaData').value = new Date().toISOString().split('T')[0];
+
+            const selectConta = document.getElementById('pagarDividaConta');
+            selectConta.innerHTML = '<option value="">Selecione o Banco</option>';
+            listaContasBanco.forEach(d => {
+                selectConta.innerHTML += `<option value="${d.id}">[BANCO] ${d.nome_banco} (R$ ${Number(d.saldo_inicial).toFixed(2)})</option>`;
+            });
+
+            document.getElementById('modalPagarDivida').classList.remove('hidden');
+        }
+
+        function fecharModalPagarDivida() {
+            document.getElementById('modalPagarDivida').classList.add('hidden');
+        }
+
+        function calcularEconomiaDivida() {
+            let valorAtual = parseFloat(document.getElementById('pagarDividaAtual').value) || 0;
+            let valorReal = parseFloat(document.getElementById('pagarDividaRealPago').value) || 0;
+            let economia = valorAtual - valorReal;
+            if (economia < 0) economia = 0;
+            document.getElementById('pagarDividaEconomia').innerText = `R$ ${economia.toFixed(2)}`;
+        }
+
+        async function confirmarPagamentoDivida() {
+            const dividaId = document.getElementById('pagarDividaId').value;
+            const credor = document.getElementById('pagarDividaCredor').value;
+            const valorReal = parseFloat(document.getElementById('pagarDividaRealPago').value);
+            const dataPagamento = document.getElementById('pagarDividaData').value;
+            const contaId = document.getElementById('pagarDividaConta').value;
+
+            if(isNaN(valorReal) || !contaId || !dataPagamento) return alert('Preencha o valor real pago, selecione o banco e a data!');
+
+            // Marcar dívida como paga
+            await _supabase.from('meufuturo_dividas_atrasadas').update({ status: 'pago' }).eq('id', dividaId);
+
+            // Registrar transação de despesa no banco escolhido
+            await _supabase.from('meufuturo_transacoes').insert([{
+                descricao: `Acordo Dívida: ${credor}`,
+                valor: valorReal,
+                tipo: 'despesa',
+                data: dataPagamento,
+                conta_id: contaId
+            }]);
+
+            // Atualizar saldo da conta bancária
+            const contaBancoObj = listaContasBanco.find(c => c.id === contaId);
+            if(contaBancoObj) {
+                let novoSaldo = Number(contaBancoObj.saldo_inicial) - valorReal;
+                await _supabase.from('meufuturo_contas').update({ saldo_inicial: novoSaldo }).eq('id', contaId);
+            }
+
+            fecharModalPagarDivida();
+            carregarTudo();
+            alert('Pagamento da dívida registrado com sucesso!');
         }
 
         async function carregarTransacoes() {
