@@ -36,7 +36,7 @@
         <!-- Card de Controle de Etapas -->
         <div id="cardPrincipal" class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-5 text-center relative">
             
-            <!-- Botão de Minimizar / Flutuar (Aparece ativo quando o cronômetro estiver rodando) -->
+            <!-- Botão de Minimizar / Flutuar -->
             <button id="btnFlutuar" onclick="alternarModoFlutuante()" class="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-800/80 p-2 rounded-xl text-xs transition hidden" title="Modo Flutuante / Compacto">
                 <i class="fa-solid fa-expand"></i>
             </button>
@@ -62,8 +62,8 @@
                 <div class="flex items-center space-x-2">
                     <i class="fa-solid fa-bell text-amber-400 text-sm"></i>
                     <div>
-                        <span class="text-xs font-bold text-white block">Alerta Sonoro (Relógio)</span>
-                        <span class="text-[10px] text-slate-400">Bipe estilo despertador</span>
+                        <span class="text-xs font-bold text-white block">Alerta Sonoro (Elegante)</span>
+                        <span class="text-[10px] text-slate-400">Toque tipo carrilhão suave</span>
                     </div>
                 </div>
                 <div class="flex items-center space-x-2">
@@ -150,24 +150,34 @@
         let segundosDeslocamento = 0;
         let segundosPermanencia = 0;
 
+        // Bipe elegante estilo carrilhão / sino de cristal (suave e refinado)
         function emitirSomBip() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                function tocarBeepUnico(tempoInicio, frequencia) {
+                
+                function tocarNotaElegante(frequencia, atraso, duracao) {
                     const osc = audioCtx.createOscillator();
                     const gain = audioCtx.createGain();
-                    osc.type = 'square';
-                    osc.frequency.value = frequencia;
-                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime + tempoInicio);
-                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + tempoInicio + 0.1);
+                    
+                    osc.type = 'sine'; // Onda senoidal pura (som limpo e aveludado)
+                    osc.frequency.setValueAtTime(frequencia, audioCtx.currentTime + atraso);
+                    
+                    gain.gain.setValueAtTime(0.001, audioCtx.currentTime + atraso);
+                    gain.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + atraso + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + atraso + duracao);
+                    
                     osc.connect(gain);
                     gain.connect(audioCtx.destination);
-                    osc.start(audioCtx.currentTime + tempoInicio);
-                    osc.stop(audioCtx.currentTime + tempoInicio + 0.1);
+                    
+                    osc.start(audioCtx.currentTime + atraso);
+                    osc.stop(audioCtx.currentTime + atraso + duracao);
                 }
-                tocarBeepUnico(0.0, 2400);
-                tocarBeepUnico(0.12, 2400);
-                tocarBeepUnico(0.24, 3000);
+
+                // Acorde harmonioso tipo carrilhão
+                tocarNotaElegante(523.25, 0.0, 0.8);  // Nota Dó (C5)
+                tocarNotaElegante(659.25, 0.1, 0.8);  // Nota Mi (E5)
+                tocarNotaElegante(783.99, 0.2, 1.0);  // Nota Sol (G5)
+
             } catch (e) {
                 console.log('Áudio não suportado.');
             }
@@ -182,14 +192,12 @@
             const btnFlutuarIcon = document.querySelector('#btnFlutuar i');
 
             if (modoFlutuanteAtivo) {
-                // Modo Compacto / Flutuante
                 painelConfig.style.display = 'none';
                 painelBip.style.display = 'none';
                 painelEnd.style.display = 'none';
                 card.classList.add('fixed', 'top-4', 'left-4', 'right-4', 'z-[998]', 'shadow-2xl', 'border-blue-500/50');
                 btnFlutuarIcon.className = 'fa-solid fa-compress';
             } else {
-                // Modo Normal
                 painelConfig.style.display = 'block';
                 painelBip.style.display = 'flex';
                 painelEnd.style.display = 'block';
@@ -295,7 +303,6 @@
                 badge.innerHTML = '<i class="fa-solid fa-car text-amber-400 mr-1"></i> Etapa 2: Em Deslocamento';
                 status.innerText = 'Cronômetro de deslocamento rodando...';
                 
-                // Mostra o botão de flutuar assim que inicia
                 document.getElementById('btnFlutuar').classList.remove('hidden');
 
                 document.getElementById('inputTitulo').disabled = true;
@@ -330,7 +337,6 @@
                 tempoInicioMs = agora.getTime();
                 segundosPermanencia = 0;
 
-                // Se estiver no modo flutuante ao chegar, volta ao normal para ver os botões de finalizar
                 if (modoFlutuanteAtivo) alternarModoFlutuante();
 
                 etapaAtual = 3;
