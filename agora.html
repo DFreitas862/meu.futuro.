@@ -34,7 +34,13 @@
     <main class="max-w-md mx-auto p-4 md:p-6 space-y-6">
 
         <!-- Card de Controle de Etapas -->
-        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-5 text-center">
+        <div id="cardPrincipal" class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-5 text-center relative">
+            
+            <!-- Botão de Minimizar / Flutuar (Aparece ativo quando o cronômetro estiver rodando) -->
+            <button id="btnFlutuar" onclick="alternarModoFlutuante()" class="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-800/80 p-2 rounded-xl text-xs transition hidden" title="Modo Flutuante / Compacto">
+                <i class="fa-solid fa-expand"></i>
+            </button>
+
             <div class="space-y-1">
                 <span id="badgeEtapa" class="text-xs font-bold text-blue-400 uppercase tracking-widest"><i class="fa-solid fa-route mr-1"></i> Etapa 1: Pronto para Iniciar</span>
                 <h2 id="statusAtividade" class="text-sm text-slate-400">Insira os dados e clique em Iniciar Deslocamento</h2>
@@ -52,7 +58,7 @@
             </div>
 
             <!-- Configuração do Bipe Periódico -->
-            <div class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 text-left flex items-center justify-between gap-2">
+            <div id="painelBipConfig" class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 text-left flex items-center justify-between gap-2">
                 <div class="flex items-center space-x-2">
                     <i class="fa-solid fa-bell text-amber-400 text-sm"></i>
                     <div>
@@ -107,7 +113,7 @@
 
     </main>
 
-    <!-- Modal Pop-up de Resumo Final (Garantido para abrir por cima de tudo) -->
+    <!-- Modal Pop-up de Resumo Final -->
     <div id="modalResumo" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 z-[999]">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full space-y-4 shadow-2xl text-center">
             <div class="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto text-xl">
@@ -132,6 +138,7 @@
         let etapaAtual = 1; 
         let timerInterval = null;
         let tempoInicioMs = 0;
+        let modoFlutuanteAtivo = false;
         
         let horaInicioDeslocamento = '';
         let horaChegadaLocal = '';
@@ -163,6 +170,31 @@
                 tocarBeepUnico(0.24, 3000);
             } catch (e) {
                 console.log('Áudio não suportado.');
+            }
+        }
+
+        function alternarModoFlutuante() {
+            modoFlutuanteAtivo = !modoFlutuanteAtivo;
+            const card = document.getElementById('cardPrincipal');
+            const painelConfig = document.getElementById('painelConfig');
+            const painelBip = document.getElementById('painelBipConfig');
+            const painelEnd = document.getElementById('painelEnderecos');
+            const btnFlutuarIcon = document.querySelector('#btnFlutuar i');
+
+            if (modoFlutuanteAtivo) {
+                // Modo Compacto / Flutuante
+                painelConfig.style.display = 'none';
+                painelBip.style.display = 'none';
+                painelEnd.style.display = 'none';
+                card.classList.add('fixed', 'top-4', 'left-4', 'right-4', 'z-[998]', 'shadow-2xl', 'border-blue-500/50');
+                btnFlutuarIcon.className = 'fa-solid fa-compress';
+            } else {
+                // Modo Normal
+                painelConfig.style.display = 'block';
+                painelBip.style.display = 'flex';
+                painelEnd.style.display = 'block';
+                card.classList.remove('fixed', 'top-4', 'left-4', 'right-4', 'z-[998]', 'shadow-2xl', 'border-blue-500/50');
+                btnFlutuarIcon.className = 'fa-solid fa-expand';
             }
         }
 
@@ -263,6 +295,9 @@
                 badge.innerHTML = '<i class="fa-solid fa-car text-amber-400 mr-1"></i> Etapa 2: Em Deslocamento';
                 status.innerText = 'Cronômetro de deslocamento rodando...';
                 
+                // Mostra o botão de flutuar assim que inicia
+                document.getElementById('btnFlutuar').classList.remove('hidden');
+
                 document.getElementById('inputTitulo').disabled = true;
                 document.getElementById('inputTag').disabled = true;
                 document.getElementById('inputLocal').disabled = true;
@@ -294,6 +329,9 @@
                 
                 tempoInicioMs = agora.getTime();
                 segundosPermanencia = 0;
+
+                // Se estiver no modo flutuante ao chegar, volta ao normal para ver os botões de finalizar
+                if (modoFlutuanteAtivo) alternarModoFlutuante();
 
                 etapaAtual = 3;
                 badge.innerHTML = '<i class="fa-solid fa-clock text-indigo-400 mr-1"></i> Etapa 3: Permanência no Local';
@@ -345,7 +383,9 @@
                     return;
                 }
 
-                // Exibe o Pop-up utilizando classes do Tailwind sem conflito de style inline
+                if (modoFlutuanteAtivo) alternarModoFlutuante();
+                document.getElementById('btnFlutuar').classList.add('hidden');
+
                 const containerResumo = document.getElementById('conteudoResumo');
                 containerResumo.innerHTML = `
                     <div><strong>Atividade:</strong> ${titulo}</div>
