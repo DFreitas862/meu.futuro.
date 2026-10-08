@@ -67,8 +67,8 @@
             </div>
         </div>
 
-        <!-- Contas Bancárias, VR e Cartões -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Contas Bancárias e VR -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg space-y-4">
                 <div class="flex justify-between items-center">
                     <h3 class="text-base font-bold text-emerald-400"><i class="fa-solid fa-building-columns"></i> Bancos (Itaú, Nubank)</h3>
@@ -84,15 +84,21 @@
                 </div>
                 <div class="space-y-3" id="listaVR"></div>
             </section>
-
-            <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg space-y-4">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-base font-bold text-purple-400"><i class="fa-solid fa-credit-card"></i> Cartões de Crédito</h3>
-                    <button onclick="abrirModalCartao()" class="text-xs bg-slate-800 hover:bg-slate-700 text-purple-400 font-semibold px-2 py-1 rounded-lg border border-slate-700 transition">+ Cartão</button>
-                </div>
-                <div class="space-y-3" id="listaCartoes"></div>
-            </section>
         </div>
+
+        <!-- Seção de Cartões de Crédito (Faturas do Mês) -->
+        <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div>
+                    <h3 class="text-base font-bold text-purple-400"><i class="fa-solid fa-credit-card mr-2"></i>Cartões de Crédito - Faturas do Mês</h3>
+                    <p class="text-[11px] text-slate-400">Gerencie seus limites, compras e faturas mensais</p>
+                </div>
+                <button onclick="abrirModalCartao()" class="text-xs bg-slate-800 hover:bg-slate-700 text-purple-400 font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition">+ Novo Cartão</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="listaCartoes">
+                <p class="text-xs text-slate-500 text-center py-4 col-span-2">A carregar cartões...</p>
+            </div>
+        </section>
 
         <!-- Carnês do Mês & Dívidas Atrasadas -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -143,75 +149,40 @@
 
     <!-- ================= MODAIS ================= -->
 
-    <!-- Modal Pagar Parcela -->
-    <div id="modalPagarCarne" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <!-- Modal Nova Compra no Cartão -->
+    <div id="modalCompraCartao" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="text-lg font-bold text-amber-400"><i class="fa-solid fa-check-to-slot mr-2"></i>Pagar Parcela do Mês</h3>
-                <button onclick="fecharModalPagarCarne()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <h3 class="text-lg font-bold text-purple-450"><i class="fa-solid fa-cart-shopping mr-2"></i>Nova Compra no Cartão</h3>
+                <button onclick="fecharModalCompraCartao()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <div class="space-y-3">
-                <input type="hidden" id="pagarCarneId">
+                <input type="hidden" id="compraCartaoId">
                 <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Parcela</label>
-                    <input type="text" id="pagarCarneInfo" readonly class="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-sm text-slate-300 outline-none">
+                    <label class="text-[10px] text-slate-400 block mb-1">Cartão</label>
+                    <input type="text" id="compraCartaoNome" readonly class="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-sm text-slate-300 outline-none">
                 </div>
                 <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Valor Original (R$)</label>
-                    <input type="number" step="0.01" id="pagarCarneOriginal" readonly class="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-sm text-slate-300 outline-none">
+                    <label class="text-[10px] text-slate-400 block mb-1">Descrição / Estabelecimento</label>
+                    <input type="text" id="compraDescricao" placeholder="Ex: Supermercado" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 </div>
                 <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Valor Real Pago (Com juros, se houver)</label>
-                    <input type="number" step="0.01" id="pagarCarneReal" placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    <label class="text-[10px] text-slate-400 block mb-1">Valor da Compra (R$)</label>
+                    <input type="number" step="0.01" id="compraValor" placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 </div>
                 <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Data do Pagamento</label>
-                    <input type="date" id="pagarCarneData" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                </div>
-                <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Conta para Pagamento</label>
-                    <select id="pagarCarneConta" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                        <option value="">Selecione o Banco</option>
-                    </select>
+                    <label class="text-[10px] text-slate-400 block mb-1">Data da Compra</label>
+                    <input type="date" id="compraData" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" onclick="fecharModalPagarCarne()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="button" onclick="confirmarPagamentoCarne()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition">Confirmar</button>
+                    <button type="button" onclick="fecharModalCompraCartao()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
+                    <button type="button" onclick="salvarCompraCartao()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition">Salvar Compra</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal Novo Carnê -->
-    <div id="modalCarne" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
-            <h3 class="text-lg font-bold text-amber-400">Cadastrar Carnê / Financiamento</h3>
-            <div class="space-y-3">
-                <input type="text" id="carneCredor" placeholder="Credor (Ex: Banco Pan / Carro)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                <input type="number" step="0.01" id="carneValor" placeholder="Valor Parcela (R$)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Total de Parcelas (Ex: 41)</label>
-                        <input type="number" id="carneTotal" placeholder="41" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                    </div>
-                    <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Dia do Vencimento (Ex: 20)</label>
-                        <input type="number" id="carneVencimento" placeholder="20" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                    </div>
-                </div>
-                <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Mês da 1ª Parcela (Início do Carnê)</label>
-                    <input type="month" id="carneMesInicio" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                </div>
-                <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" onclick="fecharModalCarne()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="button" onclick="salvarCarneGerado()" class="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold">Gerar Carnê</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Cartão Atualizado com Fechamento e Vencimento -->
+    <!-- Modal Novo Cartão -->
     <div id="modalCartao" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-purple-400">Cadastrar Cartão de Crédito</h3>
@@ -220,11 +191,11 @@
                 <input type="number" step="0.01" id="cartaoLimite" placeholder="Limite Total (R$)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Melhor Dia / Fechamento</label>
+                        <label class="text-[10px] text-slate-400 block mb-1">Fechamento (Dia)</label>
                         <input type="number" id="cartaoFechamento" placeholder="Ex: 10" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                     </div>
                     <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Dia do Vencimento</label>
+                        <label class="text-[10px] text-slate-400 block mb-1">Vencimento (Dia)</label>
                         <input type="number" id="cartaoVencimento" placeholder="Ex: 17" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                     </div>
                 </div>
@@ -260,6 +231,34 @@
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalVR()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
                     <button type="button" onclick="salvarVRConta()" class="px-4 py-2 bg-cyan-600 text-white rounded-xl text-xs font-bold">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalCarne" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
+            <h3 class="text-lg font-bold text-amber-400">Cadastrar Carnê / Financiamento</h3>
+            <div class="space-y-3">
+                <input type="text" id="carneCredor" placeholder="Credor (Ex: Banco Pan / Carro)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <input type="number" step="0.01" id="carneValor" placeholder="Valor Parcela (R$)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Total de Parcelas (Ex: 41)</label>
+                        <input type="number" id="carneTotal" placeholder="41" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Dia do Vencimento (Ex: 20)</label>
+                        <input type="number" id="carneVencimento" placeholder="20" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Mês da 1ª Parcela (Início do Carnê)</label>
+                    <input type="month" id="carneMesInicio" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="fecharModalCarne()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
+                    <button type="button" onclick="salvarCarneGerado()" class="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold">Gerar Carnê</button>
                 </div>
             </div>
         </div>
@@ -400,28 +399,76 @@
             if(!error) { fecharModalVR(); carregarVR(); document.getElementById('vrNome').value=''; document.getElementById('vrSaldo').value=''; }
         }
 
-        // --- CARREGAR CARTÕES COM FECHAMENTO E VENCIMENTO ---
+        // --- GESTÃO DE CARTÕES E FATURAS ---
         async function carregarCartoes() {
-            const { data } = await _supabase.from('meufuturo_cartoes').select('*');
+            const { data: cartoes } = await _supabase.from('meufuturo_cartoes').select('*');
+            const { data: compras } = await _supabase.from('meufuturo_cartao_compras').select('*');
+            
             const lista = document.getElementById('listaCartoes');
             lista.innerHTML = '';
-            if(!data || data.length === 0) {
-                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-2">Nenhum cartão cadastrado.</p>';
+
+            if(!cartoes || cartoes.length === 0) {
+                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4 col-span-2">Nenhum cartão cadastrado. Clique em + Novo Cartão.</p>';
                 return;
             }
-            data.forEach(c => {
+
+            let anoSel = dataAtualNavegacao.getFullYear();
+            let mesSel = dataAtualNavegacao.getMonth() + 1;
+
+            cartoes.forEach(cartao => {
+                // Filtra compras deste cartão para o mês selecionado
+                let comprasDoMes = (compras || []).filter(c => c.cartao_id === cartao.id && Number(c.ano_fatura) === anoSel && Number(c.mes_fatura) === mesSel);
+                let totalFatura = comprasDoMes.reduce((acc, curr) => acc + Number(curr.valor), 0);
+                let limiteDisponivel = Number(cartao.limite) - totalFatura;
+
+                let itensHTML = '';
+                if(comprasDoMes.length === 0) {
+                    itensHTML = '<p class="text-[11px] text-slate-500 italic">Nenhuma compra nesta fatura.</p>';
+                } else {
+                    comprasDoMes.forEach(comp => {
+                        itensHTML += `
+                            <div class="flex justify-between items-center text-xs bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                                <div>
+                                    <span class="text-white font-medium">${comp.descricao}</span>
+                                    <span class="text-[10px] text-slate-400 block">${new Date(comp.data_compra + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-purple-300 font-bold">R$ ${Number(comp.valor).toFixed(2)}</span>
+                                    <button onclick="excluirCompraCartao('${comp.id}')" class="text-rose-400 hover:text-rose-300 text-xs"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
                 lista.innerHTML += `
-                    <div class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
-                        <div>
-                            <p class="font-bold text-sm text-white"><i class="fa-solid fa-credit-card text-purple-400 mr-1.5"></i>${c.nome}</p>
-                            <span class="text-[11px] text-slate-400">Limite: R$ ${Number(c.limite).toFixed(2)} | Fechamento: ${c.fechamento || '-'} | Vencimento: ${c.vencimento || '-'}</span>
+                    <div class="bg-slate-950/50 p-4 rounded-2xl border border-slate-800 space-y-3 shadow">
+                        <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                            <div>
+                                <h4 class="font-bold text-sm text-white"><i class="fa-solid fa-credit-card text-purple-400 mr-2"></i>${cartao.nome}</h4>
+                                <span class="text-[10px] text-slate-400">Fechamento: Dia ${cartao.fechamento || 10} | Vencimento: Dia ${cartao.vencimento || 17}</span>
+                            </div>
+                            <button onclick="abrirModalCompraCartao('${cartao.id}', '${cartao.nome}')" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl transition"><i class="fa-solid fa-plus mr-1"></i> Compra</button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-xs bg-slate-900/40 p-2.5 rounded-xl border border-slate-800/80">
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">Fatura Atual</span>
+                                <span class="text-purple-400 font-extrabold text-sm">R$ ${totalFatura.toFixed(2)}</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">Limite Disponível</span>
+                                <span class="text-emerald-400 font-extrabold text-sm">R$ ${limiteDisponivel.toFixed(2)}</span>
+                            </div>
+                        </div>
+                        <div class="space-y-1.5 max-h-40 overflow-y-auto">
+                            <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Lançamentos da Fatura:</p>
+                            ${itensHTML}
                         </div>
                     </div>
                 `;
             });
         }
 
-        // --- SALVAR CARTÃO CORRIGIDO ---
         async function salvarCartao() {
             const nome = document.getElementById('cartaoNome').value;
             const limite = parseFloat(document.getElementById('cartaoLimite').value);
@@ -430,13 +477,7 @@
 
             if(!nome || isNaN(limite)) return alert('Preencha o nome e o limite do cartão!');
 
-            const { error } = await _supabase.from('meufuturo_cartoes').insert([{ 
-                nome: nome, 
-                limite: limite, 
-                fechamento: fechamento, 
-                vencimento: vencimento 
-            }]);
-
+            const { error } = await _supabase.from('meufuturo_cartoes').insert([{ nome, limite, fechamento, vencimento }]);
             if(error) return alert('Erro ao salvar cartão: ' + error.message);
 
             fecharModalCartao();
@@ -448,19 +489,78 @@
             alert('Cartão cadastrado com sucesso!');
         }
 
+        function abrirModalCompraCartao(cartaoId, cartaoNome) {
+            document.getElementById('compraCartaoId').value = cartaoId;
+            document.getElementById('compraCartaoNome').value = cartaoNome;
+            document.getElementById('compraDescricao').value = '';
+            document.getElementById('compraValor').value = '';
+            document.getElementById('compraData').value = new Date().toISOString().split('T')[0];
+            document.getElementById('modalCompraCartao').classList.remove('hidden');
+        }
+
+        function fecharModalCompraCartao() {
+            document.getElementById('modalCompraCartao').classList.add('hidden');
+        }
+
+        async function salvarCompraCartao() {
+            const cartaoId = document.getElementById('compraCartaoId').value;
+            const descricao = document.getElementById('compraDescricao').value;
+            const valor = parseFloat(document.getElementById('compraValor').value);
+            const dataCompra = document.getElementById('compraData').value;
+
+            if(!descricao || isNaN(valor) || !dataCompra) return alert('Preencha todos os campos!');
+
+            // Calcula em qual mês/ano da fatura a compra entra com base na data
+            let partesData = dataCompra.split('-');
+            let ano = parseInt(partesData[0]);
+            let mes = parseInt(partesData[1]);
+            let dia = parseInt(partesData[2]);
+
+            // Busca o dia de fechamento do cartão para calcular a fatura correta
+            const { data: cartaoObj } = await _supabase.from('meufuturo_cartoes').select('fechamento').eq('id', cartaoId).single();
+            let diaFechamento = cartaoObj ? (cartaoObj.fechamento || 10) : 10;
+
+            // Se o dia da compra for igual ou após o fechamento, a fatura vai para o mês seguinte
+            if (dia >= diaFechamento) {
+                mes++;
+                if (mes > 12) {
+                    mes = 1;
+                    ano++;
+                }
+            }
+
+            const { error } = await _supabase.from('meufuturo_cartao_compras').insert([{
+                cartao_id: cartaoId,
+                descricao: descricao,
+                valor: valor,
+                data_compra: dataCompra,
+                mes_fatura: mes,
+                ano_fatura: ano,
+                status: 'aberta'
+            }]);
+
+            if(error) return alert('Erro ao salvar compra: ' + error.message);
+
+            fecharModalCompraCartao();
+            carregarCartoes();
+            alert('Compra lançada com sucesso na fatura!');
+        }
+
+        async function excluirCompraCartao(id) {
+            if(!confirm('Deseja excluir esta compra do cartão?')) return;
+            await _supabase.from('meufuturo_cartao_compras').delete().eq('id', id);
+            carregarCartoes();
+        }
+
         function popularSelectsContas() {
             const selectTrans = document.getElementById('transContaId');
-            const selectCarnePag = document.getElementById('pagarCarneConta');
-            
             if(selectTrans) selectTrans.innerHTML = '<option value="">Selecione Conta</option>';
-            if(selectCarnePag) selectCarnePag.innerHTML = '<option value="">Selecione o Banco</option>';
 
             listaContasBanco.forEach(d => {
                 const opt = document.createElement('option');
                 opt.value = `conta:${d.id}`;
                 opt.textContent = `[BANCO] ${d.nome_banco} (R$ ${Number(d.saldo_inicial).toFixed(2)})`;
                 if(selectTrans) selectTrans.appendChild(opt);
-                if(selectCarnePag) selectCarnePag.appendChild(opt.cloneNode(true));
             });
 
             listaVRBanco.forEach(d => {
@@ -516,7 +616,6 @@
             alert('Carnê gerado com sucesso!');
         }
 
-        // --- EXIBIR CARNÊS E TOTAIS ---
         async function carregarCarnesDoMes() {
             const { data } = await _supabase.from('meufuturo_carnes').select('*');
             const lista = document.getElementById('listaCarnes');
@@ -552,7 +651,7 @@
             }
 
             if(!data || data.length === 0) {
-                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhum carnê cadastrado. Clique em + Novo Carnê.</p>';
+                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhum carnê cadastrado.</p>';
                 return;
             }
 
@@ -570,23 +669,19 @@
                         ? `<span class="bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-check mr-1"></i> Pago</span>` 
                         : `<button onclick="abrirPagarCarne('${c.id}', '${c.credor}', ${c.parcela_atual}, ${c.total_parcelas}, ${c.valor_parcela})" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">Pagar Parcela</button>`;
 
-                    let diaExibicao = `Dia ${c.dia_vencimento || 20}`;
-
                     lista.innerHTML += `
                         <div class="p-4 rounded-2xl border ${corCard} space-y-3 shadow">
                             <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
                                 <h4 class="font-bold text-white text-sm"><i class="fa-solid fa-file-invoice text-amber-400 mr-2"></i>${c.credor}</h4>
-                                <button onclick="excluirGrupoCarne('${c.credor}')" class="text-rose-400 hover:text-rose-300 text-xs" title="Excluir carnê inteiro"><i class="fa-solid fa-trash"></i> Excluir</button>
+                                <button onclick="excluirGrupoCarne('${c.credor}')" class="text-rose-400 hover:text-rose-300 text-xs"><i class="fa-solid fa-trash"></i> Excluir</button>
                             </div>
                             <div class="flex justify-between items-center">
                                 <div>
                                     <p class="text-sm font-extrabold text-white">Parcela ${c.parcela_atual} de ${c.total_parcelas}</p>
-                                    <p class="text-xs text-slate-400 mt-0.5">Vencimento: <strong class="text-slate-200">${diaExibicao}</strong></p>
+                                    <p class="text-xs text-slate-400 mt-0.5">Vencimento: Dia ${c.dia_vencimento || 20}</p>
                                     <p class="text-base font-extrabold text-amber-400 mt-1">R$ ${Number(c.valor_parcela).toFixed(2)}</p>
                                 </div>
-                                <div>
-                                    ${badgeStatus}
-                                </div>
+                                <div>${badgeStatus}</div>
                             </div>
                         </div>
                     `;
@@ -596,51 +691,6 @@
             if(!encontrouAlguma) {
                 lista.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">Nenhuma parcela de carnê para este mês.</p>`;
             }
-        }
-
-        function abrirPagarCarne(id, credor, atual, total, valor) {
-            document.getElementById('pagarCarneId').value = id;
-            document.getElementById('pagarCarneInfo').value = `${credor} (Parcela ${atual}/${total})`;
-            document.getElementById('pagarCarneOriginal').value = valor.toFixed(2);
-            document.getElementById('pagarCarneReal').value = valor.toFixed(2);
-            document.getElementById('pagarCarneData').value = new Date().toISOString().split('T')[0];
-            document.getElementById('modalPagarCarne').classList.remove('hidden');
-        }
-
-        function fecharModalPagarCarne() { document.getElementById('modalPagarCarne').classList.add('hidden'); }
-
-        async function confirmarPagamentoCarne() {
-            const carneId = document.getElementById('pagarCarneId').value;
-            const valorReal = parseFloat(document.getElementById('pagarCarneReal').value);
-            const dataPagamento = document.getElementById('pagarCarneData').value;
-            const contaInfo = document.getElementById('pagarCarneConta').value;
-
-            if(isNaN(valorReal) || !contaInfo) return alert('Preencha o valor e selecione a conta!');
-
-            const [tipoConta, contaId] = contaInfo.split(':');
-
-            const { data: carneData } = await _supabase.from('meufuturo_carnes').select('*').eq('id', carneId).single();
-            
-            if(carneData) {
-                await _supabase.from('meufuturo_carnes').update({ status: 'pago' }).eq('id', carneId);
-            }
-
-            await _supabase.from('meufuturo_transacoes').insert([{
-                descricao: `Pgto Carnê: ${carneData.credor} (${carneData.parcela_atual}/${carneData.total_parcelas})`,
-                valor: valorReal,
-                tipo: 'despesa',
-                data: dataPagamento,
-                conta_id: contaId
-            }]);
-
-            if(tipoConta === 'conta') {
-                const { data: c } = await _supabase.from('meufuturo_contas').select('saldo_inicial').eq('id', contaId).single();
-                await _supabase.from('meufuturo_contas').update({ saldo_inicial: Number(c.saldo_inicial) - valorReal }).eq('id', contaId);
-            }
-
-            fecharModalPagarCarne();
-            carregarTudo();
-            alert('Pagamento registrado com sucesso!');
         }
 
         async function excluirGrupoCarne(credor) {
@@ -696,7 +746,6 @@
         async function carregarTransacoes() {
             const { data } = await _supabase.from('meufuturo_transacoes').select('*');
             let rec = 0, desp = 0;
-            
             let anoSel = dataAtualNavegacao.getFullYear();
             let mesSel = dataAtualNavegacao.getMonth() + 1;
 
@@ -754,7 +803,7 @@
             const { data } = await _supabase.from('meufuturo_transacoes').select('*').eq('conta_id', id).order('data', { ascending: false });
             lista.innerHTML = '';
             if(!data || data.length === 0) {
-                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhuma movimentação.</p>';
+                lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Nenhuma movimentação.</p>';
                 return;
             }
             data.forEach(t => {
