@@ -240,6 +240,41 @@
         </div>
     </div>
 
+    <!-- Modal Pagar Fatura do Cartão -->
+    <div id="modalPagarFatura" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-bold text-emerald-400"><i class="fa-solid fa-file-invoice-dollar mr-2"></i>Pagar Fatura do Cartão</h3>
+                <button onclick="fecharModalPagarFatura()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3">
+                <input type="hidden" id="pagarCartaoId">
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Cartão</label>
+                    <input type="text" id="pagarCartaoNome" readonly class="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Valor da Fatura do Mês (R$)</label>
+                    <input type="number" step="0.01" id="pagarCartaoValor" readonly class="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-sm text-purple-400 font-bold outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Conta Bancária para Débito</label>
+                    <select id="pagarCartaoConta" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                        <option value="">Selecione o Banco</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Data do Pagamento</label>
+                    <input type="date" id="pagarCartaoData" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="fecharModalPagarFatura()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
+                    <button type="button" onclick="confirmarPagamentoFatura()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition">Confirmar Pagamento</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Editar / Gerenciar Cartão -->
     <div id="modalEditarCartao" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
@@ -535,7 +570,7 @@
             const saldo = parseFloat(document.getElementById('contaSaldo').value);
             if(!nome || isNaN(saldo)) return alert('Preencha os campos!');
             const { error } = await _supabase.from('meufuturo_contas').insert([{ nome_banco: nome, saldo_inicial: saldo }]);
-            if(!error) { fecharModalConta(); carregarContas(); document.getElementById('contaBanco').value=''; document.getElementById('contaSaldo').value=''; }
+            if(!error) { fecharModalConta(); carregarContas(); document.getElementById('contaBanco'].value=''; document.getElementById('contaSaldo').value=''; }
         }
 
         async function carregarVR() {
@@ -583,22 +618,30 @@
                 let totalFatura = comprasDoMes.reduce((acc, curr) => acc + Number(curr.valor), 0);
                 let limiteDisponivel = Number(cartao.limite) - totalFatura;
 
+                let faturaPaga = comprasDoMes.length > 0 && comprasDoMes.every(c => c.pago === true);
+
                 let comprasHTML = comprasDoMes.length === 0 ? '<p class="text-[11px] text-slate-500 italic">Nenhuma compra nesta fatura.</p>' : '';
                 comprasDoMes.forEach(cp => {
                     let descTexto = cp.total_parcelas && cp.total_parcelas > 1 ? `${cp.descricao} (${cp.parcela_atual}/${cp.total_parcelas})` : cp.descricao;
+                    let checkPago = cp.pago ? '<span class="text-emerald-400 text-[10px] font-bold ml-2">(Pago)</span>' : '';
                     comprasHTML += `
                         <div class="flex justify-between items-center text-xs bg-slate-900/60 p-2 rounded-lg border border-slate-800">
-                            <span class="text-white">${descTexto}</span>
+                            <span class="text-white">${descTexto} ${checkPago}</span>
                             <span class="text-purple-300 font-bold">R$ ${Number(cp.valor).toFixed(2)}</span>
                         </div>
                     `;
                 });
+
+                let botaoPagarHTML = totalFatura > 0 && !faturaPaga 
+                    ? `<button onclick="abrirModalPagarFatura('${cartao.id}', '${cartao.nome}', ${totalFatura})" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition shadow"><i class="fa-solid fa-check mr-1"></i> Pagar Fatura</button>`
+                    : (faturaPaga ? `<span class="text-[11px] bg-emerald-950 text-emerald-400 px-2 py-1 rounded-lg border border-emerald-800 font-bold"><i class="fa-solid fa-check-circle mr-1"></i>Fatura Quitada</span>` : '');
 
                 lista.innerHTML += `
                     <div class="bg-slate-950/50 p-4 rounded-2xl border border-slate-800 space-y-3 shadow">
                         <div class="flex justify-between items-center border-b border-slate-800 pb-2">
                             <h4 class="font-bold text-sm text-white"><i class="fa-solid fa-credit-card text-purple-400 mr-2"></i>${cartao.nome}</h4>
                             <div class="flex items-center gap-1.5">
+                                ${botaoPagarHTML}
                                 <button onclick="abrirModalCompraCartao('${cartao.id}')" class="bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition"><i class="fa-solid fa-plus mr-1"></i> Compra</button>
                                 <button onclick="abrirModalEditarCartao('${cartao.id}', '${cartao.nome}', ${cartao.limite}, ${cartao.vencimento || 10})" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold px-2 py-1 rounded-lg border border-slate-700 transition" title="Gerenciar Cartão"><i class="fa-solid fa-gear"></i></button>
                             </div>
@@ -706,7 +749,8 @@
                     parcela_atual: i,
                     total_parcelas: parcelas,
                     mes_fatura: m,
-                    ano_fatura: a
+                    ano_fatura: a,
+                    pago: false
                 });
             }
 
@@ -716,6 +760,61 @@
             fecharModalCompraCartao();
             carregarCartoes();
             alert('Compra(s) adicionada(s) com sucesso!');
+        }
+
+        function abrirModalPagarFatura(cartaoId, cartaoNome, valorFatura) {
+            document.getElementById('pagarCartaoId').value = cartaoId;
+            document.getElementById('pagarCartaoNome').value = cartaoNome;
+            document.getElementById('pagarCartaoValor').value = valorFatura.toFixed(2);
+            document.getElementById('pagarCartaoData').value = new Date().toISOString().split('T')[0];
+
+            const selectConta = document.getElementById('pagarCartaoConta');
+            selectConta.innerHTML = '<option value="">Selecione o Banco</option>';
+            listaContasBanco.forEach(d => { selectConta.innerHTML += `<option value="${d.id}">[BANCO] ${d.nome_banco} (R$ ${Number(d.saldo_inicial).toFixed(2)})</option>`; });
+            document.getElementById('modalPagarFatura').classList.remove('hidden');
+        }
+
+        function fecharModalPagarFatura() { document.getElementById('modalPagarFatura').classList.add('hidden'); }
+
+        async function confirmarPagamentoFatura() {
+            const cartaoId = document.getElementById('pagarCartaoId').value;
+            const cartaoNome = document.getElementById('pagarCartaoNome').value;
+            const valorFatura = parseFloat(document.getElementById('pagarCartaoValor').value);
+            const contaId = document.getElementById('pagarCartaoConta').value;
+            const dataPagto = document.getElementById('pagarCartaoData').value;
+
+            if(!contaId || !dataPagto) return alert('Selecione o banco e a data!');
+
+            let anoSel = dataAtualNavegacao.getFullYear(), mesSel = dataAtualNavegacao.getMonth() + 1;
+
+            // Marcar compras do mês como pagas
+            const { data: comprasDoMes } = await _supabase.from('meufuturo_cartao_compras').select('id').eq('cartao_id', cartaoId).eq('ano_fatura', anoSel).eq('mes_fatura', mesSel);
+            
+            if (comprasDoMes && comprasDoMes.length > 0) {
+                for (let cp of comprasDoMes) {
+                    await _supabase.from('meufuturo_cartao_compras').update({ pago: true }).eq('id', cp.id);
+                }
+            }
+
+            // Registar transação de saída no banco escolhido
+            await _supabase.from('meufuturo_transacoes').insert([{
+                descricao: `Pagamento Fatura: ${cartaoNome}`,
+                valor: valorFatura,
+                tipo: 'despesa',
+                data: dataPagto,
+                conta_id: contaId
+            }]);
+
+            // Atualizar saldo da conta bancária
+            const contaObj = listaContasBanco.find(c => c.id === contaId);
+            if(contaObj) {
+                let novoSaldo = Number(contaObj.saldo_inicial) - valorFatura;
+                await _supabase.from('meufuturo_contas').update({ saldo_inicial: novoSaldo }).eq('id', contaId);
+            }
+
+            fecharModalPagarFatura();
+            carregarTudo();
+            alert('Fatura paga com sucesso e descontada do banco!');
         }
 
         // --- GESTÃO DE VEÍCULOS ---
