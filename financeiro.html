@@ -115,8 +115,8 @@
             </div>
         </section>
 
-        <!-- Carnês do Mês & Dívidas Atrasadas -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Carnês do Mês & Dívidas Atrasadas (Disposição Corrigida) -->
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
             <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg space-y-4">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-800 pb-3">
                     <div>
@@ -133,9 +133,9 @@
                 </div>
             </section>
 
-            <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-base font-bold text-rose-400"><i class="fa-solid fa-triangle-exclamation"></i> Dívidas Atrasadas</h3>
+            <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg space-y-4">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                    <h3 class="text-base font-bold text-rose-400"><i class="fa-solid fa-triangle-exclamation mr-2"></i>Dívidas Atrasadas</h3>
                     <div class="flex items-center gap-2">
                         <button onclick="alternarOrdemDividas()" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 transition" title="Alternar Ordenação"><i class="fa-solid fa-arrow-down-wide-short mr-1"></i><span id="labelOrdemDivida">Recentes</span></button>
                         <button onclick="abrirModalDivida()" class="text-xs bg-slate-800 hover:bg-slate-700 text-rose-400 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 transition">+ Dívida</button>
@@ -238,7 +238,7 @@
             <div class="space-y-3">
                 <input type="hidden" id="manutVeiculoId">
                 <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Peça / Serviço (Ex: Correia Dentada, Óleo, Pastilha)</label>
+                    <label class="text-[10px] text-slate-400 block mb-1">Peça / Serviço (Ex: Correia Dentada, Óleo)</label>
                     <input type="text" id="manutDesc" placeholder="Descrição do serviço" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
@@ -565,7 +565,6 @@
                     if (Number(ultimoAbast.km) > ultimoKm) ultimoKm = Number(ultimoAbast.km);
                 }
 
-                // Calcular média Km/L do último abastecimento
                 let ultimoConsumoStr = 'N/A';
                 if (abastCarro.length > 0) {
                     let ultimo = abastCarro[abastCarro.length - 1];
@@ -660,7 +659,6 @@
             const nome = document.getElementById('veiculoNome').value;
             const modelo = document.getElementById('veiculoModelo').value;
             const km = parseFloat(document.getElementById('veiculoKm').value) || 0;
-
             if(!nome) return alert('Insira o nome do veículo!');
 
             const { error } = await _supabase.from('meufuturo_veiculos').insert([{ nome, modelo, km_atual: km }]);
@@ -686,7 +684,6 @@
             listaContasBanco.forEach(d => {
                 selectConta.innerHTML += `<option value="${d.id}">[BANCO] ${d.nome_banco} (R$ ${Number(d.saldo_inicial).toFixed(2)})</option>`;
             });
-
             document.getElementById('modalAbastecimento').classList.remove('hidden');
         }
 
@@ -702,52 +699,26 @@
 
             if(isNaN(km) || isNaN(litros) || isNaN(valor) || !contaId || !data) return alert('Preencha todos os campos!');
 
-            // Buscar último abastecimento deste veículo para calcular o Km/L
-            const { data: anteriores } = await _supabase.from('meufuturo_veiculo_abastecimentos')
-                .select('*')
-                .eq('veiculo_id', veiculoId)
-                .order('km', { ascending: false })
-                .limit(1);
+            const { data: anteriores } = await _supabase.from('meufuturo_veiculo_abastecimentos').select('*').eq('veiculo_id', veiculoId).order('km', { ascending: false }).limit(1);
 
             let consumoKmPorL = null;
             if (anteriores && anteriores.length > 0) {
                 let ultimoKm = Number(anteriores[0].km);
                 let rodados = km - ultimoKm;
-                if (rodados > 0 && litros > 0) {
-                    consumoKmPorL = rodados / litros;
-                }
+                if (rodados > 0 && litros > 0) consumoKmPorL = rodados / litros;
             }
 
-            // Inserir abastecimento
-            await _supabase.from('meufuturo_veiculo_abastecimentos').insert([{
-                veiculo_id: veiculoId,
-                data,
-                km,
-                litros,
-                valor_total: valor,
-                consumo_km_l: consumoKmPorL,
-                conta_id: contaId
-            }]);
-
-            // Atualizar km atual do veículo
+            await _supabase.from('meufuturo_veiculo_abastecimentos').insert([{ veiculo_id: veiculoId, data, km, litros, valor_total: valor, consumo_km_l: consumoKmPorL, conta_id: contaId }]);
             await _supabase.from('meufuturo_veiculos').update({ km_atual: km }).eq('id', veiculoId);
 
-            // Registrar despesa na conta bancária
             const { data: vObj } = await _supabase.from('meufuturo_veiculos').select('nome').eq('id', veiculoId).single();
             let nomeCarro = vObj ? vObj.nome : 'Veículo';
 
-            await _supabase.from('meufuturo_transacoes').insert([{
-                descricao: `Abastecimento (${nomeCarro})`,
-                valor: valor,
-                tipo: 'despesa',
-                data: data,
-                conta_id: contaId
-            }]);
+            await _supabase.from('meufuturo_transacoes').insert([{ descricao: `Abastecimento (${nomeCarro})`, valor: valor, tipo: 'despesa', data: data, conta_id: contaId }]);
 
             const contaBancoObj = listaContasBanco.find(c => c.id === contaId);
             if(contaBancoObj) {
-                let novoSaldo = Number(contaBancoObj.saldo_inicial) - valor;
-                await _supabase.from('meufuturo_contas').update({ saldo_inicial: novoSaldo }).eq('id', contaId);
+                await _supabase.from('meufuturo_contas').update({ saldo_inicial: Number(contaBancoObj.saldo_inicial) - valor }).eq('id', contaId);
             }
 
             fecharModalAbastecimento();
@@ -768,11 +739,14 @@
             listaContasBanco.forEach(d => {
                 selectConta.innerHTML += `<option value="${d.id}">[BANCO] ${d.nome_banco} (R$ ${Number(d.saldo_inicial).toFixed(2)})</option>`;
             });
-
             document.getElementById('modalManutencao').classList.remove('hidden');
         }
 
         function fecharModalManutencao() { document.getElementById('modalManutencao').classList.add('hidden'); }
+
+        async function salverManutencaoInterna() {
+            // Alias interno para evitar conflito de nome
+        }
 
         async function salvarManutencao() {
             const veiculoId = document.getElementById('manutVeiculoId').value;
@@ -785,32 +759,16 @@
 
             if(!descricao || isNaN(kmTroca) || isNaN(valor) || !contaId || !data) return alert('Preencha os campos obrigatórios!');
 
-            // Inserir manutenção
-            await _supabase.from('meufuturo_veiculo_manutencoes').insert([{
-                veiculo_id: veiculoId,
-                descricao,
-                km_troca: kmTroca,
-                km_limite: kmLimite,
-                valor,
-                data
-            }]);
+            await _supabase.from('meufuturo_veiculo_manutencoes').insert([{ veiculo_id: veiculoId, descricao, km_troca: kmTroca, km_limite: kmLimite, valor, data }]);
 
-            // Registrar despesa na conta bancária
             const { data: vObj } = await _supabase.from('meufuturo_veiculos').select('nome').eq('id', veiculoId).single();
             let nomeCarro = vObj ? vObj.nome : 'Veículo';
 
-            await _supabase.from('meufuturo_transacoes').insert([{
-                descricao: `Manutenção (${nomeCarro}): ${descricao}`,
-                valor: valor,
-                tipo: 'despesa',
-                data: data,
-                conta_id: contaId
-            }]);
+            await _supabase.from('meufuturo_transacoes').insert([{ descricao: `Manutenção (${nomeCarro}): ${descricao}`, valor: valor, tipo: 'despesa', data: data, conta_id: contaId }]);
 
             const contaBancoObj = listaContasBanco.find(c => c.id === contaId);
             if(contaBancoObj) {
-                let novoSaldo = Number(contaBancoObj.saldo_inicial) - valor;
-                await _supabase.from('meufuturo_contas').update({ saldo_inicial: novoSaldo }).eq('id', contaId);
+                await _supabase.from('meufuturo_contas').update({ saldo_inicial: Number(contaBancoObj.saldo_inicial) - valor }).eq('id', contaId);
             }
 
             fecharModalManutencao();
@@ -829,15 +787,13 @@
             if(!credor || isNaN(valor) || isNaN(total) || !mesInicioStr) return alert('Preencha todos os campos!');
 
             const partes = mesInicioStr.split('-');
-            let anoInicio = parseInt(partes[0]);
-            let mesInicio = parseInt(partes[1]);
+            let anoInicio = parseInt(partes[0]), mesInicio = parseInt(partes[1]);
 
             await _supabase.from('meufuturo_carnes').delete().eq('credor', credor);
 
             let parcelas = [];
             for (let i = 1; i <= total; i++) {
-                let m = mesInicio + (i - 1);
-                let a = anoInicio;
+                let m = mesInicio + (i - 1), a = anoInicio;
                 while (m > 12) { m -= 12; a++; }
                 parcelas.push({ credor, valor_parcela: valor, parcela_atual: i, total_parcelas: total, dia_vencimento: venc, ano_ref: a, mes_ref: m, status: 'pendente' });
             }
@@ -994,7 +950,6 @@
             listaContasBanco.forEach(d => {
                 selectConta.innerHTML += `<option value="${d.id}">[BANCO] ${d.nome_banco} (R$ ${Number(d.saldo_inicial).toFixed(2)})</option>`;
             });
-
             document.getElementById('modalPagarDivida').classList.remove('hidden');
         }
 
