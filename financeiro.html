@@ -632,9 +632,13 @@
                     `;
                 });
 
-                let botaoPagarHTML = totalFatura > 0 && !faturaPaga 
-                    ? `<button onclick="abrirModalPagarFatura('${cartao.id}', '${cartao.nome}', ${totalFatura})" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition shadow"><i class="fa-solid fa-check mr-1"></i> Pagar Fatura</button>`
-                    : (faturaPaga ? `<span class="text-[11px] bg-emerald-950 text-emerald-400 px-2 py-1 rounded-lg border border-emerald-800 font-bold"><i class="fa-solid fa-check-circle mr-1"></i>Fatura Quitada</span>` : '');
+                // Criação segura do botão utilizando atributos data-* para evitar conflitos de sintaxe
+                let botaoPagarHTML = '';
+                if (totalFatura > 0 && !faturaPaga) {
+                    botaoPagarHTML = `<button data-id="${cartao.id}" data-nome="${encodeURIComponent(cartao.nome)}" data-valor="${totalFatura}" onclick="clicarPagarFatura(this)" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition shadow"><i class="fa-solid fa-check mr-1"></i> Pagar Fatura</button>`;
+                } else if (faturaPaga) {
+                    botaoPagarHTML = `<span class="text-[11px] bg-emerald-950 text-emerald-400 px-2 py-1 rounded-lg border border-emerald-800 font-bold"><i class="fa-solid fa-check-circle mr-1"></i>Fatura Quitada</span>`;
+                }
 
                 lista.innerHTML += `
                     <div class="bg-slate-950/50 p-4 rounded-2xl border border-slate-800 space-y-3 shadow">
@@ -643,7 +647,7 @@
                             <div class="flex items-center gap-1.5">
                                 ${botaoPagarHTML}
                                 <button onclick="abrirModalCompraCartao('${cartao.id}')" class="bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition"><i class="fa-solid fa-plus mr-1"></i> Compra</button>
-                                <button onclick="abrirModalEditarCartao('${cartao.id}', '${cartao.nome}', ${cartao.limite}, ${cartao.vencimento || 10})" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold px-2 py-1 rounded-lg border border-slate-700 transition" title="Gerenciar Cartão"><i class="fa-solid fa-gear"></i></button>
+                                <button onclick="abrirModalEditarCartao('${cartao.id}', '${encodeURIComponent(cartao.nome)}', ${cartao.limite}, ${cartao.vencimento || 10})" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold px-2 py-1 rounded-lg border border-slate-700 transition" title="Gerenciar Cartão"><i class="fa-solid fa-gear"></i></button>
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-2 text-xs bg-slate-900/40 p-2.5 rounded-xl border border-slate-800">
@@ -677,9 +681,9 @@
             alert('Cartão cadastrado com sucesso!');
         }
 
-        function abrirModalEditarCartao(id, nome, limite, vencimento) {
+        function abrirModalEditarCartao(id, nomeEncoded, limite, vencimento) {
             document.getElementById('editCartaoId').value = id;
-            document.getElementById('editCartaoNome').value = nome;
+            document.getElementById('editCartaoNome').value = decodeURIComponent(nomeEncoded);
             document.getElementById('editCartaoLimite').value = limite;
             document.getElementById('editCartaoVencimento').value = vencimento;
             document.getElementById('modalEditarCartao').classList.remove('hidden');
@@ -762,7 +766,11 @@
             alert('Compra(s) adicionada(s) com sucesso!');
         }
 
-        function abrirModalPagarFatura(cartaoId, cartaoNome, valorFatura) {
+        function clicarPagarFatura(button) {
+            const cartaoId = button.getAttribute('data-id');
+            const cartaoNome = decodeURIComponent(button.getAttribute('data-nome'));
+            const valorFatura = parseFloat(button.getAttribute('data-valor'));
+
             document.getElementById('pagarCartaoId').value = cartaoId;
             document.getElementById('pagarCartaoNome').value = cartaoNome;
             document.getElementById('pagarCartaoValor').value = valorFatura.toFixed(2);
