@@ -176,7 +176,7 @@
         </div>
     </div>
 
-    <!-- Modal Novo Carnê Corrigido -->
+    <!-- Modal Novo Carnê Perfeito -->
     <div id="modalCarne" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-amber-400">Cadastrar Carnê / Financiamento</h3>
@@ -430,7 +430,7 @@
             });
         }
 
-        // --- GERAÇÃO PRECISA: LEITURA DIRETA DO ANO E MÊS SEM FUSO HORÁRIO ---
+        // --- GERAÇÃO COM SUPABASE ORGANIZADO (ano_ref e mes_ref) ---
         async function salvarCarneGerado() {
             const credor = document.getElementById('carneCredor').value;
             const valor = parseFloat(document.getElementById('carneValor').value);
@@ -440,7 +440,6 @@
 
             if(!credor || isNaN(valor) || isNaN(total) || !mesInicioStr) return alert('Preencha todos os campos e o mês da 1ª parcela!');
 
-            // Divide a string '2025-09' diretamente em ano e mês numéricos exatos
             const partes = mesInicioStr.split('-');
             let anoInicio = parseInt(partes[0]);
             let mesInicio = parseInt(partes[1]);
@@ -462,7 +461,7 @@
                     valor_parcela: valor,
                     parcela_atual: i,
                     total_parcelas: total,
-                    dia_vencimento: venc, // Número do dia compatível com coluna integer
+                    dia_vencimento: venc,
                     ano_ref: a,
                     mes_ref: m,
                     status: 'pendente'
@@ -477,7 +476,7 @@
             alert('Carnê gerado com sucesso!');
         }
 
-        // --- EXIBIR APENAS A PARCELA DO MÊS SELECIONADO NA NAVEGAÇÃO ---
+        // --- EXIBIR APENAS A PARCELA DO MÊS SELECIONADO ---
         async function carregarCarnesDoMes() {
             const { data } = await _supabase.from('meufuturo_carnes').select('*');
             const lista = document.getElementById('listaCarnes');
@@ -494,37 +493,35 @@
             let encontrouAlguma = false;
 
             data.forEach(c => {
-                if (c.ano_ref && c.mes_ref) {
-                    if (Number(c.ano_ref) === anoSel && Number(c.mes_ref) === mesSel) {
-                        encontrouAlguma = true;
-                        let jaPago = c.status === 'pago';
-                        let corCard = jaPago ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-slate-950/60 border-slate-800 text-slate-300';
-                        
-                        let badgeStatus = jaPago 
-                            ? `<span class="bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-check mr-1"></i> Pago</span>` 
-                            : `<button onclick="abrirPagarCarne('${c.id}', '${c.credor}', ${c.parcela_atual}, ${c.total_parcelas}, ${c.valor_parcela})" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">Pagar Parcela</button>`;
+                if (Number(c.ano_ref) === anoSel && Number(c.mes_ref) === mesSel) {
+                    encontrouAlguma = true;
+                    let jaPago = c.status === 'pago';
+                    let corCard = jaPago ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-slate-950/60 border-slate-800 text-slate-300';
+                    
+                    let badgeStatus = jaPago 
+                        ? `<span class="bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-check mr-1"></i> Pago</span>` 
+                        : `<button onclick="abrirPagarCarne('${c.id}', '${c.credor}', ${c.parcela_atual}, ${c.total_parcelas}, ${c.valor_parcela})" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">Pagar Parcela</button>`;
 
-                        let diaExibicao = `Dia ${c.dia_vencimento || 20}`;
+                    let diaExibicao = `Dia ${c.dia_vencimento || 20}`;
 
-                        lista.innerHTML += `
-                            <div class="p-4 rounded-2xl border ${corCard} space-y-3 shadow">
-                                <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
-                                    <h4 class="font-bold text-white text-sm"><i class="fa-solid fa-file-invoice text-amber-400 mr-2"></i>${c.credor}</h4>
-                                    <button onclick="excluirGrupoCarne('${c.credor}')" class="text-rose-400 hover:text-rose-300 text-xs" title="Excluir carnê inteiro"><i class="fa-solid fa-trash"></i> Excluir</button>
+                    lista.innerHTML += `
+                        <div class="p-4 rounded-2xl border ${corCard} space-y-3 shadow">
+                            <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
+                                <h4 class="font-bold text-white text-sm"><i class="fa-solid fa-file-invoice text-amber-400 mr-2"></i>${c.credor}</h4>
+                                <button onclick="excluirGrupoCarne('${c.credor}')" class="text-rose-400 hover:text-rose-300 text-xs" title="Excluir carnê inteiro"><i class="fa-solid fa-trash"></i> Excluir</button>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-sm font-extrabold text-white">Parcela ${c.parcela_atual} de ${c.total_parcelas}</p>
+                                    <p class="text-xs text-slate-400 mt-0.5">Vencimento: <strong class="text-slate-200">${diaExibicao}</strong></p>
+                                    <p class="text-base font-extrabold text-amber-400 mt-1">R$ ${Number(c.valor_parcela).toFixed(2)}</p>
                                 </div>
-                                <div class="flex justify-between items-center">
-                                    <div>
-                                        <p class="text-sm font-extrabold text-white">Parcela ${c.parcela_atual} de ${c.total_parcelas}</p>
-                                        <p class="text-xs text-slate-400 mt-0.5">Vencimento: <strong class="text-slate-200">${diaExibicao}</strong></p>
-                                        <p class="text-base font-extrabold text-amber-400 mt-1">R$ ${Number(c.valor_parcela).toFixed(2)}</p>
-                                    </div>
-                                    <div>
-                                        ${badgeStatus}
-                                    </div>
+                                <div>
+                                    ${badgeStatus}
                                 </div>
                             </div>
-                        `;
-                    }
+                        </div>
+                    `;
                 }
             });
 
@@ -689,7 +686,7 @@
             const { data } = await _supabase.from('meufuturo_transacoes').select('*').eq('conta_id', id).order('data', { ascending: false });
             lista.innerHTML = '';
             if(!data || data.length === 0) {
-                lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Nenhuma movimentação.</p>';
+                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhuma movimentação.</p>';
                 return;
             }
             data.forEach(t => {
@@ -722,7 +719,7 @@
             const valor = parseFloat(document.getElementById('transValor').value);
             const tipo = document.getElementById('transTipo').value;
             const contaInfo = document.getElementById('transContaId').value;
-            const data = document.getElementById('transData'	).value;
+            const data = document.getElementById('transData').value;
             if(!desc || isNaN(valor) || !contaInfo) return alert('Preencha tudo!');
 
             const [tipoConta, contaId] = contaInfo.split(':');
