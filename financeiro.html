@@ -96,11 +96,20 @@
 
         <!-- Carnês do Mês & Dívidas Atrasadas -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-file-invoice-dollar"></i> Carnê do Mês (Parcela Ativa)</h3>
-                    <button onclick="abrirModalCarne()" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 transition">+ Novo Carnê</button>
+            <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg space-y-4">
+                
+                <!-- Cabeçalho do Carnê com Totais Resumidos -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-800 pb-3">
+                    <div>
+                        <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-file-invoice-dollar"></i> Carnê do Mês</h3>
+                        <p class="text-[11px] text-slate-400">Total a pagar restante: <strong id="resumoTotalFalta" class="text-amber-300">R$ 0,00</strong></p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="resumoAtrasosBadge" class="hidden text-[10px] font-bold px-2 py-1 bg-rose-950 text-rose-400 border border-rose-800 rounded-lg"><i class="fa-solid fa-triangle-exclamation mr-1"></i><span id="resumoAtrasosQtd">0</span> atrasada(s)</span>
+                        <button onclick="abrirModalCarne()" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 transition">+ Novo Carnê</button>
+                    </div>
                 </div>
+
                 <div class="space-y-3 max-h-80 overflow-y-auto" id="listaCarnes">
                     <p class="text-xs text-slate-500 text-center py-4">A carregar carnês...</p>
                 </div>
@@ -176,7 +185,7 @@
         </div>
     </div>
 
-    <!-- Modal Novo Carnê Perfeito -->
+    <!-- Modal Novo Carnê -->
     <div id="modalCarne" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-amber-400">Cadastrar Carnê / Financiamento</h3>
@@ -430,13 +439,13 @@
             });
         }
 
-        // --- GERAÇÃO COM SUPABASE ORGANIZADO (ano_ref e mes_ref) ---
+        // --- GERAÇÃO DE CARNÊ ---
         async function salvarCarneGerado() {
             const credor = document.getElementById('carneCredor').value;
             const valor = parseFloat(document.getElementById('carneValor').value);
             const total = parseInt(document.getElementById('carneTotal').value);
             const venc = parseInt(document.getElementById('carneVencimento').value) || 20;
-            const mesInicioStr = document.getElementById('carneMesInicio').value; // Ex: '2025-09'
+            const mesInicioStr = document.getElementById('carneMesInicio').value;
 
             if(!credor || isNaN(valor) || isNaN(total) || !mesInicioStr) return alert('Preencha todos os campos e o mês da 1ª parcela!');
 
@@ -444,7 +453,6 @@
             let anoInicio = parseInt(partes[0]);
             let mesInicio = parseInt(partes[1]);
 
-            // Limpa carnês anteriores com o mesmo nome para evitar duplicidade
             await _supabase.from('meufuturo_carnes').delete().eq('credor', credor);
 
             let parcelas = [];
@@ -476,11 +484,44 @@
             alert('Carnê gerado com sucesso!');
         }
 
-        // --- EXIBIR APENAS A PARCELA DO MÊS SELECIONADO ---
+        // --- EXIBIR CARNÊS E CALCULAR TOTAIS DO CABEÇALHO ---
         async function carregarCarnesDoMes() {
             const { data } = await _supabase.from('meufuturo_carnes').select('*');
             const lista = document.getElementById('listaCarnes');
             lista.innerHTML = '';
+
+            let totalRestanteGeral = 0;
+            let qtdAtrasadasGeral = 0;
+
+            const agora = new Date();
+            const anoAtualNum = agora.getFullYear();
+            const mesAtualNum = agora.getMonth() + 1;
+            const codigoAtualNum = (anoAtualNum * 100) + mesAtualNum;
+
+            if(data && data.length > 0) {
+                data.forEach(c => {
+                    // Calcula o total restante de todas as parcelas pendentes
+                    if (c.status !== 'pago') {
+                        totalRestanteGeral += Number(c.valor_parcela);
+
+                        // Verifica se está atrasado (ano/mês anterior ao atual)
+                        let codigoParcela = (Number(c.ano_ref) * 100) + Number(c.mes_ref);
+                        if (codigoParcela < codigoAtualNum) {
+                            qtdAtrasadasGeral++;
+                        }
+                    }
+                });
+            }
+
+            // Atualiza os valores no cabeçalho do carnê
+            document.getElementById('resumoTotalFalta').innerText = `R$ ${totalRestanteGeral.toFixed(2)}`;
+            const badgeAtraso = document.getElementById('resumoAtrasosBadge');
+            if (qtdAtrasadasGeral > 0) {
+                document.getElementById('resumoAtrasosQtd').innerText = qtdAtrasadasGeral;
+                badgeAtraso.classList.remove('hidden');
+            } else {
+                badgeAtraso.classList.add('hidden');
+            }
 
             if(!data || data.length === 0) {
                 lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhum carnê cadastrado. Clique em + Novo Carnê.</p>';
@@ -489,7 +530,6 @@
 
             let anoSel = dataAtualNavegacao.getFullYear();
             let mesSel = dataAtualNavegacao.getMonth() + 1;
-
             let encontrouAlguma = false;
 
             data.forEach(c => {
