@@ -91,7 +91,7 @@
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div>
                     <h3 class="text-base font-bold text-purple-400"><i class="fa-solid fa-credit-card mr-2"></i>Cartões de Crédito - Faturas do Mês</h3>
-                    <p class="text-[11px] text-slate-400">Gerencie seus limites, compras e faturas mensais</p>
+                    <p class="text-[11px] text-slate-400">Gerencie seus limites, compras à vista e parceladas</p>
                 </div>
                 <button onclick="abrirModalCartao()" class="text-xs bg-slate-800 hover:bg-slate-700 text-purple-400 font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition">+ Novo Cartão</button>
             </div>
@@ -149,11 +149,11 @@
 
     <!-- ================= MODAIS ================= -->
 
-    <!-- Modal Nova Compra no Cartão -->
+    <!-- Modal Nova Compra / Parcelada no Cartão -->
     <div id="modalCompraCartao" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="text-lg font-bold text-purple-450"><i class="fa-solid fa-cart-shopping mr-2"></i>Nova Compra no Cartão</h3>
+                <h3 class="text-lg font-bold text-purple-450"><i class="fa-solid fa-cart-shopping mr-2"></i>Lançar Compra no Cartão</h3>
                 <button onclick="fecharModalCompraCartao()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <div class="space-y-3">
@@ -164,19 +164,25 @@
                 </div>
                 <div>
                     <label class="text-[10px] text-slate-400 block mb-1">Descrição / Estabelecimento</label>
-                    <input type="text" id="compraDescricao" placeholder="Ex: Supermercado" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    <input type="text" id="compraDescricao" placeholder="Ex: Mercado Livre" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Valor Total (R$)</label>
+                        <input type="number" step="0.01" id="compraValor" placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Parcelas (Ex: 1 ou 10)</label>
+                        <input type="number" id="compraParcelas" value="1" min="1" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    </div>
                 </div>
                 <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Valor da Compra (R$)</label>
-                    <input type="number" step="0.01" id="compraValor" placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                </div>
-                <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Data da Compra</label>
+                    <label class="text-[10px] text-slate-400 block mb-1">Data da Compra (ou 1ª Parcela)</label>
                     <input type="date" id="compraData" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalCompraCartao()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="button" onclick="salvarCompraCartao()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition">Salvar Compra</button>
+                    <button type="button" onclick="salvarCompraCartao()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition">Salvar Lançamento</button>
                 </div>
             </div>
         </div>
@@ -399,7 +405,7 @@
             if(!error) { fecharModalVR(); carregarVR(); document.getElementById('vrNome').value=''; document.getElementById('vrSaldo').value=''; }
         }
 
-        // --- GESTÃO DE CARTÕES E FATURAS ---
+        // --- GESTÃO DE CARTÕES E FATURAS PARCELADAS ---
         async function carregarCartoes() {
             const { data: cartoes } = await _supabase.from('meufuturo_cartoes').select('*');
             const { data: compras } = await _supabase.from('meufuturo_cartao_compras').select('*');
@@ -416,7 +422,6 @@
             let mesSel = dataAtualNavegacao.getMonth() + 1;
 
             cartoes.forEach(cartao => {
-                // Filtra compras deste cartão para o mês selecionado
                 let comprasDoMes = (compras || []).filter(c => c.cartao_id === cartao.id && Number(c.ano_fatura) === anoSel && Number(c.mes_fatura) === mesSel);
                 let totalFatura = comprasDoMes.reduce((acc, curr) => acc + Number(curr.valor), 0);
                 let limiteDisponivel = Number(cartao.limite) - totalFatura;
@@ -426,15 +431,20 @@
                     itensHTML = '<p class="text-[11px] text-slate-500 italic">Nenhuma compra nesta fatura.</p>';
                 } else {
                     comprasDoMes.forEach(comp => {
+                        let infoParcela = (comp.total_parcelas && comp.total_parcelas > 1) ? ` (${comp.parcela_atual}/${comp.total_parcelas})` : '';
+                        let botaoExcluir = comp.compra_grupo_id 
+                            ? `<button onclick="excluirGrupoCompra('${comp.compra_grupo_id}')" class="text-rose-400 hover:text-rose-300 text-xs" title="Excluir parcelamento inteiro"><i class="fa-solid fa-trash-can"></i></button>`
+                            : `<button onclick="excluirCompraCartao('${comp.id}')" class="text-rose-400 hover:text-rose-300 text-xs"><i class="fa-solid fa-trash"></i></button>`;
+
                         itensHTML += `
                             <div class="flex justify-between items-center text-xs bg-slate-900/60 p-2 rounded-lg border border-slate-800">
                                 <div>
-                                    <span class="text-white font-medium">${comp.descricao}</span>
+                                    <span class="text-white font-medium">${comp.descricao}${infoParcela}</span>
                                     <span class="text-[10px] text-slate-400 block">${new Date(comp.data_compra + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
                                 </div>
                                 <div class="flex items-center space-x-2">
                                     <span class="text-purple-300 font-bold">R$ ${Number(comp.valor).toFixed(2)}</span>
-                                    <button onclick="excluirCompraCartao('${comp.id}')" class="text-rose-400 hover:text-rose-300 text-xs"><i class="fa-solid fa-trash"></i></button>
+                                    ${botaoExcluir}
                                 </div>
                             </div>
                         `;
@@ -494,6 +504,7 @@
             document.getElementById('compraCartaoNome').value = cartaoNome;
             document.getElementById('compraDescricao').value = '';
             document.getElementById('compraValor').value = '';
+            document.getElementById('compraParcelas').value = '1';
             document.getElementById('compraData').value = new Date().toISOString().split('T')[0];
             document.getElementById('modalCompraCartao').classList.remove('hidden');
         }
@@ -502,53 +513,77 @@
             document.getElementById('modalCompraCartao').classList.add('hidden');
         }
 
+        // --- SALVAR COMPRA COM SUPORTE A PARCELAMENTO AUTOMÁTICO ---
         async function salvarCompraCartao() {
             const cartaoId = document.getElementById('compraCartaoId').value;
             const descricao = document.getElementById('compraDescricao').value;
-            const valor = parseFloat(document.getElementById('compraValor').value);
+            const valorTotal = parseFloat(document.getElementById('compraValor').value);
+            const totalParcelas = parseInt(document.getElementById('compraParcelas').value) || 1;
             const dataCompra = document.getElementById('compraData').value;
 
-            if(!descricao || isNaN(valor) || !dataCompra) return alert('Preencha todos os campos!');
+            if(!descricao || isNaN(valorTotal) || !dataCompra) return alert('Preencha todos os campos!');
 
-            // Calcula em qual mês/ano da fatura a compra entra com base na data
-            let partesData = dataCompra.split('-');
-            let ano = parseInt(partesData[0]);
-            let mes = parseInt(partesData[1]);
-            let dia = parseInt(partesData[2]);
-
-            // Busca o dia de fechamento do cartão para calcular a fatura correta
+            // Busca o dia de fechamento do cartão
             const { data: cartaoObj } = await _supabase.from('meufuturo_cartoes').select('fechamento').eq('id', cartaoId).single();
             let diaFechamento = cartaoObj ? (cartaoObj.fechamento || 10) : 10;
 
-            // Se o dia da compra for igual ou após o fechamento, a fatura vai para o mês seguinte
+            let partesData = dataCompra.split('-');
+            let anoInicial = parseInt(partesData[0]);
+            let mesInicial = parseInt(partesData[1]);
+            let dia = parseInt(partesData[2]);
+
+            // Se a compra ocorreu no dia de fechamento ou após, a 1ª fatura vai para o mês seguinte
             if (dia >= diaFechamento) {
-                mes++;
-                if (mes > 12) {
-                    mes = 1;
-                    ano++;
+                mesInicial++;
+                if (mesInicial > 12) {
+                    mesInicial = 1;
+                    anoInicial++;
                 }
             }
 
-            const { error } = await _supabase.from('meufuturo_cartao_compras').insert([{
-                cartao_id: cartaoId,
-                descricao: descricao,
-                valor: valor,
-                data_compra: dataCompra,
-                mes_fatura: mes,
-                ano_fatura: ano,
-                status: 'aberta'
-            }]);
+            let valorParcela = Number((valorTotal / totalParcelas).toFixed(2));
+            let grupoId = crypto.randomUUID(); // Identificador único para o grupo de parcelas
 
-            if(error) return alert('Erro ao salvar compra: ' + error.message);
+            let parcelasParaInserir = [];
+            for (let i = 1; i <= totalParcelas; i++) {
+                let mesFatura = mesInicial + (i - 1);
+                let anoFatura = anoInicial;
+                while (mesFatura > 12) {
+                    mesFatura -= 12;
+                    anoFatura++;
+                }
+
+                parcelasParaInserir.push({
+                    cartao_id: cartaoId,
+                    descricao: descricao,
+                    valor: valorParcela,
+                    data_compra: dataCompra,
+                    mes_fatura: mesFatura,
+                    ano_fatura: anoFatura,
+                    parcela_atual: i,
+                    total_parcelas: totalParcelas,
+                    compra_grupo_id: grupoId,
+                    status: 'aberta'
+                });
+            }
+
+            const { error } = await _supabase.from('meufuturo_cartao_compras').insert(parcelasParaInserir);
+            if(error) return alert('Erro ao salvar compra parcelada: ' + error.message);
 
             fecharModalCompraCartao();
             carregarCartoes();
-            alert('Compra lançada com sucesso na fatura!');
+            alert('Compra parcelada lançada com sucesso nas faturas!');
         }
 
         async function excluirCompraCartao(id) {
             if(!confirm('Deseja excluir esta compra do cartão?')) return;
             await _supabase.from('meufuturo_cartao_compras').delete().eq('id', id);
+            carregarCartoes();
+        }
+
+        async function excluirGrupoCompra(grupoId) {
+            if(!confirm('Deseja excluir todas as parcelas deste parcelamento?')) return;
+            await _supabase.from('meufuturo_cartao_compras').delete().eq('compra_grupo_id', grupoId);
             carregarCartoes();
         }
 
