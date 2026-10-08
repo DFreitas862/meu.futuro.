@@ -570,7 +570,7 @@
             const saldo = parseFloat(document.getElementById('contaSaldo').value);
             if(!nome || isNaN(saldo)) return alert('Preencha os campos!');
             const { error } = await _supabase.from('meufuturo_contas').insert([{ nome_banco: nome, saldo_inicial: saldo }]);
-            if(!error) { fecharModalConta(); carregarContas(); document.getElementById('contaBanco'].value=''; document.getElementById('contaSaldo').value=''; }
+            if(!error) { fecharModalConta(); carregarContas(); document.getElementById('contaBanco').value=''; document.getElementById('contaSaldo').value=''; }
         }
 
         async function carregarVR() {
@@ -787,7 +787,6 @@
 
             let anoSel = dataAtualNavegacao.getFullYear(), mesSel = dataAtualNavegacao.getMonth() + 1;
 
-            // Marcar compras do mês como pagas
             const { data: comprasDoMes } = await _supabase.from('meufuturo_cartao_compras').select('id').eq('cartao_id', cartaoId).eq('ano_fatura', anoSel).eq('mes_fatura', mesSel);
             
             if (comprasDoMes && comprasDoMes.length > 0) {
@@ -796,7 +795,6 @@
                 }
             }
 
-            // Registar transação de saída no banco escolhido
             await _supabase.from('meufuturo_transacoes').insert([{
                 descricao: `Pagamento Fatura: ${cartaoNome}`,
                 valor: valorFatura,
@@ -805,7 +803,6 @@
                 conta_id: contaId
             }]);
 
-            // Atualizar saldo da conta bancária
             const contaObj = listaContasBanco.find(c => c.id === contaId);
             if(contaObj) {
                 let novoSaldo = Number(contaObj.saldo_inicial) - valorFatura;
