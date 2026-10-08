@@ -36,8 +36,8 @@
         <!-- Card de Controle de Etapas -->
         <div id="cardPrincipal" class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-5 text-center relative">
             
-            <!-- Botão de Minimizar / Flutuar -->
-            <button id="btnFlutuar" onclick="alternarModoFlutuante()" class="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-800/80 p-2 rounded-xl text-xs transition hidden" title="Modo Flutuante / Compacto">
+            <!-- Botão de Minimizar / Flutuar (Sempre visível) -->
+            <button id="btnFlutuar" onclick="alternarModoFlutuante()" class="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-800/80 p-2 rounded-xl text-xs transition shadow" title="Modo Flutuante / Compacto">
                 <i class="fa-solid fa-expand"></i>
             </button>
 
@@ -159,7 +159,7 @@
                     const osc = audioCtx.createOscillator();
                     const gain = audioCtx.createGain();
                     
-                    osc.type = 'sine'; // Onda senoidal pura (som limpo e aveludado)
+                    osc.type = 'sine';
                     osc.frequency.setValueAtTime(frequencia, audioCtx.currentTime + atraso);
                     
                     gain.gain.setValueAtTime(0.001, audioCtx.currentTime + atraso);
@@ -173,10 +173,9 @@
                     osc.stop(audioCtx.currentTime + atraso + duracao);
                 }
 
-                // Acorde harmonioso tipo carrilhão
-                tocarNotaElegante(523.25, 0.0, 0.8);  // Nota Dó (C5)
-                tocarNotaElegante(659.25, 0.1, 0.8);  // Nota Mi (E5)
-                tocarNotaElegante(783.99, 0.2, 1.0);  // Nota Sol (G5)
+                tocarNotaElegante(523.25, 0.0, 0.8);  
+                tocarNotaElegante(659.25, 0.1, 0.8);  
+                tocarNotaElegante(783.99, 0.2, 1.0);  
 
             } catch (e) {
                 console.log('Áudio não suportado.');
@@ -303,8 +302,6 @@
                 badge.innerHTML = '<i class="fa-solid fa-car text-amber-400 mr-1"></i> Etapa 2: Em Deslocamento';
                 status.innerText = 'Cronômetro de deslocamento rodando...';
                 
-                document.getElementById('btnFlutuar').classList.remove('hidden');
-
                 document.getElementById('inputTitulo').disabled = true;
                 document.getElementById('inputTag').disabled = true;
                 document.getElementById('inputLocal').disabled = true;
