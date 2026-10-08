@@ -195,7 +195,7 @@
         </div>
     </div>
 
-    <!-- Modal Adicionar Compra no Cartão -->
+    <!-- Modal Adicionar Compra no Cartão (Com Parcelamento) -->
     <div id="modalCompraCartao" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -208,13 +208,19 @@
                     <label class="text-[10px] text-slate-400 block mb-1">Descrição do Produto / Gasto</label>
                     <input type="text" id="compraDesc" placeholder="Ex: Tênis novo" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 </div>
-                <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Valor da Compra (R$)</label>
-                    <input type="number" step="0.01" id="compraValor" placeholder="Ex: 150.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Valor Total (R$)</label>
+                        <input type="number" step="0.01" id="compraValor" placeholder="Ex: 150.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Nº de Parcelas (Ex: 1)</label>
+                        <input type="number" id="compraParcelas" value="1" min="1" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    </div>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Mês da Fatura</label>
+                        <label class="text-[10px] text-slate-400 block mb-1">Mês Inicial da Fatura</label>
                         <select id="compraMes" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                             <option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option><option value="4">Abril</option>
                             <option value="5">Maio</option><option value="6">Junho</option><option value="7">Julho</option><option value="8">Agosto</option>
@@ -222,13 +228,47 @@
                         </select>
                     </div>
                     <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Ano da Fatura</label>
+                        <label class="text-[10px] text-slate-400 block mb-1">Ano Inicial</label>
                         <input type="number" id="compraAno" placeholder="2026" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                     </div>
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalCompraCartao()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
                     <button type="button" onclick="salvarCompraCartao()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition">Adicionar Compra</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar / Gerenciar Cartão -->
+    <div id="modalEditarCartao" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-bold text-purple-400"><i class="fa-solid fa-gear mr-2"></i>Gerenciar Cartão</h3>
+                <button onclick="fecharModalEditarCartao()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3">
+                <input type="hidden" id="editCartaoId">
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Nome do Cartão</label>
+                    <input type="text" id="editCartaoNome" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Limite Total (R$)</label>
+                        <input type="number" step="0.01" id="editCartaoLimite" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Dia Vencimento</label>
+                        <input type="number" id="editCartaoVencimento" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    </div>
+                </div>
+                <div class="flex justify-between items-center pt-2">
+                    <button type="button" onclick="excluirCartao()" class="px-3 py-2 bg-rose-950/40 border border-rose-800 text-rose-400 rounded-xl text-xs font-bold hover:bg-rose-900/40 transition">Excluir Cartão</button>
+                    <div class="flex space-x-2">
+                        <button type="button" onclick="fecharModalEditarCartao()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
+                        <button type="button" onclick="atualizarCartao()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition">Salvar Alterações</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -545,9 +585,10 @@
 
                 let comprasHTML = comprasDoMes.length === 0 ? '<p class="text-[11px] text-slate-500 italic">Nenhuma compra nesta fatura.</p>' : '';
                 comprasDoMes.forEach(cp => {
+                    let descTexto = cp.total_parcelas && cp.total_parcelas > 1 ? `${cp.descricao} (${cp.parcela_atual}/${cp.total_parcelas})` : cp.descricao;
                     comprasHTML += `
                         <div class="flex justify-between items-center text-xs bg-slate-900/60 p-2 rounded-lg border border-slate-800">
-                            <span class="text-white">${cp.descricao}</span>
+                            <span class="text-white">${descTexto}</span>
                             <span class="text-purple-300 font-bold">R$ ${Number(cp.valor).toFixed(2)}</span>
                         </div>
                     `;
@@ -557,7 +598,10 @@
                     <div class="bg-slate-950/50 p-4 rounded-2xl border border-slate-800 space-y-3 shadow">
                         <div class="flex justify-between items-center border-b border-slate-800 pb-2">
                             <h4 class="font-bold text-sm text-white"><i class="fa-solid fa-credit-card text-purple-400 mr-2"></i>${cartao.nome}</h4>
-                            <button onclick="abrirModalCompraCartao('${cartao.id}')" class="bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition"><i class="fa-solid fa-plus mr-1"></i> Compra</button>
+                            <div class="flex items-center gap-1.5">
+                                <button onclick="abrirModalCompraCartao('${cartao.id}')" class="bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition"><i class="fa-solid fa-plus mr-1"></i> Compra</button>
+                                <button onclick="abrirModalEditarCartao('${cartao.id}', '${cartao.nome}', ${cartao.limite}, ${cartao.vencimento || 10})" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold px-2 py-1 rounded-lg border border-slate-700 transition" title="Gerenciar Cartão"><i class="fa-solid fa-gear"></i></button>
+                            </div>
                         </div>
                         <div class="grid grid-cols-2 gap-2 text-xs bg-slate-900/40 p-2.5 rounded-xl border border-slate-800">
                             <div><span class="text-slate-400 text-[10px] block">Fatura</span><span class="text-purple-400 font-extrabold text-sm">R$ ${totalFatura.toFixed(2)}</span></div>
@@ -590,10 +634,46 @@
             alert('Cartão cadastrado com sucesso!');
         }
 
+        function abrirModalEditarCartao(id, nome, limite, vencimento) {
+            document.getElementById('editCartaoId').value = id;
+            document.getElementById('editCartaoNome').value = nome;
+            document.getElementById('editCartaoLimite').value = limite;
+            document.getElementById('editCartaoVencimento').value = vencimento;
+            document.getElementById('modalEditarCartao').classList.remove('hidden');
+        }
+
+        function fecharModalEditarCartao() { document.getElementById('modalEditarCartao').classList.add('hidden'); }
+
+        async function atualizarCartao() {
+            const id = document.getElementById('editCartaoId').value;
+            const nome = document.getElementById('editCartaoNome').value;
+            const limite = parseFloat(document.getElementById('editCartaoLimite').value);
+            const vencimento = parseInt(document.getElementById('editCartaoVencimento').value) || 10;
+
+            if(!nome || isNaN(limite)) return alert('Preencha os campos!');
+
+            const { error } = await _supabase.from('meufuturo_cartoes').update({ nome, limite, vencimento }).eq('id', id);
+            if(error) return alert('Erro ao atualizar cartão: ' + error.message);
+
+            fecharModalEditarCartao();
+            carregarCartoes();
+            alert('Cartão atualizado com sucesso!');
+        }
+
+        async function excluirCartao() {
+            if(!confirm('Tem certeza que deseja excluir este cartão e todas as suas compras?')) return;
+            const id = document.getElementById('editCartaoId').value;
+            await _supabase.from('meufuturo_cartoes').delete().eq('id', id);
+            fecharModalEditarCartao();
+            carregarCartoes();
+            alert('Cartão excluído!');
+        }
+
         function abrirModalCompraCartao(cartaoId) {
             document.getElementById('compraCartaoId').value = cartaoId;
             document.getElementById('compraDesc').value = '';
             document.getElementById('compraValor').value = '';
+            document.getElementById('compraParcelas').value = '1';
             document.getElementById('compraMes').value = dataAtualNavegacao.getMonth() + 1;
             document.getElementById('compraAno').value = dataAtualNavegacao.getFullYear();
             document.getElementById('modalCompraCartao').classList.remove('hidden');
@@ -604,18 +684,38 @@
         async function salvarCompraCartao() {
             const cartaoId = document.getElementById('compraCartaoId').value;
             const descricao = document.getElementById('compraDesc').value;
-            const valor = parseFloat(document.getElementById('compraValor').value);
-            const mes = parseInt(document.getElementById('compraMes').value);
-            const ano = parseInt(document.getElementById('compraAno').value);
+            const valorTotal = parseFloat(document.getElementById('compraValor').value);
+            const parcelas = parseInt(document.getElementById('compraParcelas').value) || 1;
+            const mesInicio = parseInt(document.getElementById('compraMes').value);
+            const anoInicio = parseInt(document.getElementById('compraAno').value);
 
-            if(!descricao || isNaN(valor) || isNaN(mes) || isNaN(ano)) return alert('Preencha todos os campos!');
+            if(!descricao || isNaN(valorTotal) || parcelas < 1 || isNaN(mesInicio) || isNaN(anoInicio)) {
+                return alert('Preencha todos os campos corretamente!');
+            }
 
-            const { error } = await _supabase.from('meufuturo_cartao_compras').insert([{ cartao_id: cartaoId, descricao, valor, mes_fatura: mes, ano_fatura: ano }]);
+            let valorParcela = Number((valorTotal / parcelas).toFixed(2));
+            let listaCompras = [];
+
+            for (let i = 1; i <= parcelas; i++) {
+                let m = mesInicio + (i - 1), a = anoInicio;
+                while (m > 12) { m -= 12; a++; }
+                listaCompras.push({
+                    cartao_id: cartaoId,
+                    descricao: descricao,
+                    valor: valorParcela,
+                    parcela_atual: i,
+                    total_parcelas: parcelas,
+                    mes_fatura: m,
+                    ano_fatura: a
+                });
+            }
+
+            const { error } = await _supabase.from('meufuturo_cartao_compras').insert(listaCompras);
             if(error) return alert('Erro ao salvar compra: ' + error.message);
 
             fecharModalCompraCartao();
             carregarCartoes();
-            alert('Compra adicionada ao cartão!');
+            alert('Compra(s) adicionada(s) com sucesso!');
         }
 
         // --- GESTÃO DE VEÍCULOS ---
