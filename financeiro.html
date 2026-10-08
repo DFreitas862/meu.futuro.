@@ -500,7 +500,7 @@
         </div>
     </div>
 
-    <!-- Modal Extrato (Com lixeira para apagar movimentações) -->
+    <!-- Modal Extrato -->
     <div id="modalExtrato" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-xl w-full space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -849,30 +849,29 @@
                         </div>
                         <div class="flex items-center gap-3">
                             <span class="${t.tipo === 'receita' ? 'text-blue-400' : 'text-amber-400'} font-bold">R$ ${Number(t.valor).toFixed(2)}</span>
-                            <button onclick="excluirTransacaoExtrato('${t.id}', '${t.tipo}', ${t.valor})" class="text-rose-400 hover:text-rose-300 transition p-1" title="Apagar transação"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                            <button onclick="excluirTransacaoExtrato('${t.id}', '${t.tipo}', ${t.valor}, '${t.conta_id}')" class="text-rose-400 hover:text-rose-300 transition p-1" title="Apagar transação"><i class="fa-solid fa-trash-can text-sm"></i></button>
                         </div>
                     </div>
                 `;
             });
         }
 
-        async function excluirTransacaoExtrato(transacaoId, tipo, valor) {
+        async function excluirTransacaoExtrato(transacaoId, tipo, valor, contaIdVinculada) {
             if(!confirm('Deseja realmente apagar esta transação? O saldo do banco será recalculado.')) return;
 
-            // 1. Apagar a transação
             const { error } = await _supabase.from('meufuturo_transacoes').delete().eq('id', transacaoId);
             if(error) return alert('Erro ao apagar: ' + error.message);
 
-            // 2. Reverter o saldo na conta bancária correspondente
-            const contaObj = listaContasBanco.find(c => c.id === contaExtratoAtualId);
-            if(contaObj) {
-                let saldoAtual = Number(contaObj.saldo_inicial);
-                let novoSaldo = tipo === 'receita' ? saldoAtual - valor : saldoAtual + valor;
-                await _supabase.from('meufuturo_contas').update({ saldo_inicial: novoSaldo }).eq('id', contaExtratoAtualId);
+            if(contaIdVinculada) {
+                const contaObj = listaContasBanco.find(c => c.id === contaIdVinculada);
+                if(contaObj) {
+                    let saldoAtual = Number(contaObj.saldo_inicial);
+                    let novoSaldo = tipo === 'receita' ? saldoAtual - valor : saldoAtual + valor;
+                    await _supabase.from('meufuturo_contas').update({ saldo_inicial: novoSaldo }).eq('id', contaIdVinculada);
+                }
             }
 
-            // 3. Recarregar extrato e painel geral
-            await carregarDadosExtrato();
+            if(contaExtratoAtualId) await carregarDadosExtrato();
             carregarTudo();
         }
 
@@ -1195,8 +1194,14 @@
             filtradas.reverse().forEach(t => {
                 lista.innerHTML += `
                     <div class="flex justify-between items-center bg-slate-950/40 p-3 rounded-xl border border-slate-800 text-xs">
-                        <div><p class="font-medium text-white">${t.descricao}</p><span class="text-slate-500">${new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span></div>
-                        <span class="${t.tipo === 'receita' ? 'text-blue-400' : 'text-amber-400'} font-bold">R$ ${Number(t.valor).toFixed(2)}</span>
+                        <div>
+                            <p class="font-medium text-white">${t.descricao}</p>
+                            <span class="text-slate-500">${new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="${t.tipo === 'receita' ? 'text-blue-400' : 'text-amber-400'} font-bold">R$ ${Number(t.valor).toFixed(2)}</span>
+                            <button onclick="excluirTransacaoExtrato('${t.id}', '${t.tipo}', ${t.valor}, '${t.conta_id}')" class="text-rose-400 hover:text-rose-300 transition p-1" title="Apagar transação"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                        </div>
                     </div>
                 `;
             });
