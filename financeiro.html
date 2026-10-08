@@ -91,7 +91,7 @@
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div>
                     <h3 class="text-base font-bold text-purple-400"><i class="fa-solid fa-credit-card mr-2"></i>Cartões de Crédito - Faturas do Mês</h3>
-                    <p class="text-[11px] text-slate-400">Gerencie seus limites, compras à vista e parceladas</p>
+                    <p class="text-[11px] text-slate-400">Gerencie seus limites, compras e pagamento de faturas</p>
                 </div>
                 <button onclick="abrirModalCartao()" class="text-xs bg-slate-800 hover:bg-slate-700 text-purple-400 font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition">+ Novo Cartão</button>
             </div>
@@ -149,11 +149,48 @@
 
     <!-- ================= MODAIS ================= -->
 
+    <!-- Modal Pagar Fatura do Cartão -->
+    <div id="modalPagarFatura" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-bold text-purple-400"><i class="fa-solid fa-check-to-slot mr-2"></i>Pagar Fatura do Cartão</h3>
+                <button onclick="fecharModalPagarFatura()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3">
+                <input type="hidden" id="pagarCartaoId">
+                <input type="hidden" id="pagarAnoFatura">
+                <input type="hidden" id="pagarMesFatura">
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Cartão / Fatura</label>
+                    <input type="text" id="pagarFaturaInfo" readonly class="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-sm text-slate-300 outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Valor Total da Fatura (R$)</label>
+                    <input type="number" step="0.01" id="pagarFaturaValor" readonly class="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-sm text-slate-300 outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Data do Pagamento</label>
+                    <input type="date" id="pagarFaturaData" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Conta para Débito (Banco)</label>
+                    <select id="pagarFaturaConta" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                        <option value="">Selecione o Banco</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="fecharModalPagarFatura()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
+                    <button type="button" onclick="confirmarPagamentoFatura()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition">Confirmar Pagamento</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Nova Compra / Parcelada no Cartão -->
     <div id="modalCompraCartao" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="text-lg font-bold text-purple-450"><i class="fa-solid fa-cart-shopping mr-2"></i>Lançar Compra no Cartão</h3>
+                <h3 class="text-lg font-bold text-purple-400"><i class="fa-solid fa-cart-shopping mr-2"></i>Lançar Compra no Cartão</h3>
                 <button onclick="fecharModalCompraCartao()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <div class="space-y-3">
@@ -405,7 +442,7 @@
             if(!error) { fecharModalVR(); carregarVR(); document.getElementById('vrNome').value=''; document.getElementById('vrSaldo').value=''; }
         }
 
-        // --- GESTÃO DE CARTÕES E FATURAS PARCELADAS ---
+        // --- GESTÃO DE CARTÕES E PAGAMENTO DE FATURA ---
         async function carregarCartoes() {
             const { data: cartoes } = await _supabase.from('meufuturo_cartoes').select('*');
             const { data: compras } = await _supabase.from('meufuturo_cartao_compras').select('*');
@@ -426,6 +463,18 @@
                 let totalFatura = comprasDoMes.reduce((acc, curr) => acc + Number(curr.valor), 0);
                 let limiteDisponivel = Number(cartao.limite) - totalFatura;
 
+                // Verifica se toda a fatura já está paga
+                let faturaPaga = comprasDoMes.length > 0 && comprasDoMes.every(c => c.status === 'pago');
+
+                let botaoPagarFatura = '';
+                if (comprasDoMes.length > 0) {
+                    if (faturaPaga) {
+                        botaoPagarFatura = `<span class="bg-emerald-600 text-white text-xs font-bold px-2.5 py-1 rounded-xl"><i class="fa-solid fa-check mr-1"></i> Fatura Paga</span>`;
+                    } else {
+                        botaoPagarFatura = `<button onclick="abrirPagarFatura('${cartao.id}', '${cartao.nome}', ${totalFatura}, ${anoSel}, ${mesSel})" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl transition"><i class="fa-solid fa-check-to-slot mr-1"></i> Pagar Fatura</button>`;
+                    }
+                }
+
                 let itensHTML = '';
                 if(comprasDoMes.length === 0) {
                     itensHTML = '<p class="text-[11px] text-slate-500 italic">Nenhuma compra nesta fatura.</p>';
@@ -433,13 +482,15 @@
                     comprasDoMes.forEach(comp => {
                         let infoParcela = (comp.total_parcelas && comp.total_parcelas > 1) ? ` (${comp.parcela_atual}/${comp.total_parcelas})` : '';
                         let botaoExcluir = comp.compra_grupo_id 
-                            ? `<button onclick="excluirGrupoCompra('${comp.compra_grupo_id}')" class="text-rose-400 hover:text-rose-300 text-xs" title="Excluir parcelamento inteiro"><i class="fa-solid fa-trash-can"></i></button>`
+                            ? `<button onclick="excluirGrupoCompra('${comp.compra_grupo_id}')" class="text-rose-400 hover:text-rose-300 text-xs" title="Excluir parcelamento"><i class="fa-solid fa-trash-can"></i></button>`
                             : `<button onclick="excluirCompraCartao('${comp.id}')" class="text-rose-400 hover:text-rose-300 text-xs"><i class="fa-solid fa-trash"></i></button>`;
+
+                        let statusBadge = comp.status === 'pago' ? '<span class="text-[9px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-800 ml-1">Pago</span>' : '';
 
                         itensHTML += `
                             <div class="flex justify-between items-center text-xs bg-slate-900/60 p-2 rounded-lg border border-slate-800">
                                 <div>
-                                    <span class="text-white font-medium">${comp.descricao}${infoParcela}</span>
+                                    <span class="text-white font-medium">${comp.descricao}${infoParcela}</span> ${statusBadge}
                                     <span class="text-[10px] text-slate-400 block">${new Date(comp.data_compra + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
                                 </div>
                                 <div class="flex items-center space-x-2">
@@ -456,13 +507,15 @@
                         <div class="flex justify-between items-center border-b border-slate-800 pb-2">
                             <div>
                                 <h4 class="font-bold text-sm text-white"><i class="fa-solid fa-credit-card text-purple-400 mr-2"></i>${cartao.nome}</h4>
-                                <span class="text-[10px] text-slate-400">Fechamento: Dia ${cartao.fechamento || 10} | Vencimento: Dia ${cartao.vencimento || 17}</span>
+                                <span class="text-[10px] text-slate-400">Vencimento: Dia ${cartao.vencimento || 17}</span>
                             </div>
-                            <button onclick="abrirModalCompraCartao('${cartao.id}', '${cartao.nome}')" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl transition"><i class="fa-solid fa-plus mr-1"></i> Compra</button>
+                            <div class="flex items-center gap-1.5">
+                                <button onclick="abrirModalCompraCartao('${cartao.id}', '${cartao.nome}')" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl transition"><i class="fa-solid fa-plus"></i></button>
+                            </div>
                         </div>
                         <div class="grid grid-cols-2 gap-2 text-xs bg-slate-900/40 p-2.5 rounded-xl border border-slate-800/80">
                             <div>
-                                <span class="text-slate-400 block text-[10px]">Fatura Atual</span>
+                                <span class="text-slate-400 block text-[10px]">Fatura do Mês</span>
                                 <span class="text-purple-400 font-extrabold text-sm">R$ ${totalFatura.toFixed(2)}</span>
                             </div>
                             <div>
@@ -470,8 +523,11 @@
                                 <span class="text-emerald-400 font-extrabold text-sm">R$ ${limiteDisponivel.toFixed(2)}</span>
                             </div>
                         </div>
+                        <div class="flex justify-between items-center pt-1">
+                            <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Lançamentos:</p>
+                            ${botaoPagarFatura}
+                        </div>
                         <div class="space-y-1.5 max-h-40 overflow-y-auto">
-                            <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Lançamentos da Fatura:</p>
                             ${itensHTML}
                         </div>
                     </div>
@@ -492,11 +548,70 @@
 
             fecharModalCartao();
             carregarCartoes();
-            document.getElementById('cartaoNome').value = '';
-            document.getElementById('cartaoLimite').value = '';
-            document.getElementById('cartaoFechamento').value = '';
-            document.getElementById('cartaoVencimento').value = '';
             alert('Cartão cadastrado com sucesso!');
+        }
+
+        function abrirPagarFatura(cartaoId, cartaoNome, valorFatura, ano, mes) {
+            document.getElementById('pagarCartaoId').value = cartaoId;
+            document.getElementById('pagarAnoFatura').value = ano;
+            document.getElementById('pagarMesFatura').value = mes;
+            document.getElementById('pagarFaturaInfo').value = `${cartaoNome} (Mês ${mes}/${ano})`;
+            document.getElementById('pagarFaturaValor').value = valorFatura.toFixed(2);
+            document.getElementById('pagarFaturaData').value = new Date().toISOString().split('T')[0];
+            
+            // Popular select de contas bancárias para o pagamento
+            const selectConta = document.getElementById('pagarFaturaConta');
+            selectConta.innerHTML = '<option value="">Selecione o Banco</option>';
+            listaContasBanco.forEach(d => {
+                selectConta.innerHTML += `<option value="${d.id}">[BANCO] ${d.nome_banco} (R$ ${Number(d.saldo_inicial).toFixed(2)})</option>`;
+            });
+
+            document.getElementById('modalPagarFatura').classList.remove('hidden');
+        }
+
+        function fecharModalPagarFatura() {
+            document.getElementById('modalPagarFatura').classList.add('hidden');
+        }
+
+        async function confirmarPagamentoFatura() {
+            const cartaoId = document.getElementById('pagarCartaoId').value;
+            const anoFatura = parseInt(document.getElementById('pagarAnoFatura').value);
+            const mesFatura = parseInt(document.getElementById('pagarMesFatura').value);
+            const valorFatura = parseFloat(document.getElementById('pagarFaturaValor').value);
+            const dataPagamento = document.getElementById('pagarFaturaData').value;
+            const contaId = document.getElementById('pagarFaturaConta').value;
+
+            if(!contaId || !dataPagamento) return alert('Selecione a conta bancária e a data de pagamento!');
+
+            // 1. Marca todas as compras deste cartão neste mês como 'pago'
+            await _supabase.from('meufuturo_cartao_compras')
+                .update({ status: 'pago' })
+                .eq('cartao_id', cartaoId)
+                .eq('ano_fatura', anoFatura)
+                .eq('mes_fatura', mesFatura);
+
+            // 2. Cria a transação de despesa no banco escolhido
+            const { data: cartaoObj } = await _supabase.from('meufuturo_cartoes').select('nome').eq('id', cartaoId).single();
+            const nomeCartao = cartaoObj ? cartaoObj.nome : 'Cartão';
+
+            await _supabase.from('meufuturo_transacoes').insert([{
+                descricao: `Pgto Fatura: ${nomeCartao} (${mesFatura}/${anoFatura})`,
+                valor: valorFatura,
+                tipo: 'despesa',
+                data: dataPagamento,
+                conta_id: contaId
+            }]);
+
+            // 3. Debita o valor do saldo da conta bancária
+            const contaBancoObj = listaContasBanco.find(c => c.id === contaId);
+            if(contaBancoObj) {
+                let novoSaldo = Number(contaBancoObj.saldo_inicial) - valorFatura;
+                await _supabase.from('meufuturo_contas').update({ saldo_inicial: novoSaldo }).eq('id', contaId);
+            }
+
+            fecharModalPagarFatura();
+            carregarTudo();
+            alert('Fatura paga com sucesso e saldo atualizado!');
         }
 
         function abrirModalCompraCartao(cartaoId, cartaoNome) {
@@ -513,7 +628,6 @@
             document.getElementById('modalCompraCartao').classList.add('hidden');
         }
 
-        // --- SALVAR COMPRA COM SUPORTE A PARCELAMENTO AUTOMÁTICO ---
         async function salvarCompraCartao() {
             const cartaoId = document.getElementById('compraCartaoId').value;
             const descricao = document.getElementById('compraDescricao').value;
@@ -523,7 +637,6 @@
 
             if(!descricao || isNaN(valorTotal) || !dataCompra) return alert('Preencha todos os campos!');
 
-            // Busca o dia de fechamento do cartão
             const { data: cartaoObj } = await _supabase.from('meufuturo_cartoes').select('fechamento').eq('id', cartaoId).single();
             let diaFechamento = cartaoObj ? (cartaoObj.fechamento || 10) : 10;
 
@@ -532,7 +645,6 @@
             let mesInicial = parseInt(partesData[1]);
             let dia = parseInt(partesData[2]);
 
-            // Se a compra ocorreu no dia de fechamento ou após, a 1ª fatura vai para o mês seguinte
             if (dia >= diaFechamento) {
                 mesInicial++;
                 if (mesInicial > 12) {
@@ -542,7 +654,7 @@
             }
 
             let valorParcela = Number((valorTotal / totalParcelas).toFixed(2));
-            let grupoId = crypto.randomUUID(); // Identificador único para o grupo de parcelas
+            let grupoId = crypto.randomUUID();
 
             let parcelasParaInserir = [];
             for (let i = 1; i <= totalParcelas; i++) {
@@ -568,23 +680,23 @@
             }
 
             const { error } = await _supabase.from('meufuturo_cartao_compras').insert(parcelasParaInserir);
-            if(error) return alert('Erro ao salvar compra parcelada: ' + error.message);
+            if(error) return alert('Erro ao salvar compra: ' + error.message);
 
             fecharModalCompraCartao();
-            carregarCartoes();
-            alert('Compra parcelada lançada com sucesso nas faturas!');
+            carregarTudo();
+            alert('Compra lançada com sucesso!');
         }
 
         async function excluirCompraCartao(id) {
-            if(!confirm('Deseja excluir esta compra do cartão?')) return;
+            if(!confirm('Deseja excluir esta compra?')) return;
             await _supabase.from('meufuturo_cartao_compras').delete().eq('id', id);
-            carregarCartoes();
+            carregarTudo();
         }
 
         async function excluirGrupoCompra(grupoId) {
             if(!confirm('Deseja excluir todas as parcelas deste parcelamento?')) return;
             await _supabase.from('meufuturo_cartao_compras').delete().eq('compra_grupo_id', grupoId);
-            carregarCartoes();
+            carregarTudo();
         }
 
         function popularSelectsContas() {
@@ -614,7 +726,7 @@
             const venc = parseInt(document.getElementById('carneVencimento').value) || 20;
             const mesInicioStr = document.getElementById('carneMesInicio').value;
 
-            if(!credor || isNaN(valor) || isNaN(total) || !mesInicioStr) return alert('Preencha todos os campos e o mês da 1ª parcela!');
+            if(!credor || isNaN(valor) || isNaN(total) || !mesInicioStr) return alert('Preencha todos os campos!');
 
             const partes = mesInicioStr.split('-');
             let anoInicio = parseInt(partes[0]);
@@ -626,26 +738,11 @@
             for (let i = 1; i <= total; i++) {
                 let m = mesInicio + (i - 1);
                 let a = anoInicio;
-                while (m > 12) { 
-                    m -= 12; 
-                    a++; 
-                }
-
-                parcelas.push({
-                    credor: credor,
-                    valor_parcela: valor,
-                    parcela_atual: i,
-                    total_parcelas: total,
-                    dia_vencimento: venc,
-                    ano_ref: a,
-                    mes_ref: m,
-                    status: 'pendente'
-                });
+                while (m > 12) { m -= 12; a++; }
+                parcelas.push({ credor, valor_parcela: valor, parcela_atual: i, total_parcelas: total, dia_vencimento: venc, ano_ref: a, mes_ref: m, status: 'pendente' });
             }
 
-            const { error } = await _supabase.from('meufuturo_carnes').insert(parcelas);
-            if(error) return alert('Erro ao gerar carnê: ' + error.message);
-
+            await _supabase.from('meufuturo_carnes').insert(parcelas);
             fecharModalCarne();
             carregarTudo();
             alert('Carnê gerado com sucesso!');
@@ -655,23 +752,15 @@
             const { data } = await _supabase.from('meufuturo_carnes').select('*');
             const lista = document.getElementById('listaCarnes');
             lista.innerHTML = '';
-
-            let totalRestanteGeral = 0;
-            let qtdAtrasadasGeral = 0;
-
-            const agora = new Date();
-            const anoAtualNum = agora.getFullYear();
-            const mesAtualNum = agora.getMonth() + 1;
+            let totalRestanteGeral = 0, qtdAtrasadasGeral = 0;
+            const agora = new Date(), anoAtualNum = agora.getFullYear(), mesAtualNum = agora.getMonth() + 1;
             const codigoAtualNum = (anoAtualNum * 100) + mesAtualNum;
 
-            if(data && data.length > 0) {
+            if(data) {
                 data.forEach(c => {
                     if (c.status !== 'pago') {
                         totalRestanteGeral += Number(c.valor_parcela);
-                        let codigoParcela = (Number(c.ano_ref) * 100) + Number(c.mes_ref);
-                        if (codigoParcela < codigoAtualNum) {
-                            qtdAtrasadasGeral++;
-                        }
+                        if ((Number(c.ano_ref) * 100) + Number(c.mes_ref) < codigoAtualNum) qtdAtrasadasGeral++;
                     }
                 });
             }
@@ -690,8 +779,7 @@
                 return;
             }
 
-            let anoSel = dataAtualNavegacao.getFullYear();
-            let mesSel = dataAtualNavegacao.getMonth() + 1;
+            let anoSel = dataAtualNavegacao.getFullYear(), mesSel = dataAtualNavegacao.getMonth() + 1;
             let encontrouAlguma = false;
 
             data.forEach(c => {
@@ -699,7 +787,6 @@
                     encontrouAlguma = true;
                     let jaPago = c.status === 'pago';
                     let corCard = jaPago ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-slate-950/60 border-slate-800 text-slate-300';
-                    
                     let badgeStatus = jaPago 
                         ? `<span class="bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-check mr-1"></i> Pago</span>` 
                         : `<button onclick="abrirPagarCarne('${c.id}', '${c.credor}', ${c.parcela_atual}, ${c.total_parcelas}, ${c.valor_parcela})" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">Pagar Parcela</button>`;
@@ -708,7 +795,7 @@
                         <div class="p-4 rounded-2xl border ${corCard} space-y-3 shadow">
                             <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
                                 <h4 class="font-bold text-white text-sm"><i class="fa-solid fa-file-invoice text-amber-400 mr-2"></i>${c.credor}</h4>
-                                <button onclick="excluirGrupoCarne('${c.credor}')" class="text-rose-400 hover:text-rose-300 text-xs"><i class="fa-solid fa-trash"></i> Excluir</button>
+                                <button onclick="excluirGrupoCarne('${c.credor}')" class="text-rose-400 hover:text-rose-300 text-xs"><i class="fa-solid fa-trash"></i></button>
                             </div>
                             <div class="flex justify-between items-center">
                                 <div>
@@ -723,9 +810,7 @@
                 }
             });
 
-            if(!encontrouAlguma) {
-                lista.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">Nenhuma parcela de carnê para este mês.</p>`;
-            }
+            if(!encontrouAlguma) lista.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">Nenhuma parcela de carnê para este mês.</p>`;
         }
 
         async function excluirGrupoCarne(credor) {
@@ -734,19 +819,16 @@
             carregarTudo();
         }
 
-        // --- DÍVIDAS ATRASADAS ---
         async function carregarDividas() {
             const { data } = await _supabase.from('meufuturo_dividas_atrasadas').select('*');
             let total = 0;
             const tbody = document.getElementById('tabelaDividas');
             tbody.innerHTML = '';
-            
             if(!data || data.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-slate-500">Nenhuma dívida atrasada.</td></tr>';
                 document.getElementById('totalAtrasadas').innerText = 'R$ 0,00';
                 return;
             }
-
             data.forEach(d => {
                 if(d.status !== 'pago') total += Number(d.valor_atualizado);
                 tbody.innerHTML += `
@@ -777,13 +859,10 @@
             carregarDividas();
         }
 
-        // --- TRANSAÇÕES ---
         async function carregarTransacoes() {
             const { data } = await _supabase.from('meufuturo_transacoes').select('*');
             let rec = 0, desp = 0;
-            let anoSel = dataAtualNavegacao.getFullYear();
-            let mesSel = dataAtualNavegacao.getMonth() + 1;
-
+            let anoSel = dataAtualNavegacao.getFullYear(), mesSel = dataAtualNavegacao.getMonth() + 1;
             const lista = document.getElementById('listaTransacoes');
             lista.innerHTML = '';
             
@@ -857,7 +936,6 @@
         async function excluirTransacaoGeral(transId, tipoTrans, valorTrans, contaIdTrans) {
             if(!confirm('Excluir transação e estornar valor?')) return;
             await _supabase.from('meufuturo_transacoes').delete().eq('id', transId);
-            
             let conta = listaContasBanco.find(c => c.id === contaIdTrans);
             if(conta) {
                 let novoSaldo = tipoTrans === 'despesa' ? Number(conta.saldo_inicial) + Number(valorTrans) : Number(conta.saldo_inicial) - Number(valorTrans);
@@ -886,7 +964,7 @@
             carregarTudo();
         }
 
-        // Modais
+        // Modais básicos
         function abrirModalPDV() { document.getElementById('modalPDV').classList.remove('hidden'); }
         function fecharModalPDV() { document.getElementById('modalPDV').classList.add('hidden'); }
         function fecharModalExtrato() { document.getElementById('modalExtrato').classList.add('hidden'); }
