@@ -101,6 +101,20 @@
             </div>
         </section>
 
+        <!-- Gestão do Veículo / Carro -->
+        <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div>
+                    <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-car mr-2"></i>Gestão do Veículo</h3>
+                    <p class="text-[11px] text-slate-400">Controle de abastecimento, consumo médio e manutenções</p>
+                </div>
+                <button onclick="abrirModalVeiculo()" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition">+ Novo Veículo</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="listaVeiculos">
+                <p class="text-xs text-slate-500 text-center py-4 col-span-2">Nenhum veículo cadastrado. Clique em + Novo Veículo.</p>
+            </div>
+        </section>
+
         <!-- Carnês do Mês & Dívidas Atrasadas -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg space-y-4">
@@ -153,6 +167,113 @@
     </main>
 
     <!-- ================= MODAIS ================= -->
+
+    <!-- Modal Cadastrar Veículo -->
+    <div id="modalVeiculo" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
+            <h3 class="text-lg font-bold text-amber-400">Cadastrar Veículo</h3>
+            <div class="space-y-3">
+                <input type="text" id="veiculoNome" placeholder="Nome / Apelido (Ex: Meu Uno)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <input type="text" id="veiculoModelo" placeholder="Modelo (Ex: Fiat Uno Mille 1.0)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Quilometragem Atual (Km)</label>
+                    <input type="number" id="veiculoKm" placeholder="Ex: 150000" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="fecharModalVeiculo()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
+                    <button type="button" onclick="salvarVeiculo()" class="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Abastecimento -->
+    <div id="modalAbastecimento" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-bold text-amber-400"><i class="fa-solid fa-gas-pump mr-2"></i>Registrar Abastecimento</h3>
+                <button onclick="fecharModalAbastecimento()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3">
+                <input type="hidden" id="abastVeiculoId">
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Odômetro Atual (Km no painel)</label>
+                    <input type="number" id="abastKm" placeholder="Ex: 150500" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Litros Colocados</label>
+                        <input type="number" step="0.01" id="abastLitros" placeholder="Ex: 35.5" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Valor Total (R$)</label>
+                        <input type="number" step="0.01" id="abastValor" placeholder="Ex: 210.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Data do Abastecimento</label>
+                    <input type="date" id="abastData" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Forma de Pagamento (Conta Bancária)</label>
+                    <select id="abastConta" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                        <option value="">Selecione o Banco</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="fecharModalAbastecimento()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
+                    <button type="button" onclick="salvarAbastecimento()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition">Salvar Abastecimento</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Manutenção -->
+    <div id="modalManutencao" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-bold text-purple-400"><i class="fa-solid fa-wrench mr-2"></i>Registrar Manutenção</h3>
+                <button onclick="fecharModalManutencao()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3">
+                <input type="hidden" id="manutVeiculoId">
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Peça / Serviço (Ex: Correia Dentada, Óleo, Pastilha)</label>
+                    <input type="text" id="manutDesc" placeholder="Descrição do serviço" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Km da Troca</label>
+                        <input type="number" id="manutKm" placeholder="Ex: 150000" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Km Limite Próxima Troca</label>
+                        <input type="number" id="manutKmLimite" placeholder="Ex: 190000" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Valor Gasto (R$)</label>
+                        <input type="number" step="0.01" id="manutValor" placeholder="Ex: 350.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Data</label>
+                        <input type="date" id="manutData" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block mb-1">Forma de Pagamento (Conta Bancária)</label>
+                    <select id="manutConta" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                        <option value="">Selecione o Banco</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="fecharModalManutencao()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
+                    <button type="button" onclick="salvarManutencao()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition">Salvar Manutenção</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal Pagar Dívida Atrasada / Parcelar -->
     <div id="modalPagarDivida" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
@@ -212,7 +333,7 @@
         </div>
     </div>
 
-    <!-- Modal Cadastrar Dívida Atrasada -->
+    <!-- Outros Modais básicos -->
     <div id="modalDivida" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-rose-400">Cadastrar Dívida Atrasada</h3>
@@ -240,42 +361,6 @@
         </div>
     </div>
 
-    <!-- Modal Editar Configurações do Cartão -->
-    <div id="modalEditarCartao" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="text-lg font-bold text-purple-400"><i class="fa-solid fa-pen-to-square mr-2"></i>Editar Configurações do Cartão</h3>
-                <button onclick="fecharModalEditarCartao()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <div class="space-y-3">
-                <input type="hidden" id="editCartaoId">
-                <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Nome do Cartão</label>
-                    <input type="text" id="editCartaoNome" readonly class="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-sm text-slate-300 outline-none">
-                </div>
-                <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Limite Total (R$)</label>
-                    <input type="number" step="0.01" id="editCartaoLimite" placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Fechamento (Dia)</label>
-                        <input type="number" id="editCartaoFechamento" placeholder="Ex: 10" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                    </div>
-                    <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Vencimento (Dia)</label>
-                        <input type="number" id="editCartaoVencimento" placeholder="Ex: 17" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                    </div>
-                </div>
-                <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" onclick="fecharModalEditarCartao()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="button" onclick="salvarEdicaoCartao()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition">Salvar Alterações</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Outros Modais básicos -->
     <div id="modalConta" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-white">Cadastrar Banco</h3>
@@ -375,7 +460,7 @@
         let listaContasBanco = [];
         let listaVRBanco = [];
         let dataAtualNavegacao = new Date();
-        let ordemModoDivida = 'recentes'; // 'recentes' (mais recentes primeiro) ou 'distantes' (mais antigas primeiro)
+        let ordemModoDivida = 'recentes';
 
         function formatarMesAnoLabel(data) {
             const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -396,7 +481,7 @@
 
         async function carregarTudo() {
             document.getElementById('labelMesAno').innerText = formatarMesAnoLabel(dataAtualNavegacao);
-            await Promise.all([carregarContas(), carregarVR(), carregarCartoes(), carregarCarnesDoMes(), carregarDividas(), carregarTransacoes()]);
+            await Promise.all([carregarContas(), carregarVR(), carregarCartoes(), carregarVeiculos(), carregarCarnesDoMes(), carregarDividas(), carregarTransacoes()]);
         }
 
         async function carregarContas() {
@@ -456,58 +541,84 @@
             if(!error) { fecharModalVR(); carregarVR(); document.getElementById('vrNome').value=''; document.getElementById('vrSaldo').value=''; }
         }
 
-        async function carregarCartoes() {
-            const { data: cartoes } = await _supabase.from('meufuturo_cartoes').select('*');
-            const { data: compras } = await _supabase.from('meufuturo_cartao_compras').select('*');
-            
-            const lista = document.getElementById('listaCartoes');
+        // --- GESTÃO DE VEÍCULOS ---
+        async function carregarVeiculos() {
+            const { data: veiculos } = await _supabase.from('meufuturo_veiculos').select('*');
+            const { data: abastecimentos } = await _supabase.from('meufuturo_veiculo_abastecimentos').select('*').order('km', { ascending: true });
+            const { data: manutencoes } = await _supabase.from('meufuturo_veiculo_manutencoes').select('*');
+
+            const lista = document.getElementById('listaVeiculos');
             lista.innerHTML = '';
 
-            if(!cartoes || cartoes.length === 0) {
-                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4 col-span-2">Nenhum cartão cadastrado. Clique em + Novo Cartão.</p>';
+            if(!veiculos || veiculos.length === 0) {
+                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4 col-span-2">Nenhum veículo cadastrado. Clique em + Novo Veículo.</p>';
                 return;
             }
 
-            let anoSel = dataAtualNavegacao.getFullYear();
-            let mesSel = dataAtualNavegacao.getMonth() + 1;
+            veiculos.forEach(v => {
+                let abastCarro = (abastecimentos || []).filter(a => a.veiculo_id === v.id);
+                let manutCarro = (manutencoes || []).filter(m => m.veiculo_id === v.id);
 
-            cartoes.forEach(cartao => {
-                let comprasDoMes = (compras || []).filter(c => c.cartao_id === cartao.id && Number(c.ano_fatura) === anoSel && Number(c.mes_fatura) === mesSel);
-                let totalFatura = comprasDoMes.reduce((acc, curr) => acc + Number(curr.valor), 0);
-                let limiteDisponivel = Number(cartao.limite) - totalFatura;
-                let faturaPaga = comprasDoMes.length > 0 && comprasDoMes.every(c => c.status === 'pago');
+                let ultimoKm = Number(v.km_atual || 0);
+                if (abastCarro.length > 0) {
+                    let ultimoAbast = abastCarro[abastCarro.length - 1];
+                    if (Number(ultimoAbast.km) > ultimoKm) ultimoKm = Number(ultimoAbast.km);
+                }
 
-                let botaoPagarFatura = '';
-                if (comprasDoMes.length > 0) {
-                    if (faturaPaga) {
-                        botaoPagarFatura = `<span class="bg-emerald-600 text-white text-xs font-bold px-2.5 py-1 rounded-xl"><i class="fa-solid fa-check mr-1"></i> Fatura Paga</span>`;
-                    } else {
-                        botaoPagarFatura = `<button onclick="abrirPagarFatura('${cartao.id}', '${cartao.nome}', ${totalFatura}, ${anoSel}, ${mesSel})" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl transition"><i class="fa-solid fa-check-to-slot mr-1"></i> Pagar Fatura</button>`;
+                // Calcular média Km/L do último abastecimento
+                let ultimoConsumoStr = 'N/A';
+                if (abastCarro.length > 0) {
+                    let ultimo = abastCarro[abastCarro.length - 1];
+                    if (ultimo.consumo_km_l) {
+                        ultimoConsumoStr = `${Number(ultimo.consumo_km_l).toFixed(2)} Km/L`;
                     }
                 }
 
-                let itensHTML = '';
-                if(comprasDoMes.length === 0) {
-                    itensHTML = '<p class="text-[11px] text-slate-500 italic">Nenhuma compra nesta fatura.</p>';
+                let abastHTML = '';
+                if (abastCarro.length === 0) {
+                    abastHTML = '<p class="text-[11px] text-slate-500 italic">Nenhum abastecimento registado.</p>';
                 } else {
-                    comprasDoMes.forEach(comp => {
-                        let infoParcela = (comp.total_parcelas && comp.total_parcelas > 1) ? ` (${comp.parcela_atual}/${comp.total_parcelas})` : '';
-                        let botaoExcluir = comp.compra_grupo_id 
-                            ? `<button onclick="excluirGrupoCompra('${comp.compra_grupo_id}')" class="text-rose-400 hover:text-rose-300 text-xs" title="Excluir parcelamento"><i class="fa-solid fa-trash-can"></i></button>`
-                            : `<button onclick="excluirCompraCartao('${comp.id}')" class="text-rose-400 hover:text-rose-300 text-xs"><i class="fa-solid fa-trash"></i></button>`;
-
-                        let statusBadge = comp.status === 'pago' ? '<span class="text-[9px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-800 ml-1">Pago</span>' : '';
-
-                        itensHTML += `
+                    abastCarro.slice(-3).reverse().forEach(a => {
+                        let kmL = a.consumo_km_l ? `${Number(a.consumo_km_l).toFixed(2)} Km/L` : '1º Registo';
+                        abastHTML += `
                             <div class="flex justify-between items-center text-xs bg-slate-900/60 p-2 rounded-lg border border-slate-800">
                                 <div>
-                                    <span class="text-white font-medium">${comp.descricao}${infoParcela}</span> ${statusBadge}
-                                    <span class="text-[10px] text-slate-400 block">${new Date(comp.data_compra + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                                    <span class="text-white font-medium">${a.km} Km - ${a.litros}L</span>
+                                    <span class="text-[10px] text-slate-400 block">${new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
                                 </div>
-                                <div class="flex items-center space-x-2">
-                                    <span class="text-purple-300 font-bold">R$ ${Number(comp.valor).toFixed(2)}</span>
-                                    ${botaoExcluir}
+                                <div class="text-right">
+                                    <span class="text-amber-400 font-bold block">R$ ${Number(a.valor_total).toFixed(2)}</span>
+                                    <span class="text-emerald-400 text-[10px] font-bold">${kmL}</span>
                                 </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                let manutHTML = '';
+                if (manutCarro.length === 0) {
+                    manutHTML = '<p class="text-[11px] text-slate-500 italic">Nenhuma manutenção registada.</p>';
+                } else {
+                    manutCarro.forEach(m => {
+                        let statusKm = '';
+                        if (m.km_limite) {
+                            let falta = Number(m.km_limite) - ultimoKm;
+                            if (falta <= 0) {
+                                statusKm = '<span class="text-[9px] bg-rose-950 text-rose-400 px-1.5 py-0.5 rounded border border-rose-800 ml-1">Troca Vencida!</span>';
+                            } else if (falta <= 1000) {
+                                statusKm = `<span class="text-[9px] bg-amber-950 text-amber-400 px-1.5 py-0.5 rounded border border-amber-800 ml-1">Faltam ${falta} Km</span>`;
+                            } else {
+                                statusKm = `<span class="text-[9px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-800 ml-1">OK (${falta} Km restantes)</span>`;
+                            }
+                        }
+
+                        manutHTML += `
+                            <div class="flex justify-between items-center text-xs bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                                <div>
+                                    <span class="text-white font-medium">${m.descricao}</span> ${statusKm}
+                                    <span class="text-[10px] text-slate-400 block">Troca feita aos ${m.km_troca} Km (${new Date(m.data + 'T00:00:00').toLocaleDateString('pt-BR')})</span>
+                                </div>
+                                <span class="text-purple-300 font-bold">R$ ${Number(m.valor).toFixed(2)}</span>
                             </div>
                         `;
                     });
@@ -517,246 +628,194 @@
                     <div class="bg-slate-950/50 p-4 rounded-2xl border border-slate-800 space-y-3 shadow">
                         <div class="flex justify-between items-center border-b border-slate-800 pb-2">
                             <div>
-                                <h4 class="font-bold text-sm text-white"><i class="fa-solid fa-credit-card text-purple-400 mr-2"></i>${cartao.nome}</h4>
-                                <span class="text-[10px] text-slate-400 block">Limite: R$ ${Number(cartao.limite).toFixed(2)}</span>
-                                <span class="text-[10px] text-slate-400">Fechamento: Dia ${cartao.fechamento || 10} | Vencimento: Dia ${cartao.vencimento || 17}</span>
+                                <h4 class="font-bold text-sm text-white"><i class="fa-solid fa-car text-amber-400 mr-2"></i>${v.nome} <span class="text-xs text-slate-400 font-normal">(${v.modelo || ''})</span></h4>
+                                <span class="text-[10px] text-slate-400 block">Odômetro Atual: <strong class="text-emerald-400">${ultimoKm} Km</strong></span>
                             </div>
                             <div class="flex items-center gap-1.5">
-                                <button onclick="abrirModalEditarCartao('${cartao.id}', '${cartao.nome}', ${cartao.limite}, ${cartao.fechamento || 10}, ${cartao.vencimento || 17})" class="bg-slate-800 hover:bg-slate-700 text-amber-400 text-xs font-bold px-2 py-1.5 rounded-xl transition" title="Editar Cartão"><i class="fa-solid fa-pen-to-square"></i></button>
-                                <button onclick="abrirModalCompraCartao('${cartao.id}', '${cartao.nome}')" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl transition" title="Nova Compra"><i class="fa-solid fa-plus"></i></button>
+                                <button onclick="abrirModalAbastecimento('${v.id}')" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl transition" title="Abastecer"><i class="fa-solid fa-gas-pump mr-1"></i> Abastecer</button>
+                                <button onclick="abrirModalManutencao('${v.id}')" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl transition" title="Manutenção"><i class="fa-solid fa-wrench mr-1"></i> Manutenção</button>
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-2 text-xs bg-slate-900/40 p-2.5 rounded-xl border border-slate-800/80">
-                            <div>
-                                <span class="text-slate-400 block text-[10px]">Fatura do Mês</span>
-                                <span class="text-purple-400 font-extrabold text-sm">R$ ${totalFatura.toFixed(2)}</span>
-                            </div>
-                            <div>
-                                <span class="text-slate-400 block text-[10px]">Limite Disponível</span>
-                                <span class="text-emerald-400 font-extrabold text-sm">R$ ${limiteDisponivel.toFixed(2)}</span>
-                            </div>
+                        <div class="bg-slate-900/40 p-2.5 rounded-xl border border-slate-800/80 flex justify-between items-center text-xs">
+                            <span class="text-slate-400">Último Consumo Médio:</span>
+                            <span class="text-cyan-400 font-extrabold text-sm">${ultimoConsumoStr}</span>
                         </div>
-                        <div class="flex justify-between items-center pt-1">
-                            <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Lançamentos:</p>
-                            ${botaoPagarFatura}
+                        <div>
+                            <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider mb-1">Últimos Abastecimentos:</p>
+                            <div class="space-y-1.5 max-h-32 overflow-y-auto">${abastHTML}</div>
                         </div>
-                        <div class="space-y-1.5 max-h-40 overflow-y-auto">
-                            ${itensHTML}
+                        <div>
+                            <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider mb-1">Manutenções & Prazos:</p>
+                            <div class="space-y-1.5 max-h-32 overflow-y-auto">${manutHTML}</div>
                         </div>
                     </div>
                 `;
             });
         }
 
-        async function salvarCartao() {
-            const nome = document.getElementById('cartaoNome').value;
-            const limite = parseFloat(document.getElementById('cartaoLimite').value);
-            const fechamento = parseInt(document.getElementById('cartaoFechamento').value) || 10;
-            const vencimento = parseInt(document.getElementById('cartaoVencimento').value) || 17;
+        function abrirModalVeiculo() { document.getElementById('modalVeiculo').classList.remove('hidden'); }
+        function fecharModalVeiculo() { document.getElementById('modalVeiculo').classList.add('hidden'); }
 
-            if(!nome || isNaN(limite)) return alert('Preencha o nome e o limite do cartão!');
+        async function salvarVeiculo() {
+            const nome = document.getElementById('veiculoNome').value;
+            const modelo = document.getElementById('veiculoModelo').value;
+            const km = parseFloat(document.getElementById('veiculoKm').value) || 0;
 
-            const { error } = await _supabase.from('meufuturo_cartoes').insert([{ nome, limite, fechamento, vencimento }]);
-            if(error) return alert('Erro ao salvar cartão: ' + error.message);
+            if(!nome) return alert('Insira o nome do veículo!');
 
-            fecharModalCartao();
-            carregarCartoes();
-            alert('Cartão cadastrado com sucesso!');
+            const { error } = await _supabase.from('meufuturo_veiculos').insert([{ nome, modelo, km_atual: km }]);
+            if(error) return alert('Erro ao salvar veículo: ' + error.message);
+
+            fecharModalVeiculo();
+            carregarVeiculos();
+            document.getElementById('veiculoNome').value = '';
+            document.getElementById('veiculoModelo').value = '';
+            document.getElementById('veiculoKm').value = '';
+            alert('Veículo cadastrado com sucesso!');
         }
 
-        function abrirModalEditarCartao(id, nome, limite, fechamento, vencimento) {
-            document.getElementById('editCartaoId').value = id;
-            document.getElementById('editCartaoNome').value = nome;
-            document.getElementById('editCartaoLimite').value = limite;
-            document.getElementById('editCartaoFechamento').value = fechamento;
-            document.getElementById('editCartaoVencimento').value = vencimento;
-            document.getElementById('modalEditarCartao').classList.remove('hidden');
-        }
+        function abrirModalAbastecimento(veiculoId) {
+            document.getElementById('abastVeiculoId').value = veiculoId;
+            document.getElementById('abastKm').value = '';
+            document.getElementById('abastLitros').value = '';
+            document.getElementById('abastValor').value = '';
+            document.getElementById('abastData').value = new Date().toISOString().split('T')[0];
 
-        function fecharModalEditarCartao() {
-            document.getElementById('modalEditarCartao').classList.add('hidden');
-        }
-
-        async function salvarEdicaoCartao() {
-            const cartaoId = document.getElementById('editCartaoId').value;
-            const novoLimite = parseFloat(document.getElementById('editCartaoLimite').value);
-            const novoFechamento = parseInt(document.getElementById('editCartaoFechamento').value) || 10;
-            const novoVencimento = parseInt(document.getElementById('editCartaoVencimento').value) || 17;
-
-            if(isNaN(novoLimite)) return alert('Informe um valor de limite válido!');
-
-            const { error } = await _supabase.from('meufuturo_cartoes')
-                .update({ limite: novoLimite, fechamento: novoFechamento, vencimento: novoVencimento })
-                .eq('id', cartaoId);
-
-            if(error) return alert('Erro ao atualizar cartão: ' + error.message);
-
-            fecharModalEditarCartao();
-            carregarCartoes();
-            alert('Configurações do cartão atualizadas com sucesso!');
-        }
-
-        function abrirPagarFatura(cartaoId, cartaoNome, valorFatura, ano, mes) {
-            document.getElementById('pagarCartaoId').value = cartaoId;
-            document.getElementById('pagarAnoFatura').value = ano;
-            document.getElementById('pagarMesFatura').value = mes;
-            document.getElementById('pagarFaturaInfo').value = `${cartaoNome} (Mês ${mes}/${ano})`;
-            document.getElementById('pagarFaturaValor').value = valorFatura.toFixed(2);
-            document.getElementById('pagarFaturaData').value = new Date().toISOString().split('T')[0];
-            
-            const selectConta = document.getElementById('pagarFaturaConta');
+            const selectConta = document.getElementById('abastConta');
             selectConta.innerHTML = '<option value="">Selecione o Banco</option>';
             listaContasBanco.forEach(d => {
                 selectConta.innerHTML += `<option value="${d.id}">[BANCO] ${d.nome_banco} (R$ ${Number(d.saldo_inicial).toFixed(2)})</option>`;
             });
 
-            document.getElementById('modalPagarFatura').classList.remove('hidden');
+            document.getElementById('modalAbastecimento').classList.remove('hidden');
         }
 
-        function fecharModalPagarFatura() {
-            document.getElementById('modalPagarFatura').classList.add('hidden');
-        }
+        function fecharModalAbastecimento() { document.getElementById('modalAbastecimento').classList.add('hidden'); }
 
-        async function confirmarPagamentoFatura() {
-            const cartaoId = document.getElementById('pagarCartaoId').value;
-            const anoFatura = parseInt(document.getElementById('pagarAnoFatura').value);
-            const mesFatura = parseInt(document.getElementById('pagarMesFatura').value);
-            const valorFatura = parseFloat(document.getElementById('pagarFaturaValor').value);
-            const dataPagamento = document.getElementById('pagarFaturaData').value;
-            const contaId = document.getElementById('pagarFaturaConta').value;
+        async function salvarAbastecimento() {
+            const veiculoId = document.getElementById('abastVeiculoId').value;
+            const km = parseFloat(document.getElementById('abastKm').value);
+            const litros = parseFloat(document.getElementById('abastLitros').value);
+            const valor = parseFloat(document.getElementById('abastValor').value);
+            const data = document.getElementById('abastData').value;
+            const contaId = document.getElementById('abastConta').value;
 
-            if(!contaId || !dataPagamento) return alert('Selecione a conta bancária e a data de pagamento!');
+            if(isNaN(km) || isNaN(litros) || isNaN(valor) || !contaId || !data) return alert('Preencha todos os campos!');
 
-            await _supabase.from('meufuturo_cartao_compras')
-                .update({ status: 'pago' })
-                .eq('cartao_id', cartaoId)
-                .eq('ano_fatura', anoFatura)
-                .eq('mes_fatura', mesFatura);
+            // Buscar último abastecimento deste veículo para calcular o Km/L
+            const { data: anteriores } = await _supabase.from('meufuturo_veiculo_abastecimentos')
+                .select('*')
+                .eq('veiculo_id', veiculoId)
+                .order('km', { ascending: false })
+                .limit(1);
 
-            const { data: cartaoObj } = await _supabase.from('meufuturo_cartoes').select('nome').eq('id', cartaoId).single();
-            const nomeCartao = cartaoObj ? cartaoObj.nome : 'Cartão';
+            let consumoKmPorL = null;
+            if (anteriores && anteriores.length > 0) {
+                let ultimoKm = Number(anteriores[0].km);
+                let rodados = km - ultimoKm;
+                if (rodados > 0 && litros > 0) {
+                    consumoKmPorL = rodados / litros;
+                }
+            }
+
+            // Inserir abastecimento
+            await _supabase.from('meufuturo_veiculo_abastecimentos').insert([{
+                veiculo_id: veiculoId,
+                data,
+                km,
+                litros,
+                valor_total: valor,
+                consumo_km_l: consumoKmPorL,
+                conta_id: contaId
+            }]);
+
+            // Atualizar km atual do veículo
+            await _supabase.from('meufuturo_veiculos').update({ km_atual: km }).eq('id', veiculoId);
+
+            // Registrar despesa na conta bancária
+            const { data: vObj } = await _supabase.from('meufuturo_veiculos').select('nome').eq('id', veiculoId).single();
+            let nomeCarro = vObj ? vObj.nome : 'Veículo';
 
             await _supabase.from('meufuturo_transacoes').insert([{
-                descricao: `Pgto Fatura: ${nomeCartao} (${mesFatura}/${anoFatura})`,
-                valor: valorFatura,
+                descricao: `Abastecimento (${nomeCarro})`,
+                valor: valor,
                 tipo: 'despesa',
-                data: dataPagamento,
+                data: data,
                 conta_id: contaId
             }]);
 
             const contaBancoObj = listaContasBanco.find(c => c.id === contaId);
             if(contaBancoObj) {
-                let novoSaldo = Number(contaBancoObj.saldo_inicial) - valorFatura;
+                let novoSaldo = Number(contaBancoObj.saldo_inicial) - valor;
                 await _supabase.from('meufuturo_contas').update({ saldo_inicial: novoSaldo }).eq('id', contaId);
             }
 
-            fecharModalPagarFatura();
+            fecharModalAbastecimento();
             carregarTudo();
-            alert('Fatura paga com sucesso e saldo atualizado!');
+            alert('Abastecimento registado com sucesso!');
         }
 
-        function abrirModalCompraCartao(cartaoId, cartaoNome) {
-            document.getElementById('compraCartaoId').value = cartaoId;
-            document.getElementById('compraCartaoNome').value = cartaoNome;
-            document.getElementById('compraDescricao').value = '';
-            document.getElementById('compraValor').value = '';
-            document.getElementById('compraParcelas').value = '1';
-            document.getElementById('compraData').value = new Date().toISOString().split('T')[0];
-            document.getElementById('modalCompraCartao').classList.remove('hidden');
-        }
+        function abrirModalManutencao(veiculoId) {
+            document.getElementById('manutVeiculoId').value = veiculoId;
+            document.getElementById('manutDesc').value = '';
+            document.getElementById('manutKm').value = '';
+            document.getElementById('manutKmLimite').value = '';
+            document.getElementById('manutValor').value = '';
+            document.getElementById('manutData').value = new Date().toISOString().split('T')[0];
 
-        function fecharModalCompraCartao() {
-            document.getElementById('modalCompraCartao').classList.add('hidden');
-        }
-
-        async function salvarCompraCartao() {
-            const cartaoId = document.getElementById('compraCartaoId').value;
-            const descricao = document.getElementById('compraDescricao').value;
-            const valorTotal = parseFloat(document.getElementById('compraValor').value);
-            const totalParcelas = parseInt(document.getElementById('compraParcelas').value) || 1;
-            const dataCompra = document.getElementById('compraData').value;
-
-            if(!descricao || isNaN(valorTotal) || !dataCompra) return alert('Preencha todos os campos!');
-
-            const { data: cartaoObj } = await _supabase.from('meufuturo_cartoes').select('fechamento').eq('id', cartaoId).single();
-            let diaFechamento = cartaoObj ? (cartaoObj.fechamento || 10) : 10;
-
-            let partesData = dataCompra.split('-');
-            let anoInicial = parseInt(partesData[0]);
-            let mesInicial = parseInt(partesData[1]);
-            let dia = parseInt(partesData[2]);
-
-            if (dia >= diaFechamento) {
-                mesInicial++;
-                if (mesInicial > 12) {
-                    mesInicial = 1;
-                    anoInicial++;
-                }
-            }
-
-            let valorParcela = Number((valorTotal / totalParcelas).toFixed(2));
-            let grupoId = crypto.randomUUID();
-
-            let parcelasParaInserir = [];
-            for (let i = 1; i <= totalParcelas; i++) {
-                let mesFatura = mesInicial + (i - 1);
-                let anoFatura = anoInicial;
-                while (mesFatura > 12) {
-                    mesFatura -= 12;
-                    anoFatura++;
-                }
-
-                parcelasParaInserir.push({
-                    cartao_id: cartaoId,
-                    descricao: descricao,
-                    valor: valorParcela,
-                    data_compra: dataCompra,
-                    mes_fatura: mesFatura,
-                    ano_fatura: anoFatura,
-                    parcela_atual: i,
-                    total_parcelas: totalParcelas,
-                    compra_grupo_id: grupoId,
-                    status: 'aberta'
-                });
-            }
-
-            const { error } = await _supabase.from('meufuturo_cartao_compras').insert(parcelasParaInserir);
-            if(error) return alert('Erro ao salvar compra: ' + error.message);
-
-            fecharModalCompraCartao();
-            carregarTudo();
-            alert('Compra lançada com sucesso!');
-        }
-
-        async function excluirCompraCartao(id) {
-            if(!confirm('Deseja excluir esta compra?')) return;
-            await _supabase.from('meufuturo_cartao_compras').delete().eq('id', id);
-            carregarTudo();
-        }
-
-        async function excluirGrupoCompra(grupoId) {
-            if(!confirm('Deseja excluir todas as parcelas deste parcelamento?')) return;
-            await _supabase.from('meufuturo_cartao_compras').delete().eq('compra_grupo_id', grupoId);
-            carregarTudo();
-        }
-
-        function popularSelectsContas() {
-            const selectTrans = document.getElementById('transContaId');
-            if(selectTrans) selectTrans.innerHTML = '<option value="">Selecione Conta</option>';
-
+            const selectConta = document.getElementById('manutConta');
+            selectConta.innerHTML = '<option value="">Selecione o Banco</option>';
             listaContasBanco.forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = `conta:${d.id}`;
-                opt.textContent = `[BANCO] ${d.nome_banco} (R$ ${Number(d.saldo_inicial).toFixed(2)})`;
-                if(selectTrans) selectTrans.appendChild(opt);
+                selectConta.innerHTML += `<option value="${d.id}">[BANCO] ${d.nome_banco} (R$ ${Number(d.saldo_inicial).toFixed(2)})</option>`;
             });
 
-            listaVRBanco.forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = `vr:${d.id}`;
-                opt.textContent = `[VR] ${d.nome}`;
-                if(selectTrans) selectTrans.appendChild(opt);
-            });
+            document.getElementById('modalManutencao').classList.remove('hidden');
+        }
+
+        function fecharModalManutencao() { document.getElementById('modalManutencao').classList.add('hidden'); }
+
+        async function salvarManutencao() {
+            const veiculoId = document.getElementById('manutVeiculoId').value;
+            const descricao = document.getElementById('manutDesc').value;
+            const kmTroca = parseFloat(document.getElementById('manutKm').value);
+            const kmLimite = parseFloat(document.getElementById('manutKmLimite').value) || null;
+            const valor = parseFloat(document.getElementById('manutValor').value);
+            const data = document.getElementById('manutData').value;
+            const contaId = document.getElementById('manutConta').value;
+
+            if(!descricao || isNaN(kmTroca) || isNaN(valor) || !contaId || !data) return alert('Preencha os campos obrigatórios!');
+
+            // Inserir manutenção
+            await _supabase.from('meufuturo_veiculo_manutencoes').insert([{
+                veiculo_id: veiculoId,
+                descricao,
+                km_troca: kmTroca,
+                km_limite: kmLimite,
+                valor,
+                data
+            }]);
+
+            // Registrar despesa na conta bancária
+            const { data: vObj } = await _supabase.from('meufuturo_veiculos').select('nome').eq('id', veiculoId).single();
+            let nomeCarro = vObj ? vObj.nome : 'Veículo';
+
+            await _supabase.from('meufuturo_transacoes').insert([{
+                descricao: `Manutenção (${nomeCarro}): ${descricao}`,
+                valor: valor,
+                tipo: 'despesa',
+                data: data,
+                conta_id: contaId
+            }]);
+
+            const contaBancoObj = listaContasBanco.find(c => c.id === contaId);
+            if(contaBancoObj) {
+                let novoSaldo = Number(contaBancoObj.saldo_inicial) - valor;
+                await _supabase.from('meufuturo_contas').update({ saldo_inicial: novoSaldo }).eq('id', contaId);
+            }
+
+            fecharModalManutencao();
+            carregarTudo();
+            alert('Manutenção registada com sucesso!');
         }
 
         // --- GESTÃO DE CARNÊ ---
@@ -787,61 +846,6 @@
             fecharModalCarne();
             carregarTudo();
             alert('Carnê gerado com sucesso!');
-        }
-
-        function abrirPagarCarne(id, credor, atual, total, valor) {
-            document.getElementById('pagarCarneId').value = id;
-            document.getElementById('pagarCarneInfo').value = `${credor} (Parcela ${atual}/${total})`;
-            document.getElementById('pagarCarneOriginal').value = valor.toFixed(2);
-            document.getElementById('pagarCarneReal').value = valor.toFixed(2);
-            document.getElementById('pagarCarneData').value = new Date().toISOString().split('T')[0];
-            
-            const selectCarnePag = document.getElementById('pagarCarneConta');
-            if(selectCarnePag) {
-                selectCarnePag.innerHTML = '<option value="">Selecione o Banco</option>';
-                listaContasBanco.forEach(d => {
-                    selectCarnePag.innerHTML += `<option value="conta:${d.id}">[BANCO] ${d.nome_banco} (R$ ${Number(d.saldo_inicial).toFixed(2)})</option>`;
-                });
-            }
-
-            document.getElementById('modalPagarCarne').classList.remove('hidden');
-        }
-
-        function fecharModalPagarCarne() { 
-            document.getElementById('modalPagarCarne').classList.add('hidden'); 
-        }
-
-        async function confirmarPagamentoCarne() {
-            const carneId = document.getElementById('pagarCarneId').value;
-            const valorReal = parseFloat(document.getElementById('pagarCarneReal').value);
-            const dataPagamento = document.getElementById('pagarCarneData').value;
-            const contaInfo = document.getElementById('pagarCarneConta').value;
-
-            if(isNaN(valorReal) || !contaInfo) return alert('Preencha o valor e selecione a conta!');
-
-            const [tipoConta, contaId] = contaInfo.split(':');
-            const { data: carneData } = await _supabase.from('meufuturo_carnes').select('*').eq('id', carneId).single();
-            
-            if(carneData) {
-                await _supabase.from('meufuturo_carnes').update({ status: 'pago' }).eq('id', carneId);
-            }
-
-            await _supabase.from('meufuturo_transacoes').insert([{
-                descricao: `Pgto Carnê: ${carneData.credor} (${carneData.parcela_atual}/${carneData.total_parcelas})`,
-                valor: valorReal,
-                tipo: 'despesa',
-                data: dataPagamento,
-                conta_id: contaId
-            }]);
-
-            if(tipoConta === 'conta') {
-                const { data: c } = await _supabase.from('meufuturo_contas').select('saldo_inicial').eq('id', contaId).single();
-                await _supabase.from('meufuturo_contas').update({ saldo_inicial: Number(c.saldo_inicial) - valorReal }).eq('id', contaId);
-            }
-
-            fecharModalPagarCarne();
-            carregarTudo();
-            alert('Pagamento registrado com sucesso!');
         }
 
         async function carregarCarnesDoMes() {
@@ -883,10 +887,7 @@
                     encontrouAlguma = true;
                     let jaPago = c.status === 'pago';
                     let corCard = jaPago ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-slate-950/60 border-slate-800 text-slate-300';
-                    let badgeStatus = jaPago 
-                        ? `<span class="bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-check mr-1"></i> Pago</span>` 
-                        : `<button onclick="abrirPagarCarne('${c.id}', '${c.credor}', ${c.parcela_atual}, ${c.total_parcelas}, ${c.valor_parcela})" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">Pagar Parcela</button>`;
-
+                    
                     lista.innerHTML += `
                         <div class="p-4 rounded-2xl border ${corCard} space-y-3 shadow">
                             <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
@@ -899,7 +900,7 @@
                                     <p class="text-xs text-slate-400 mt-0.5">Vencimento: Dia ${c.dia_vencimento || 20}</p>
                                     <p class="text-base font-extrabold text-amber-400 mt-1">R$ ${Number(c.valor_parcela).toFixed(2)}</p>
                                 </div>
-                                <div>${badgeStatus}</div>
+                                <div>${jaPago ? '<span class="bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold">Pago</span>' : '<span class="text-xs text-amber-400 font-bold">Pendente</span>'}</div>
                             </div>
                         </div>
                     `;
@@ -915,7 +916,7 @@
             carregarTudo();
         }
 
-        // --- GESTÃO DE DÍVIDAS ATRASADAS & ORDENAÇÃO AZ/DATA ---
+        // --- DÍVIDAS ATRASADAS ---
         function alternarOrdemDividas() {
             if (ordemModoDivida === 'recentes') {
                 ordemModoDivida = 'distantes';
@@ -941,15 +942,11 @@
                 return;
             }
 
-            // Ordenação por data (Compra / Vencimento Original)
             dividasPendentes.sort((a, b) => {
                 let dataA = new Date(a.data_vencimento || '1970-01-01');
                 let dataB = new Date(b.data_vencimento || '1970-01-01');
-                if (ordemModoDivida === 'recentes') {
-                    return dataB - dataA; // Mais recente primeiro
-                } else {
-                    return dataA - dataB; // Mais distante / antiga primeiro
-                }
+                if (ordemModoDivida === 'recentes') return dataB - dataA;
+                else return dataA - dataB;
             });
 
             dividasPendentes.forEach(d => {
@@ -976,23 +973,10 @@
 
             if(!credor || isNaN(original) || isNaN(atual)) return alert('Preencha os campos obrigatórios!');
 
-            const { error } = await _supabase.from('meufuturo_dividas_atrasadas').insert([{ 
-                credor, 
-                valor_original: original, 
-                valor_atualizado: atual, 
-                data_vencimento: venc, 
-                status: 'pendente' 
-            }]);
-
-            if(error) return alert('Erro ao salvar dívida: ' + error.message);
-
+            await _supabase.from('meufuturo_dividas_atrasadas').insert([{ credor, valor_original: original, valor_atualizado: atual, data_vencimento: venc, status: 'pendente' }]);
             fecharModalDivida();
             carregarDividas();
-            document.getElementById('divCredor').value = '';
-            document.getElementById('divOriginal').value = '';
-            document.getElementById('divAtual').value = '';
-            document.getElementById('divVencimento').value = '';
-            alert('Dívida atrasada cadastrada com sucesso!');
+            alert('Dívida cadastrada com sucesso!');
         }
 
         function abrirPagarDivida(id, credor, valorAtual) {
@@ -1014,21 +998,16 @@
             document.getElementById('modalPagarDivida').classList.remove('hidden');
         }
 
-        function fecharModalPagarDivida() {
-            document.getElementById('modalPagarDivida').classList.add('hidden');
-        }
+        function fecharModalPagarDivida() { document.getElementById('modalPagarDivida').classList.add('hidden'); }
 
         function alternarModoPagamentoDivida() {
             const tipo = document.getElementById('pagarDividaTipo').value;
-            const blocoParcelas = document.getElementById('blocoParcelasDivida');
-            const blocoBanco = document.getElementById('blocoBancoDivida');
-
             if (tipo === 'parcelado') {
-                blocoParcelas.classList.remove('hidden');
-                blocoBanco.classList.add('hidden');
+                document.getElementById('blocoParcelasDivida').classList.remove('hidden');
+                document.getElementById('blocoBancoDivida').classList.add('hidden');
             } else {
-                blocoParcelas.classList.add('hidden');
-                blocoBanco.classList.remove('hidden');
+                document.getElementById('blocoParcelasDivida').classList.add('hidden');
+                document.getElementById('blocoBancoDivida').classList.remove('hidden');
             }
         }
 
@@ -1051,67 +1030,35 @@
 
             if (tipoPagamento === 'vista') {
                 const contaId = document.getElementById('pagarDividaConta').value;
-                if(!contaId) return alert('Selecione o banco para pagamento à vista!');
+                if(!contaId) return alert('Selecione o banco!');
 
-                // Marcar dívida como paga
                 await _supabase.from('meufuturo_dividas_atrasadas').update({ status: 'pago' }).eq('id', dividaId);
+                await _supabase.from('meufuturo_transacoes').insert([{ descricao: `Acordo Dívida: ${credor}`, valor: valorAcordado, tipo: 'despesa', data: dataInicio, conta_id: contaId }]);
 
-                // Registrar transação de despesa
-                await _supabase.from('meufuturo_transacoes').insert([{
-                    descricao: `Acordo Dívida: ${credor}`,
-                    valor: valorAcordado,
-                    tipo: 'despesa',
-                    data: dataInicio,
-                    conta_id: contaId
-                }]);
-
-                // Atualizar saldo do banco
                 const contaBancoObj = listaContasBanco.find(c => c.id === contaId);
                 if(contaBancoObj) {
-                    let novoSaldo = Number(contaBancoObj.saldo_inicial) - valorAcordado;
-                    await _supabase.from('meufuturo_contas').update({ saldo_inicial: novoSaldo }).eq('id', contaId);
+                    await _supabase.from('meufuturo_contas').update({ saldo_inicial: Number(contaBancoObj.saldo_inicial) - valorAcordado }).eq('id', contaId);
                 }
-
-                alert('Pagamento à vista registrado com sucesso!');
-
             } else {
-                // Modo parcelado -> Jogar no Carnê
                 let qtdParcelas = parseInt(document.getElementById('pagarDividaQtdParcelas').value) || 2;
                 let valorParcela = Number((valorAcordado / qtdParcelas).toFixed(2));
-
                 const partes = dataInicio.split('-');
-                let anoInicio = parseInt(partes[0]);
-                let mesInicio = parseInt(partes[1]);
-                let diaVencimento = parseInt(partes[2].split('-')[0]) || 20;
+                let anoInicio = parseInt(partes[0]), mesInicio = parseInt(partes[1]), diaVencimento = parseInt(partes[2]) || 20;
 
                 let parcelasParaCarnet = [];
                 for (let i = 1; i <= qtdParcelas; i++) {
-                    let m = mesInicio + (i - 1);
-                    let a = anoInicio;
+                    let m = mesInicio + (i - 1), a = anoInicio;
                     while (m > 12) { m -= 12; a++; }
-                    parcelasParaCarnet.push({
-                        credor: `Acordo: ${credor}`,
-                        valor_parcela: valorParcela,
-                        parcela_atual: i,
-                        total_parcelas: qtdParcelas,
-                        dia_vencimento: diaVencimento,
-                        ano_ref: a,
-                        mes_ref: m,
-                        status: 'pendente'
-                    });
+                    parcelasParaCarnet.push({ credor: `Acordo: ${credor}`, valor_parcela: valorParcela, parcela_atual: i, total_parcelas: qtdParcelas, dia_vencimento: diaVencimento, ano_ref: a, mes_ref: m, status: 'pendente' });
                 }
 
-                // Inserir parcelas no carnê
                 await _supabase.from('meufuturo_carnes').insert(parcelasParaCarnet);
-
-                // Remover ou marcar dívida como paga
                 await _supabase.from('meufuturo_dividas_atrasadas').update({ status: 'pago' }).eq('id', dividaId);
-
-                alert('Dívida parcelada com sucesso e adicionada à aba Carnê!');
             }
 
             fecharModalPagarDivida();
             carregarTudo();
+            alert('Acordo concluído com sucesso!');
         }
 
         async function carregarTransacoes() {
@@ -1219,6 +1166,14 @@
             carregarTudo();
         }
 
+        function popularSelectsContas() {
+            const selectTrans = document.getElementById('transContaId');
+            if(selectTrans) selectTrans.innerHTML = '<option value="">Selecione Conta</option>';
+            listaContasBanco.forEach(d => {
+                if(selectTrans) selectTrans.innerHTML += `<option value="conta:${d.id}">[BANCO] ${d.nome_banco} (R$ ${Number(d.saldo_inicial).toFixed(2)})</option>`;
+            });
+        }
+
         // Modais básicos
         function abrirModalPDV() { document.getElementById('modalPDV').classList.remove('hidden'); }
         function fecharModalPDV() { document.getElementById('modalPDV').classList.add('hidden'); }
@@ -1235,6 +1190,8 @@
         function fecharModalDivida() { document.getElementById('modalDivida').classList.add('hidden'); }
         function abrirModalTransacao() { document.getElementById('modalTransacao').classList.remove('hidden'); }
         function fecharModalTransacao() { document.getElementById('modalTransacao').classList.add('hidden'); }
+        function fecharModalAbastecimento() { document.getElementById('modalAbastecimento').classList.add('hidden'); }
+        function fecharModalManutencao() { document.getElementById('modalManutencao').classList.add('hidden'); }
 
         carregarTudo();
     </script>
