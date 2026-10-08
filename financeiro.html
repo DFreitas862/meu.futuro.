@@ -198,7 +198,7 @@
     <!-- Modal Cadastrar Veículo -->
     <div id="modalVeiculo" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
-            <h3 class="text-lg font-bold text-amber-400">Cadastrar Veículo</h3>
+            <h3 class="text-lg font-bold text-amber-400"><i class="fa-solid fa-car mr-2"></i>Cadastrar Veículo</h3>
             <div class="space-y-3">
                 <input type="text" id="veiculoNome" placeholder="Nome / Apelido (Ex: Meu Uno)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <input type="text" id="veiculoModelo" placeholder="Modelo (Ex: Fiat Uno Mille 1.0)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
@@ -208,7 +208,7 @@
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalVeiculo()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="button" onclick="salvarVeiculo()" class="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold">Salvar</button>
+                    <button type="button" onclick="salvarVeiculo()" class="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold">Salvar Veículo</button>
                 </div>
             </div>
         </div>
@@ -604,7 +604,9 @@
 
             if(!nome || isNaN(limite)) return alert('Preencha os campos do cartão!');
 
-            await _supabase.from('meufuturo_cartoes').insert([{ nome, limite, vencimento }]);
+            const { error } = await _supabase.from('meufuturo_cartoes').insert([{ nome, limite, vencimento }]);
+            if(error) return alert('Erro ao salvar cartão: ' + error.message);
+
             fecharModalCartao();
             carregarCartoes();
             document.getElementById('cartaoNome').value = '';
@@ -615,7 +617,12 @@
 
         // --- GESTÃO DE VEÍCULOS ---
         async function carregarVeiculos() {
-            const { data: veiculos } = await _supabase.from('meufuturo_veiculos').select('*');
+            const { data: veiculos, error: errV } = await _supabase.from('meufuturo_veiculos').select('*');
+            if (errV) {
+                console.error('Erro ao carregar veículos:', errV);
+                return;
+            }
+
             const { data: abastecimentos } = await _supabase.from('meufuturo_veiculo_abastecimentos').select('*').order('km', { ascending: true });
             const { data: manutencoes } = await _supabase.from('meufuturo_veiculo_manutencoes').select('*');
 
@@ -699,13 +706,15 @@
             const km = parseFloat(document.getElementById('veiculoKm').value) || 0;
             if(!nome) return alert('Insira o nome do veículo!');
 
-            await _supabase.from('meufuturo_veiculos').insert([{ nome, modelo, km_atual: km }]);
+            const { error } = await _supabase.from('meufuturo_veiculos').insert([{ nome, modelo, km_atual: km }]);
+            if (error) return alert('Erro ao salvar veículo: ' + error.message);
+
             fecharModalVeiculo();
             carregarVeiculos();
             document.getElementById('veiculoNome').value = '';
             document.getElementById('veiculoModelo').value = '';
             document.getElementById('veiculoKm').value = '';
-            alert('Veículo cadastrado!');
+            alert('Veículo cadastrado com sucesso!');
         }
 
         function abrirModalAbastecimento(veiculoId) {
