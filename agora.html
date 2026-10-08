@@ -56,8 +56,8 @@
                 <div class="flex items-center space-x-2">
                     <i class="fa-solid fa-bell text-amber-400 text-sm"></i>
                     <div>
-                        <span class="text-xs font-bold text-white block">Alerta Sonoro (Bip)</span>
-                        <span class="text-[10px] text-slate-400">Avisa periodicamente</span>
+                        <span class="text-xs font-bold text-white block">Alerta Sonoro (Relógio)</span>
+                        <span class="text-[10px] text-slate-400">Bipe estilo despertador</span>
                     </div>
                 </div>
                 <div class="flex items-center space-x-2">
@@ -143,22 +143,34 @@
         let segundosDeslocamento = 0;
         let segundosPermanencia = 0;
 
-        // Função para emitir som de bipe usando o navegador
+        // Som de alarme estilo relógio digital / despertador (alto e marcante)
         function emitirSomBip() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
                 
-                osc.type = 'sine';
-                osc.frequency.value = 800; // Tom do bipe (Hz)
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.15); // Duração curta de 150ms
+                // Função para tocar um bipe individual
+                function tocarBeepUnico(tempoInicio, frequencia) {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    osc.type = 'square'; // Onda quadrada imita som digital de relógio
+                    osc.frequency.value = frequencia;
+                    
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime + tempoInicio); // Volume mais alto (0.3)
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + tempoInicio + 0.1);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    
+                    osc.start(audioCtx.currentTime + tempoInicio);
+                    osc.stop(audioCtx.currentTime + tempoInicio + 0.1);
+                }
+
+                // Sequência de alarme: 3 bipes rápidos e agudos (estilo relógio)
+                tocarBeepUnico(0.0, 2400);
+                tocarBeepUnico(0.12, 2400);
+                tocarBeepUnico(0.24, 3000);
+
             } catch (e) {
                 console.log('Áudio não suportado ou bloqueado pelo navegador.');
             }
@@ -226,7 +238,7 @@
             const segundosDecorridos = Math.floor((agoraMs - tempoInicioMs) / 1000);
             document.getElementById('displayTempo').innerText = formatarTempo(segundosDecorridos);
 
-            // Verificar se deve disparar o bipe com base no intervalo escolhido
+            // Verificar se deve disparar o alarme com base no intervalo escolhido
             const intervaloMinutos = parseInt(document.getElementById('inputIntervaloBip').value) || 0;
             if (intervaloMinutos > 0 && segundosDecorridos > 0 && segundosDecorridos % (intervaloMinutos * 60) === 0) {
                 emitirSomBip();
