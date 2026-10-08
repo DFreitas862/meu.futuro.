@@ -176,7 +176,7 @@
         </div>
     </div>
 
-    <!-- Modal Novo Carnê 100% Compatível com Coluna Integer -->
+    <!-- Modal Novo Carnê Corrigido -->
     <div id="modalCarne" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-amber-400">Cadastrar Carnê / Financiamento</h3>
@@ -430,7 +430,7 @@
             });
         }
 
-        // --- GERAÇÃO COMPATÍVEL COM COLUNA INTEIRO ---
+        // --- GERAÇÃO PRECISA: LEITURA DIRETA DO ANO E MÊS SEM FUSO HORÁRIO ---
         async function salvarCarneGerado() {
             const credor = document.getElementById('carneCredor').value;
             const valor = parseFloat(document.getElementById('carneValor').value);
@@ -440,24 +440,29 @@
 
             if(!credor || isNaN(valor) || isNaN(total) || !mesInicioStr) return alert('Preencha todos os campos e o mês da 1ª parcela!');
 
-            let [anoInicio, mesInicio] = mesInicioStr.split('-').map(Number);
+            // Divide a string '2025-09' diretamente em ano e mês numéricos exatos
+            const partes = mesInicioStr.split('-');
+            let anoInicio = parseInt(partes[0]);
+            let mesInicio = parseInt(partes[1]);
 
+            // Limpa carnês anteriores com o mesmo nome para evitar duplicidade
             await _supabase.from('meufuturo_carnes').delete().eq('credor', credor);
 
             let parcelas = [];
             for (let i = 1; i <= total; i++) {
                 let m = mesInicio + (i - 1);
                 let a = anoInicio;
-                while (m > 12) { m -= 12; a++; }
-                while (m < 1) { m += 12; a--; }
+                while (m > 12) { 
+                    m -= 12; 
+                    a++; 
+                }
 
-                // Gravamos o ano e o mês de forma interna e o número do dia (integer) no dia_vencimento
                 parcelas.push({
                     credor: credor,
                     valor_parcela: valor,
                     parcela_atual: i,
                     total_parcelas: total,
-                    dia_vencimento: venc, // Número inteiro exigido pela base de dados
+                    dia_vencimento: venc, // Número do dia compatível com coluna integer
                     ano_ref: a,
                     mes_ref: m,
                     status: 'pendente'
@@ -465,18 +470,7 @@
             }
 
             const { error } = await _supabase.from('meufuturo_carnes').insert(parcelas);
-            if(error) {
-                // Caso a tabela não tenha ano_ref e mes_ref, tenta enviar apenas os campos base
-                let parcelasSimples = parcelas.map(p => ({
-                    credor: p.credor,
-                    valor_parcela: p.valor_parcela,
-                    parcela_atual: p.parcela_atual,
-                    total_parcelas: p.total_parcelas,
-                    dia_vencimento: p.dia_vencimento
-                }));
-                const res2 = await _supabase.from('meufuturo_carnes').insert(parcelasSimples);
-                if(res2.error) return alert('Erro ao gerar carnê: ' + res2.error.message);
-            }
+            if(error) return alert('Erro ao gerar carnê: ' + error.message);
 
             fecharModalCarne();
             carregarTudo();
@@ -500,49 +494,37 @@
             let encontrouAlguma = false;
 
             data.forEach(c => {
-                let corresponde = false;
-
-                // Verifica se tem ano_ref e mes_ref guardados ou calcula pela parcela
                 if (c.ano_ref && c.mes_ref) {
                     if (Number(c.ano_ref) === anoSel && Number(c.mes_ref) === mesSel) {
-                        corresponde = true;
-                    }
-                } else {
-                    // Fallback inteligente caso não tenha as colunas de ano/mes: estimamos pelo número da parcela atual
-                    if (c.parcela_atual === mesSel && anoSel === 2026) {
-                        corresponde = true;
-                    }
-                }
+                        encontrouAlguma = true;
+                        let jaPago = c.status === 'pago';
+                        let corCard = jaPago ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-slate-950/60 border-slate-800 text-slate-300';
+                        
+                        let badgeStatus = jaPago 
+                            ? `<span class="bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-check mr-1"></i> Pago</span>` 
+                            : `<button onclick="abrirPagarCarne('${c.id}', '${c.credor}', ${c.parcela_atual}, ${c.total_parcelas}, ${c.valor_parcela})" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">Pagar Parcela</button>`;
 
-                if(corresponde) {
-                    encontrouAlguma = true;
-                    let jaPago = c.status === 'pago';
-                    let corCard = jaPago ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-slate-950/60 border-slate-800 text-slate-300';
-                    
-                    let badgeStatus = jaPago 
-                        ? `<span class="bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-check mr-1"></i> Pago</span>` 
-                        : `<button onclick="abrirPagarCarne('${c.id}', '${c.credor}', ${c.parcela_atual}, ${c.total_parcelas}, ${c.valor_parcela})" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">Pagar Parcela</button>`;
+                        let diaExibicao = `Dia ${c.dia_vencimento || 20}`;
 
-                    let diaExibicao = `Dia ${c.dia_vencimento || 20}`;
-
-                    lista.innerHTML += `
-                        <div class="p-4 rounded-2xl border ${corCard} space-y-3 shadow">
-                            <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
-                                <h4 class="font-bold text-white text-sm"><i class="fa-solid fa-file-invoice text-amber-400 mr-2"></i>${c.credor}</h4>
-                                <button onclick="excluirGrupoCarne('${c.credor}')" class="text-rose-400 hover:text-rose-300 text-xs" title="Excluir carnê inteiro"><i class="fa-solid fa-trash"></i> Excluir</button>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <p class="text-sm font-extrabold text-white">Parcela ${c.parcela_atual} de ${c.total_parcelas}</p>
-                                    <p class="text-xs text-slate-400 mt-0.5">Vencimento: <strong class="text-slate-200">${diaExibicao}</strong></p>
-                                    <p class="text-base font-extrabold text-amber-400 mt-1">R$ ${Number(c.valor_parcela).toFixed(2)}</p>
+                        lista.innerHTML += `
+                            <div class="p-4 rounded-2xl border ${corCard} space-y-3 shadow">
+                                <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
+                                    <h4 class="font-bold text-white text-sm"><i class="fa-solid fa-file-invoice text-amber-400 mr-2"></i>${c.credor}</h4>
+                                    <button onclick="excluirGrupoCarne('${c.credor}')" class="text-rose-400 hover:text-rose-300 text-xs" title="Excluir carnê inteiro"><i class="fa-solid fa-trash"></i> Excluir</button>
                                 </div>
-                                <div>
-                                    ${badgeStatus}
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="text-sm font-extrabold text-white">Parcela ${c.parcela_atual} de ${c.total_parcelas}</p>
+                                        <p class="text-xs text-slate-400 mt-0.5">Vencimento: <strong class="text-slate-200">${diaExibicao}</strong></p>
+                                        <p class="text-base font-extrabold text-amber-400 mt-1">R$ ${Number(c.valor_parcela).toFixed(2)}</p>
+                                    </div>
+                                    <div>
+                                        ${badgeStatus}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    `;
+                        `;
+                    }
                 }
             });
 
@@ -740,7 +722,7 @@
             const valor = parseFloat(document.getElementById('transValor').value);
             const tipo = document.getElementById('transTipo').value;
             const contaInfo = document.getElementById('transContaId').value;
-            const data = document.getElementById('transData').value;
+            const data = document.getElementById('transData'	).value;
             if(!desc || isNaN(valor) || !contaInfo) return alert('Preencha tudo!');
 
             const [tipoConta, contaId] = contaInfo.split(':');
