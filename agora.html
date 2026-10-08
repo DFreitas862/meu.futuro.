@@ -51,6 +51,27 @@
                 <div><strong class="text-amber-400">Destino:</strong> <span id="txtDestino">Aguardando chegada...</span></div>
             </div>
 
+            <!-- Configuração do Bipe Periódico -->
+            <div class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 text-left flex items-center justify-between gap-2">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-bell text-amber-400 text-sm"></i>
+                    <div>
+                        <span class="text-xs font-bold text-white block">Alerta Sonoro (Bip)</span>
+                        <span class="text-[10px] text-slate-400">Avisa periodicamente</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <select id="inputIntervaloBip" class="bg-slate-900 border border-slate-800 rounded-lg p-1.5 text-xs text-amber-400 font-bold outline-none">
+                        <option value="0">Desativado</option>
+                        <option value="1">A cada 1 min</option>
+                        <option value="5" selected>A cada 5 min</option>
+                        <option value="10">A cada 10 min</option>
+                        <option value="15">A cada 15 min</option>
+                        <option value="30">A cada 30 min</option>
+                    </select>
+                </div>
+            </div>
+
             <!-- Formulário de Configuração -->
             <div id="painelConfig" class="space-y-3 text-left">
                 <div>
@@ -86,7 +107,7 @@
 
     </main>
 
-    <!-- Modal Pop-up de Resumo Final (Forçado com style="display: none;" para evitar bloqueio de classe) -->
+    <!-- Modal Pop-up de Resumo Final -->
     <div id="modalResumo" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full space-y-4 shadow-2xl text-center">
             <div class="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto text-xl">
@@ -121,6 +142,27 @@
         
         let segundosDeslocamento = 0;
         let segundosPermanencia = 0;
+
+        // Função para emitir som de bipe usando o navegador
+        function emitirSomBip() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.value = 800; // Tom do bipe (Hz)
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.15); // Duração curta de 150ms
+            } catch (e) {
+                console.log('Áudio não suportado ou bloqueado pelo navegador.');
+            }
+        }
 
         async function carregarTagsNoSelect() {
             try {
@@ -183,6 +225,12 @@
             const agoraMs = Date.now();
             const segundosDecorridos = Math.floor((agoraMs - tempoInicioMs) / 1000);
             document.getElementById('displayTempo').innerText = formatarTempo(segundosDecorridos);
+
+            // Verificar se deve disparar o bipe com base no intervalo escolhido
+            const intervaloMinutos = parseInt(document.getElementById('inputIntervaloBip').value) || 0;
+            if (intervaloMinutos > 0 && segundosDecorridos > 0 && segundosDecorridos % (intervaloMinutos * 60) === 0) {
+                emitirSomBip();
+            }
         }
 
         async function executarEtapa() {
@@ -217,6 +265,7 @@
                 document.getElementById('inputTitulo').disabled = true;
                 document.getElementById('inputTag').disabled = true;
                 document.getElementById('inputLocal').disabled = true;
+                document.getElementById('inputIntervaloBip').disabled = true;
                 document.getElementById('inputTitulo').style.opacity = '0.5';
                 document.getElementById('inputTag').style.opacity = '0.5';
                 document.getElementById('inputLocal').style.opacity = '0.5';
@@ -296,7 +345,6 @@
                     return;
                 }
 
-                // Exibe o Pop-up de Resumo Final garantindo que o estilo mude para flex
                 const containerResumo = document.getElementById('conteudoResumo');
                 containerResumo.innerHTML = `
                     <div><strong>Atividade:</strong> ${titulo}</div>
