@@ -115,8 +115,8 @@
             </div>
         </section>
 
-        <!-- Carnês do Mês & Dívidas Atrasadas (Disposição Corrigida) -->
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+        <!-- Carnês do Mês & Dívidas Atrasadas (Empilhados de forma limpa) -->
+        <div class="grid grid-cols-1 gap-6">
             <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg space-y-4">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-800 pb-3">
                     <div>
@@ -541,6 +541,35 @@
             if(!error) { fecharModalVR(); carregarVR(); document.getElementById('vrNome').value=''; document.getElementById('vrSaldo').value=''; }
         }
 
+        async function carregarCartoes() {
+            const { data: cartoes } = await _supabase.from('meufuturo_cartoes').select('*');
+            const { data: compras } = await _supabase.from('meufuturo_cartao_compras').select('*');
+            const lista = document.getElementById('listaCartoes');
+            lista.innerHTML = '';
+
+            if(!cartoes || cartoes.length === 0) {
+                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4 col-span-2">Nenhum cartão cadastrado. Clique em + Novo Cartão.</p>';
+                return;
+            }
+
+            let anoSel = dataAtualNavegacao.getFullYear(), mesSel = dataAtualNavegacao.getMonth() + 1;
+            cartoes.forEach(cartao => {
+                let comprasDoMes = (compras || []).filter(c => c.cartao_id === cartao.id && Number(c.ano_fatura) === anoSel && Number(c.mes_fatura) === mesSel);
+                let totalFatura = comprasDoMes.reduce((acc, curr) => acc + Number(curr.valor), 0);
+                let limiteDisponivel = Number(cartao.limite) - totalFatura;
+
+                lista.innerHTML += `
+                    <div class="bg-slate-950/50 p-4 rounded-2xl border border-slate-800 space-y-3 shadow">
+                        <h4 class="font-bold text-sm text-white"><i class="fa-solid fa-credit-card text-purple-400 mr-2"></i>${cartao.nome}</h4>
+                        <div class="grid grid-cols-2 gap-2 text-xs bg-slate-900/40 p-2.5 rounded-xl border border-slate-800">
+                            <div><span class="text-slate-400 text-[10px] block">Fatura</span><span class="text-purple-400 font-extrabold text-sm">R$ ${totalFatura.toFixed(2)}</span></div>
+                            <div><span class="text-slate-400 text-[10px] block">Disponível</span><span class="text-emerald-400 font-extrabold text-sm">R$ ${limiteDisponivel.toFixed(2)}</span></div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
         // --- GESTÃO DE VEÍCULOS ---
         async function carregarVeiculos() {
             const { data: veiculos } = await _supabase.from('meufuturo_veiculos').select('*');
@@ -558,7 +587,6 @@
             veiculos.forEach(v => {
                 let abastCarro = (abastecimentos || []).filter(a => a.veiculo_id === v.id);
                 let manutCarro = (manutencoes || []).filter(m => m.veiculo_id === v.id);
-
                 let ultimoKm = Number(v.km_atual || 0);
                 if (abastCarro.length > 0) {
                     let ultimoAbast = abastCarro[abastCarro.length - 1];
@@ -568,84 +596,51 @@
                 let ultimoConsumoStr = 'N/A';
                 if (abastCarro.length > 0) {
                     let ultimo = abastCarro[abastCarro.length - 1];
-                    if (ultimo.consumo_km_l) {
-                        ultimoConsumoStr = `${Number(ultimo.consumo_km_l).toFixed(2)} Km/L`;
+                    if (ultimo.consumo_km_l) ultimoConsumoStr = `${Number(ultimo.consumo_km_l).toFixed(2)} Km/L`;
+                }
+
+                let abastHTML = abastCarro.length === 0 ? '<p class="text-[11px] text-slate-500 italic">Nenhum abastecimento registado.</p>' : '';
+                abastCarro.slice(-3).reverse().forEach(a => {
+                    let kmL = a.consumo_km_l ? `${Number(a.consumo_km_l).toFixed(2)} Km/L` : '1º Registo';
+                    abastHTML += `
+                        <div class="flex justify-between items-center text-xs bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                            <div><span class="text-white font-medium">${a.km} Km - ${a.litros}L</span><span class="text-[10px] text-slate-400 block">${new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span></div>
+                            <div class="text-right"><span class="text-amber-400 font-bold block">R$ ${Number(a.valor_total).toFixed(2)}</span><span class="text-emerald-400 text-[10px] font-bold">${kmL}</span></div>
+                        </div>
+                    `;
+                });
+
+                let manutHTML = manutCarro.length === 0 ? '<p class="text-[11px] text-slate-500 italic">Nenhuma manutenção registada.</p>' : '';
+                manutCarro.forEach(m => {
+                    let statusKm = '';
+                    if (m.km_limite) {
+                        let falta = Number(m.km_limite) - ultimoKm;
+                        if (falta <= 0) statusKm = '<span class="text-[9px] bg-rose-950 text-rose-400 px-1.5 py-0.5 rounded border border-rose-800 ml-1">Vencida!</span>';
+                        else statusKm = `<span class="text-[9px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-800 ml-1">OK (${falta} Km)</span>`;
                     }
-                }
-
-                let abastHTML = '';
-                if (abastCarro.length === 0) {
-                    abastHTML = '<p class="text-[11px] text-slate-500 italic">Nenhum abastecimento registado.</p>';
-                } else {
-                    abastCarro.slice(-3).reverse().forEach(a => {
-                        let kmL = a.consumo_km_l ? `${Number(a.consumo_km_l).toFixed(2)} Km/L` : '1º Registo';
-                        abastHTML += `
-                            <div class="flex justify-between items-center text-xs bg-slate-900/60 p-2 rounded-lg border border-slate-800">
-                                <div>
-                                    <span class="text-white font-medium">${a.km} Km - ${a.litros}L</span>
-                                    <span class="text-[10px] text-slate-400 block">${new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
-                                </div>
-                                <div class="text-right">
-                                    <span class="text-amber-400 font-bold block">R$ ${Number(a.valor_total).toFixed(2)}</span>
-                                    <span class="text-emerald-400 text-[10px] font-bold">${kmL}</span>
-                                </div>
-                            </div>
-                        `;
-                    });
-                }
-
-                let manutHTML = '';
-                if (manutCarro.length === 0) {
-                    manutHTML = '<p class="text-[11px] text-slate-500 italic">Nenhuma manutenção registada.</p>';
-                } else {
-                    manutCarro.forEach(m => {
-                        let statusKm = '';
-                        if (m.km_limite) {
-                            let falta = Number(m.km_limite) - ultimoKm;
-                            if (falta <= 0) {
-                                statusKm = '<span class="text-[9px] bg-rose-950 text-rose-400 px-1.5 py-0.5 rounded border border-rose-800 ml-1">Troca Vencida!</span>';
-                            } else if (falta <= 1000) {
-                                statusKm = `<span class="text-[9px] bg-amber-950 text-amber-400 px-1.5 py-0.5 rounded border border-amber-800 ml-1">Faltam ${falta} Km</span>`;
-                            } else {
-                                statusKm = `<span class="text-[9px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-800 ml-1">OK (${falta} Km restantes)</span>`;
-                            }
-                        }
-
-                        manutHTML += `
-                            <div class="flex justify-between items-center text-xs bg-slate-900/60 p-2 rounded-lg border border-slate-800">
-                                <div>
-                                    <span class="text-white font-medium">${m.descricao}</span> ${statusKm}
-                                    <span class="text-[10px] text-slate-400 block">Troca feita aos ${m.km_troca} Km (${new Date(m.data + 'T00:00:00').toLocaleDateString('pt-BR')})</span>
-                                </div>
-                                <span class="text-purple-300 font-bold">R$ ${Number(m.valor).toFixed(2)}</span>
-                            </div>
-                        `;
-                    });
-                }
+                    manutHTML += `
+                        <div class="flex justify-between items-center text-xs bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                            <div><span class="text-white font-medium">${m.descricao}</span> ${statusKm}<span class="text-[10px] text-slate-400 block">Aos ${m.km_troca} Km</span></div>
+                            <span class="text-purple-300 font-bold">R$ ${Number(m.valor).toFixed(2)}</span>
+                        </div>
+                    `;
+                });
 
                 lista.innerHTML += `
-                    <div class="bg-slate-950/50 p-4 rounded-2xl border border-slate-800 space-y-3 shadow">
+                    <div class="bg-slate-950/50 p-4 rounded-2xl border border-slate-800 space-y-3 shadow col-span-2">
                         <div class="flex justify-between items-center border-b border-slate-800 pb-2">
                             <div>
                                 <h4 class="font-bold text-sm text-white"><i class="fa-solid fa-car text-amber-400 mr-2"></i>${v.nome} <span class="text-xs text-slate-400 font-normal">(${v.modelo || ''})</span></h4>
-                                <span class="text-[10px] text-slate-400 block">Odômetro Atual: <strong class="text-emerald-400">${ultimoKm} Km</strong></span>
+                                <span class="text-[10px] text-slate-400 block">Odômetro: <strong class="text-emerald-400">${ultimoKm} Km</strong> | Consumo Médio: <strong class="text-cyan-400">${ultimoConsumoStr}</strong></span>
                             </div>
                             <div class="flex items-center gap-1.5">
-                                <button onclick="abrirModalAbastecimento('${v.id}')" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl transition" title="Abastecer"><i class="fa-solid fa-gas-pump mr-1"></i> Abastecer</button>
-                                <button onclick="abrirModalManutencao('${v.id}')" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl transition" title="Manutenção"><i class="fa-solid fa-wrench mr-1"></i> Manutenção</button>
+                                <button onclick="abrirModalAbastecimento('${v.id}')" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl transition"><i class="fa-solid fa-gas-pump mr-1"></i> Abastecer</button>
+                                <button onclick="abrirModalManutencao('${v.id}')" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl transition"><i class="fa-solid fa-wrench mr-1"></i> Manutenção</button>
                             </div>
                         </div>
-                        <div class="bg-slate-900/40 p-2.5 rounded-xl border border-slate-800/80 flex justify-between items-center text-xs">
-                            <span class="text-slate-400">Último Consumo Médio:</span>
-                            <span class="text-cyan-400 font-extrabold text-sm">${ultimoConsumoStr}</span>
-                        </div>
-                        <div>
-                            <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider mb-1">Últimos Abastecimentos:</p>
-                            <div class="space-y-1.5 max-h-32 overflow-y-auto">${abastHTML}</div>
-                        </div>
-                        <div>
-                            <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider mb-1">Manutenções & Prazos:</p>
-                            <div class="space-y-1.5 max-h-32 overflow-y-auto">${manutHTML}</div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                            <div><p class="text-[11px] text-slate-400 font-bold uppercase mb-1">Últimos Abastecimentos:</p><div class="space-y-1.5">${abastHTML}</div></div>
+                            <div><p class="text-[11px] text-slate-400 font-bold uppercase mb-1">Manutenções:</p><div class="space-y-1.5">${manutHTML}</div></div>
                         </div>
                     </div>
                 `;
@@ -661,15 +656,13 @@
             const km = parseFloat(document.getElementById('veiculoKm').value) || 0;
             if(!nome) return alert('Insira o nome do veículo!');
 
-            const { error } = await _supabase.from('meufuturo_veiculos').insert([{ nome, modelo, km_atual: km }]);
-            if(error) return alert('Erro ao salvar veículo: ' + error.message);
-
+            await _supabase.from('meufuturo_veiculos').insert([{ nome, modelo, km_atual: km }]);
             fecharModalVeiculo();
             carregarVeiculos();
             document.getElementById('veiculoNome').value = '';
             document.getElementById('veiculoModelo').value = '';
             document.getElementById('veiculoKm').value = '';
-            alert('Veículo cadastrado com sucesso!');
+            alert('Veículo cadastrado!');
         }
 
         function abrirModalAbastecimento(veiculoId) {
@@ -681,9 +674,7 @@
 
             const selectConta = document.getElementById('abastConta');
             selectConta.innerHTML = '<option value="">Selecione o Banco</option>';
-            listaContasBanco.forEach(d => {
-                selectConta.innerHTML += `<option value="${d.id}">[BANCO] ${d.nome_banco} (R$ ${Number(d.saldo_inicial).toFixed(2)})</option>`;
-            });
+            listaContasBanco.forEach(d => { selectConta.innerHTML += `<option value="${d.id}">[BANCO] ${d.nome_banco} (R$ ${Number(d.saldo_inicial).toFixed(2)})</option>`; });
             document.getElementById('modalAbastecimento').classList.remove('hidden');
         }
 
@@ -697,33 +688,25 @@
             const data = document.getElementById('abastData').value;
             const contaId = document.getElementById('abastConta').value;
 
-            if(isNaN(km) || isNaN(litros) || isNaN(valor) || !contaId || !data) return alert('Preencha todos os campos!');
+            if(isNaN(km) || isNaN(litros) || isNaN(valor) || !contaId || !data) return alert('Preencha tudo!');
 
             const { data: anteriores } = await _supabase.from('meufuturo_veiculo_abastecimentos').select('*').eq('veiculo_id', veiculoId).order('km', { ascending: false }).limit(1);
-
             let consumoKmPorL = null;
             if (anteriores && anteriores.length > 0) {
-                let ultimoKm = Number(anteriores[0].km);
-                let rodados = km - ultimoKm;
+                let rodados = km - Number(anteriores[0].km);
                 if (rodados > 0 && litros > 0) consumoKmPorL = rodados / litros;
             }
 
             await _supabase.from('meufuturo_veiculo_abastecimentos').insert([{ veiculo_id: veiculoId, data, km, litros, valor_total: valor, consumo_km_l: consumoKmPorL, conta_id: contaId }]);
             await _supabase.from('meufuturo_veiculos').update({ km_atual: km }).eq('id', veiculoId);
+            await _supabase.from('meufuturo_transacoes').insert([{ descricao: `Abastecimento Veículo`, valor: valor, tipo: 'despesa', data: data, conta_id: contaId }]);
 
-            const { data: vObj } = await _supabase.from('meufuturo_veiculos').select('nome').eq('id', veiculoId).single();
-            let nomeCarro = vObj ? vObj.nome : 'Veículo';
-
-            await _supabase.from('meufuturo_transacoes').insert([{ descricao: `Abastecimento (${nomeCarro})`, valor: valor, tipo: 'despesa', data: data, conta_id: contaId }]);
-
-            const contaBancoObj = listaContasBanco.find(c => c.id === contaId);
-            if(contaBancoObj) {
-                await _supabase.from('meufuturo_contas').update({ saldo_inicial: Number(contaBancoObj.saldo_inicial) - valor }).eq('id', contaId);
-            }
+            const contaObj = listaContasBanco.find(c => c.id === contaId);
+            if(contaObj) await _supabase.from('meufuturo_contas').update({ saldo_inicial: Number(contaObj.saldo_inicial) - valor }).eq('id', contaId);
 
             fecharModalAbastecimento();
             carregarTudo();
-            alert('Abastecimento registado com sucesso!');
+            alert('Abastecimento registado!');
         }
 
         function abrirModalManutencao(veiculoId) {
@@ -736,17 +719,11 @@
 
             const selectConta = document.getElementById('manutConta');
             selectConta.innerHTML = '<option value="">Selecione o Banco</option>';
-            listaContasBanco.forEach(d => {
-                selectConta.innerHTML += `<option value="${d.id}">[BANCO] ${d.nome_banco} (R$ ${Number(d.saldo_inicial).toFixed(2)})</option>`;
-            });
+            listaContasBanco.forEach(d => { selectConta.innerHTML += `<option value="${d.id}">[BANCO] ${d.nome_banco} (R$ ${Number(d.saldo_inicial).toFixed(2)})</option>`; });
             document.getElementById('modalManutencao').classList.remove('hidden');
         }
 
         function fecharModalManutencao() { document.getElementById('modalManutencao').classList.add('hidden'); }
-
-        async function salverManutencaoInterna() {
-            // Alias interno para evitar conflito de nome
-        }
 
         async function salvarManutencao() {
             const veiculoId = document.getElementById('manutVeiculoId').value;
@@ -757,26 +734,20 @@
             const data = document.getElementById('manutData').value;
             const contaId = document.getElementById('manutConta').value;
 
-            if(!descricao || isNaN(kmTroca) || isNaN(valor) || !contaId || !data) return alert('Preencha os campos obrigatórios!');
+            if(!descricao || isNaN(kmTroca) || isNaN(valor) || !contaId || !data) return alert('Preencha tudo!');
 
             await _supabase.from('meufuturo_veiculo_manutencoes').insert([{ veiculo_id: veiculoId, descricao, km_troca: kmTroca, km_limite: kmLimite, valor, data }]);
+            await _supabase.from('meufuturo_transacoes').insert([{ descricao: `Manutenção: ${descricao}`, valor: valor, tipo: 'despesa', data: data, conta_id: contaId }]);
 
-            const { data: vObj } = await _supabase.from('meufuturo_veiculos').select('nome').eq('id', veiculoId).single();
-            let nomeCarro = vObj ? vObj.nome : 'Veículo';
-
-            await _supabase.from('meufuturo_transacoes').insert([{ descricao: `Manutenção (${nomeCarro}): ${descricao}`, valor: valor, tipo: 'despesa', data: data, conta_id: contaId }]);
-
-            const contaBancoObj = listaContasBanco.find(c => c.id === contaId);
-            if(contaBancoObj) {
-                await _supabase.from('meufuturo_contas').update({ saldo_inicial: Number(contaBancoObj.saldo_inicial) - valor }).eq('id', contaId);
-            }
+            const contaObj = listaContasBanco.find(c => c.id === contaId);
+            if(contaObj) await _supabase.from('meufuturo_contas').update({ saldo_inicial: Number(contaObj.saldo_inicial) - valor }).eq('id', contaId);
 
             fecharModalManutencao();
             carregarTudo();
-            alert('Manutenção registada com sucesso!');
+            alert('Manutenção registada!');
         }
 
-        // --- GESTÃO DE CARNÊ ---
+        // --- CARNÊS E DÍVIDAS ---
         async function salvarCarneGerado() {
             const credor = document.getElementById('carneCredor').value;
             const valor = parseFloat(document.getElementById('carneValor').value);
@@ -784,24 +755,21 @@
             const venc = parseInt(document.getElementById('carneVencimento').value) || 20;
             const mesInicioStr = document.getElementById('carneMesInicio').value;
 
-            if(!credor || isNaN(valor) || isNaN(total) || !mesInicioStr) return alert('Preencha todos os campos!');
-
+            if(!credor || isNaN(valor) || isNaN(total) || !mesInicioStr) return alert('Preencha tudo!');
             const partes = mesInicioStr.split('-');
             let anoInicio = parseInt(partes[0]), mesInicio = parseInt(partes[1]);
 
             await _supabase.from('meufuturo_carnes').delete().eq('credor', credor);
-
             let parcelas = [];
             for (let i = 1; i <= total; i++) {
                 let m = mesInicio + (i - 1), a = anoInicio;
                 while (m > 12) { m -= 12; a++; }
                 parcelas.push({ credor, valor_parcela: valor, parcela_atual: i, total_parcelas: total, dia_vencimento: venc, ano_ref: a, mes_ref: m, status: 'pendente' });
             }
-
             await _supabase.from('meufuturo_carnes').insert(parcelas);
             fecharModalCarne();
             carregarTudo();
-            alert('Carnê gerado com sucesso!');
+            alert('Carnê gerado!');
         }
 
         async function carregarCarnesDoMes() {
@@ -826,61 +794,29 @@
             if (qtdAtrasadasGeral > 0) {
                 document.getElementById('resumoAtrasosQtd').innerText = qtdAtrasadasGeral;
                 badgeAtraso.classList.remove('hidden');
-            } else {
-                badgeAtraso.classList.add('hidden');
-            }
+            } else { badgeAtraso.classList.add('hidden'); }
 
-            if(!data || data.length === 0) {
-                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhum carnê cadastrado.</p>';
-                return;
-            }
+            if(!data || data.length === 0) { lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhum carnê.</p>'; return; }
 
-            let anoSel = dataAtualNavegacao.getFullYear(), mesSel = dataAtualNavegacao.getMonth() + 1;
-            let encontrouAlguma = false;
-
+            let anoSel = dataAtualNavegacao.getFullYear(), mesSel = dataAtualNavegacao.getMonth() + 1, encontrou = false;
             data.forEach(c => {
                 if (Number(c.ano_ref) === anoSel && Number(c.mes_ref) === mesSel) {
-                    encontrouAlguma = true;
+                    encontrou = true;
                     let jaPago = c.status === 'pago';
-                    let corCard = jaPago ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-slate-950/60 border-slate-800 text-slate-300';
-                    
                     lista.innerHTML += `
-                        <div class="p-4 rounded-2xl border ${corCard} space-y-3 shadow">
-                            <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
-                                <h4 class="font-bold text-white text-sm"><i class="fa-solid fa-file-invoice text-amber-400 mr-2"></i>${c.credor}</h4>
-                                <button onclick="excluirGrupoCarne('${c.credor}')" class="text-rose-400 hover:text-rose-300 text-xs"><i class="fa-solid fa-trash"></i></button>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <p class="text-sm font-extrabold text-white">Parcela ${c.parcela_atual} de ${c.total_parcelas}</p>
-                                    <p class="text-xs text-slate-400 mt-0.5">Vencimento: Dia ${c.dia_vencimento || 20}</p>
-                                    <p class="text-base font-extrabold text-amber-400 mt-1">R$ ${Number(c.valor_parcela).toFixed(2)}</p>
-                                </div>
-                                <div>${jaPago ? '<span class="bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold">Pago</span>' : '<span class="text-xs text-amber-400 font-bold">Pendente</span>'}</div>
-                            </div>
+                        <div class="p-3 rounded-xl border ${jaPago ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-slate-950/60 border-slate-800 text-slate-300'} flex justify-between items-center text-xs">
+                            <div><p class="font-bold text-white">${c.credor} - Parcela ${c.parcela_atual}/${c.total_parcelas}</p><span class="text-slate-400">Vencimento: Dia ${c.dia_vencimento || 20}</span></div>
+                            <div class="text-right"><span class="font-extrabold text-amber-400 block">R$ ${Number(c.valor_parcela).toFixed(2)}</span>${jaPago ? '<span class="text-emerald-400 font-bold">Pago</span>' : '<span class="text-slate-400">Pendente</span>'}</div>
                         </div>
                     `;
                 }
             });
-
-            if(!encontrouAlguma) lista.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">Nenhuma parcela de carnê para este mês.</p>`;
+            if(!encontrou) lista.innerHTML = `<p class="text-xs text-slate-500 text-center py-4">Nenhum carnê para este mês.</p>`;
         }
 
-        async function excluirGrupoCarne(credor) {
-            if(!confirm(`Deseja excluir o carnê "${credor}" inteiro?`)) return;
-            await _supabase.from('meufuturo_carnes').delete().eq('credor', credor);
-            carregarTudo();
-        }
-
-        // --- DÍVIDAS ATRASADAS ---
         function alternarOrdemDividas() {
-            if (ordemModoDivida === 'recentes') {
-                ordemModoDivida = 'distantes';
-                document.getElementById('labelOrdemDivida').innerText = 'Distantes';
-            } else {
-                ordemModoDivida = 'recentes';
-                document.getElementById('labelOrdemDivida').innerText = 'Recentes';
-            }
+            ordemModoDivida = ordemModoDivida === 'recentes' ? 'distantes' : 'recentes';
+            document.getElementById('labelOrdemDivida').innerText = ordemModoDivida === 'recentes' ? 'Recentes' : 'Distantes';
             carregarDividas();
         }
 
@@ -889,31 +825,28 @@
             let total = 0;
             const tbody = document.getElementById('tabelaDividas');
             tbody.innerHTML = '';
-            
-            let dividasPendentes = (data || []).filter(d => d.status !== 'pago');
+            let pendentes = (data || []).filter(d => d.status !== 'pago');
 
-            if(dividasPendentes.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="p-3 text-center text-slate-500">Nenhuma dívida atrasada pendente.</td></tr>';
+            if(pendentes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-3 text-center text-slate-500">Nenhuma dívida pendente.</td></tr>';
                 document.getElementById('totalAtrasadas').innerText = 'R$ 0,00';
                 return;
             }
 
-            dividasPendentes.sort((a, b) => {
-                let dataA = new Date(a.data_vencimento || '1970-01-01');
-                let dataB = new Date(b.data_vencimento || '1970-01-01');
-                if (ordemModoDivida === 'recentes') return dataB - dataA;
-                else return dataA - dataB;
+            pendentes.sort((a, b) => {
+                let dA = new Date(a.data_vencimento || '1970-01-01'), dB = new Date(b.data_vencimento || '1970-01-01');
+                return ordemModoDivida === 'recentes' ? dB - dA : dA - dB;
             });
 
-            dividasPendentes.forEach(d => {
+            pendentes.forEach(d => {
                 total += Number(d.valor_atualizado);
-                let dataFormatada = d.data_vencimento ? new Date(d.data_vencimento + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
+                let dataF = d.data_vencimento ? new Date(d.data_vencimento + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
                 tbody.innerHTML += `
                     <tr class="border-b border-slate-800">
                         <td class="p-2 text-white font-medium">${d.credor}</td>
                         <td class="p-2 text-slate-400">R$ ${Number(d.valor_original || 0).toFixed(2)}</td>
                         <td class="p-2 text-rose-400 font-bold">R$ ${Number(d.valor_atualizado || 0).toFixed(2)}</td>
-                        <td class="p-2 text-slate-400">${dataFormatada}</td>
+                        <td class="p-2 text-slate-400">${dataF}</td>
                         <td class="p-2"><button onclick="abrirPagarDivida('${d.id}', '${d.credor}', ${d.valor_atualizado})" class="text-emerald-400 underline font-bold">Pagar</button></td>
                     </tr>
                 `;
@@ -926,13 +859,12 @@
             const original = parseFloat(document.getElementById('divOriginal').value);
             const atual = parseFloat(document.getElementById('divAtual').value);
             const venc = document.getElementById('divVencimento').value;
-
-            if(!credor || isNaN(original) || isNaN(atual)) return alert('Preencha os campos obrigatórios!');
+            if(!credor || isNaN(original) || isNaN(atual)) return alert('Preencha tudo!');
 
             await _supabase.from('meufuturo_dividas_atrasadas').insert([{ credor, valor_original: original, valor_atualizado: atual, data_vencimento: venc, status: 'pendente' }]);
             fecharModalDivida();
             carregarDividas();
-            alert('Dívida cadastrada com sucesso!');
+            alert('Dívida cadastrada!');
         }
 
         function abrirPagarDivida(id, credor, valorAtual) {
@@ -947,9 +879,7 @@
 
             const selectConta = document.getElementById('pagarDividaConta');
             selectConta.innerHTML = '<option value="">Selecione o Banco</option>';
-            listaContasBanco.forEach(d => {
-                selectConta.innerHTML += `<option value="${d.id}">[BANCO] ${d.nome_banco} (R$ ${Number(d.saldo_inicial).toFixed(2)})</option>`;
-            });
+            listaContasBanco.forEach(d => { selectConta.innerHTML += `<option value="${d.id}">[BANCO] ${d.nome_banco} (R$ ${Number(d.saldo_inicial).toFixed(2)})</option>`; });
             document.getElementById('modalPagarDivida').classList.remove('hidden');
         }
 
@@ -967,53 +897,48 @@
         }
 
         function calcularEconomiaDivida() {
-            let valorAtual = parseFloat(document.getElementById('pagarDividaAtual').value) || 0;
-            let valorReal = parseFloat(document.getElementById('pagarDividaRealPago').value) || 0;
-            let economia = valorAtual - valorReal;
-            if (economia < 0) economia = 0;
-            document.getElementById('pagarDividaEconomia').innerText = `R$ ${economia.toFixed(2)}`;
+            let vAtual = parseFloat(document.getElementById('pagarDividaAtual').value) || 0;
+            let vReal = parseFloat(document.getElementById('pagarDividaRealPago').value) || 0;
+            let eco = vAtual - vReal;
+            if (eco < 0) eco = 0;
+            document.getElementById('pagarDividaEconomia').innerText = `R$ ${eco.toFixed(2)}`;
         }
 
         async function confirmarPagamentoDivida() {
             const dividaId = document.getElementById('pagarDividaId').value;
             const credor = document.getElementById('pagarDividaCredor').value;
-            const valorAcordado = parseFloat(document.getElementById('pagarDividaRealPago').value);
-            const tipoPagamento = document.getElementById('pagarDividaTipo').value;
+            const valorAcordo = parseFloat(document.getElementById('pagarDividaRealPago').value);
+            const tipo = document.getElementById('pagarDividaTipo').value;
             const dataInicio = document.getElementById('pagarDividaData').value;
 
-            if(isNaN(valorAcordado) || !dataInicio) return alert('Preencha o valor e a data!');
+            if(isNaN(valorAcordo) || !dataInicio) return alert('Preencha os campos!');
 
-            if (tipoPagamento === 'vista') {
+            if (tipo === 'vista') {
                 const contaId = document.getElementById('pagarDividaConta').value;
                 if(!contaId) return alert('Selecione o banco!');
-
                 await _supabase.from('meufuturo_dividas_atrasadas').update({ status: 'pago' }).eq('id', dividaId);
-                await _supabase.from('meufuturo_transacoes').insert([{ descricao: `Acordo Dívida: ${credor}`, valor: valorAcordado, tipo: 'despesa', data: dataInicio, conta_id: contaId }]);
-
-                const contaBancoObj = listaContasBanco.find(c => c.id === contaId);
-                if(contaBancoObj) {
-                    await _supabase.from('meufuturo_contas').update({ saldo_inicial: Number(contaBancoObj.saldo_inicial) - valorAcordado }).eq('id', contaId);
-                }
+                await _supabase.from('meufuturo_transacoes').insert([{ descricao: `Acordo Dívida: ${credor}`, valor: valorAcordo, tipo: 'despesa', data: dataInicio, conta_id: contaId }]);
+                const contaObj = listaContasBanco.find(c => c.id === contaId);
+                if(contaObj) await _supabase.from('meufuturo_contas').update({ saldo_inicial: Number(contaObj.saldo_inicial) - valorAcordo }).eq('id', contaId);
             } else {
-                let qtdParcelas = parseInt(document.getElementById('pagarDividaQtdParcelas').value) || 2;
-                let valorParcela = Number((valorAcordado / qtdParcelas).toFixed(2));
+                let qtd = parseInt(document.getElementById('pagarDividaQtdParcelas').value) || 2;
+                let vParcela = Number((valorAcordo / qtd).toFixed(2));
                 const partes = dataInicio.split('-');
-                let anoInicio = parseInt(partes[0]), mesInicio = parseInt(partes[1]), diaVencimento = parseInt(partes[2]) || 20;
+                let anoI = parseInt(partes[0]), mesI = parseInt(partes[1]), diaV = parseInt(partes[2]) || 20;
 
-                let parcelasParaCarnet = [];
-                for (let i = 1; i <= qtdParcelas; i++) {
-                    let m = mesInicio + (i - 1), a = anoInicio;
+                let parcelas = [];
+                for (let i = 1; i <= qtd; i++) {
+                    let m = mesI + (i - 1), a = anoI;
                     while (m > 12) { m -= 12; a++; }
-                    parcelasParaCarnet.push({ credor: `Acordo: ${credor}`, valor_parcela: valorParcela, parcela_atual: i, total_parcelas: qtdParcelas, dia_vencimento: diaVencimento, ano_ref: a, mes_ref: m, status: 'pendente' });
+                    parcelas.push({ credor: `Acordo: ${credor}`, valor_parcela: vParcela, parcela_atual: i, total_parcelas: qtd, dia_vencimento: diaV, ano_ref: a, mes_ref: m, status: 'pendente' });
                 }
-
-                await _supabase.from('meufuturo_carnes').insert(parcelasParaCarnet);
+                await _supabase.from('meufuturo_carnes').insert(parcelas);
                 await _supabase.from('meufuturo_dividas_atrasadas').update({ status: 'pago' }).eq('id', dividaId);
             }
 
             fecharModalPagarDivida();
             carregarTudo();
-            alert('Acordo concluído com sucesso!');
+            alert('Acordo concluído!');
         }
 
         async function carregarTransacoes() {
@@ -1024,42 +949,29 @@
             lista.innerHTML = '';
             
             if(!data || data.length === 0) {
-                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhuma transação registrada.</p>';
+                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhuma transação.</p>';
                 document.getElementById('totalReceitas').innerText = 'R$ 0,00';
                 document.getElementById('totalDespesas').innerText = 'R$ 0,00';
                 return;
             }
 
-            let transFiltradas = data.filter(t => {
+            let filtradas = data.filter(t => {
                 if(!t.data) return false;
-                let [anoT, mesT] = t.data.split('-').map(Number);
-                return anoT === anoSel && mesT === mesSel;
+                let [a, m] = t.data.split('-').map(Number);
+                return a === anoSel && m === mesSel;
             });
 
-            transFiltradas.forEach(t => { 
-                if(t.tipo === 'receita') rec += Number(t.valor); 
-                else desp += Number(t.valor); 
-            });
-
+            filtradas.forEach(t => { if(t.tipo === 'receita') rec += Number(t.valor); else desp += Number(t.valor); });
             document.getElementById('totalReceitas').innerText = `R$ ${rec.toFixed(2)}`;
             document.getElementById('totalDespesas').innerText = `R$ ${desp.toFixed(2)}`;
 
-            if(transFiltradas.length === 0) {
-                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhuma transação neste mês.</p>';
-                return;
-            }
+            if(filtradas.length === 0) { lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nenhuma transação neste mês.</p>'; return; }
 
-            transFiltradas.reverse().forEach(t => {
+            filtradas.reverse().forEach(t => {
                 lista.innerHTML += `
                     <div class="flex justify-between items-center bg-slate-950/40 p-3 rounded-xl border border-slate-800 text-xs">
-                        <div>
-                            <p class="font-medium text-white">${t.descricao}</p>
-                            <span class="text-slate-500">${new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
-                        </div>
-                        <div class="flex items-center space-x-3">
-                            <span class="${t.tipo === 'receita' ? 'text-blue-400' : 'text-amber-400'} font-bold">R$ ${Number(t.valor).toFixed(2)}</span>
-                            <button onclick="excluirTransacaoGeral('${t.id}', '${t.tipo}', ${t.valor}, '${t.conta_id}')" class="text-rose-400 hover:text-rose-300 p-1"><i class="fa-solid fa-trash"></i></button>
-                        </div>
+                        <div><p class="font-medium text-white">${t.descricao}</p><span class="text-slate-500">${new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span></div>
+                        <span class="${t.tipo === 'receita' ? 'text-blue-400' : 'text-amber-400'} font-bold">R$ ${Number(t.valor).toFixed(2)}</span>
                     </div>
                 `;
             });
@@ -1073,32 +985,15 @@
 
             const { data } = await _supabase.from('meufuturo_transacoes').select('*').eq('conta_id', id).order('data', { ascending: false });
             lista.innerHTML = '';
-            if(!data || data.length === 0) {
-                lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Nenhuma movimentação.</p>';
-                return;
-            }
+            if(!data || data.length === 0) { lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Nenhuma movimentação.</p>'; return; }
             data.forEach(t => {
                 lista.innerHTML += `
                     <div class="flex justify-between items-center bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-xs">
-                        <div>
-                            <p class="font-bold text-white">${t.descricao}</p>
-                            <span class="text-slate-500">${new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
-                        </div>
+                        <div><p class="font-bold text-white">${t.descricao}</p><span class="text-slate-500">${new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span></div>
                         <span class="${t.tipo === 'receita' ? 'text-blue-400' : 'text-amber-400'} font-bold">R$ ${Number(t.valor).toFixed(2)}</span>
                     </div>
                 `;
             });
-        }
-
-        async function excluirTransacaoGeral(transId, tipoTrans, valorTrans, contaIdTrans) {
-            if(!confirm('Excluir transação e estornar valor?')) return;
-            await _supabase.from('meufuturo_transacoes').delete().eq('id', transId);
-            let conta = listaContasBanco.find(c => c.id === contaIdTrans);
-            if(conta) {
-                let novoSaldo = tipoTrans === 'despesa' ? Number(conta.saldo_inicial) + Number(valorTrans) : Number(conta.saldo_inicial) - Number(valorTrans);
-                await _supabase.from('meufuturo_contas').update({ saldo_inicial: novoSaldo }).eq('id', contaIdTrans);
-            }
-            carregarTudo();
         }
 
         async function salvarTransacao() {
@@ -1111,7 +1006,6 @@
 
             const [tipoConta, contaId] = contaInfo.split(':');
             await _supabase.from('meufuturo_transacoes').insert([{ descricao: desc, valor, tipo, data, conta_id: contaId }]);
-
             if(tipoConta === 'conta') {
                 const { data: c } = await _supabase.from('meufuturo_contas').select('saldo_inicial').eq('id', contaId).single();
                 let novo = tipo === 'receita' ? Number(c.saldo_inicial) + valor : Number(c.saldo_inicial) - valor;
@@ -1124,9 +1018,7 @@
         function popularSelectsContas() {
             const selectTrans = document.getElementById('transContaId');
             if(selectTrans) selectTrans.innerHTML = '<option value="">Selecione Conta</option>';
-            listaContasBanco.forEach(d => {
-                if(selectTrans) selectTrans.innerHTML += `<option value="conta:${d.id}">[BANCO] ${d.nome_banco} (R$ ${Number(d.saldo_inicial).toFixed(2)})</option>`;
-            });
+            listaContasBanco.forEach(d => { if(selectTrans) selectTrans.innerHTML += `<option value="conta:${d.id}">[BANCO] ${d.nome_banco} (R$ ${Number(d.saldo_inicial).toFixed(2)})</option>`; });
         }
 
         // Modais básicos
