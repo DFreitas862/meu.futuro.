@@ -94,7 +94,7 @@
                     <h3 class="text-base font-bold text-purple-400"><i class="fa-solid fa-credit-card mr-2"></i>Cartões de Crédito - Faturas do Mês</h3>
                     <p class="text-[11px] text-slate-400">Gerencie seus limites, compras e pagamento de faturas</p>
                 </div>
-                <button onclick="abrirModalCartao()" class="text-xs bg-slate-800 hover:bg-slate-700 text-purple-400 font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition">+ Novo Cartão</button>
+                <button onclick="abrirModalCartao()" class="text-xs bg-purple-600 hover:bg-purple-500 text-white font-semibold px-3 py-1.5 rounded-lg transition shadow"><i class="fa-solid fa-plus mr-1"></i> Novo Cartão</button>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="listaCartoes">
                 <p class="text-xs text-slate-500 text-center py-4 col-span-2">A carregar cartões...</p>
@@ -108,7 +108,7 @@
                     <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-car mr-2"></i>Gestão do Veículo</h3>
                     <p class="text-[11px] text-slate-400">Controle de abastecimento, consumo médio e manutenções</p>
                 </div>
-                <button onclick="abrirModalVeiculo()" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition">+ Novo Veículo</button>
+                <button onclick="abrirModalVeiculo()" class="text-xs bg-amber-600 hover:bg-amber-500 text-white font-semibold px-3 py-1.5 rounded-lg transition shadow"><i class="fa-solid fa-plus mr-1"></i> Novo Veículo</button>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="listaVeiculos">
                 <p class="text-xs text-slate-500 text-center py-4 col-span-2">Nenhum veículo cadastrado. Clique em + Novo Veículo.</p>
@@ -189,7 +189,7 @@
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalCartao()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="button" onclick="salvarCartao()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition">Salvar Cartão</button>
+                    <button type="button" onclick="salvarCartaoSistema()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition">Salvar Cartão</button>
                 </div>
             </div>
         </div>
@@ -197,8 +197,11 @@
 
     <!-- Modal Cadastrar Veículo -->
     <div id="modalVeiculo" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
-            <h3 class="text-lg font-bold text-amber-400"><i class="fa-solid fa-car mr-2"></i>Cadastrar Veículo</h3>
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-bold text-amber-400"><i class="fa-solid fa-car mr-2"></i>Cadastrar Veículo</h3>
+                <button onclick="fecharModalVeiculo()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
             <div class="space-y-3">
                 <input type="text" id="veiculoNome" placeholder="Nome / Apelido (Ex: Meu Uno)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
                 <input type="text" id="veiculoModelo" placeholder="Modelo (Ex: Fiat Uno Mille 1.0)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
@@ -208,7 +211,7 @@
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalVeiculo()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="button" onclick="salvarVeiculo()" class="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold">Salvar Veículo</button>
+                    <button type="button" onclick="salvarVeiculoSistema()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition">Salvar Veículo</button>
                 </div>
             </div>
         </div>
@@ -302,92 +305,7 @@
         </div>
     </div>
 
-    <!-- Modal Pagar Dívida Atrasada / Parcelar -->
-    <div id="modalPagarDivida" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="text-lg font-bold text-rose-400"><i class="fa-solid fa-hand-holding-dollar mr-2"></i>Pagar / Acordar Dívida</h3>
-                <button onclick="fecharModalPagarDivida()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <div class="space-y-3">
-                <input type="hidden" id="pagarDividaId">
-                <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Credor</label>
-                    <input type="text" id="pagarDividaCredor" readonly class="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-sm text-slate-300 outline-none">
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Valor Atualizado (R$)</label>
-                        <input type="number" step="0.01" id="pagarDividaAtual" readonly class="w-full bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-sm text-rose-400 font-bold outline-none">
-                    </div>
-                    <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Valor Total Acordado (R$)</label>
-                        <input type="number" step="0.01" id="pagarDividaRealPago" placeholder="0.00" oninput="calcularEconomiaDivida()" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-emerald-400 font-bold outline-none">
-                    </div>
-                </div>
-                <div class="bg-emerald-950/30 border border-emerald-900/50 p-3 rounded-xl text-xs text-emerald-300 flex justify-between items-center">
-                    <span>Economia obtida (Desconto):</span>
-                    <strong id="pagarDividaEconomia" class="text-sm font-extrabold text-emerald-400">R$ 0,00</strong>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Forma de Pagamento</label>
-                        <select id="pagarDividaTipo" onchange="alternarModoPagamentoDivida()" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                            <option value="vista">À Vista (Banco)</option>
-                            <option value="parcelado">Parcelado (Carnê)</option>
-                        </select>
-                    </div>
-                    <div id="blocoParcelasDivida" class="hidden">
-                        <label class="text-[10px] text-slate-400 block mb-1">Nº de Parcelas</label>
-                        <input type="number" id="pagarDividaQtdParcelas" value="2" min="2" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                    </div>
-                </div>
-                <div id="blocoBancoDivida">
-                    <label class="text-[10px] text-slate-400 block mb-1">Conta para Pagamento (Banco)</label>
-                    <select id="pagarDividaConta" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                        <option value="">Selecione o Banco</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Data (Pagamento ou Início do Carnê)</label>
-                    <input type="date" id="pagarDividaData" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                </div>
-                <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" onclick="fecharModalPagarDivida()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="button" onclick="confirmarPagamentoDivida()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition">Concluir Acordo</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Outros Modais básicos -->
-    <div id="modalDivida" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
-            <h3 class="text-lg font-bold text-rose-400">Cadastrar Dívida Atrasada</h3>
-            <div class="space-y-3">
-                <input type="text" id="divCredor" placeholder="Credor / Descrição" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Dívida Real / Original (R$)</label>
-                        <input type="number" step="0.01" id="divOriginal" placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                    </div>
-                    <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Valor Atual (R$)</label>
-                        <input type="number" step="0.01" id="divAtual" placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                    </div>
-                </div>
-                <div>
-                    <label class="text-[10px] text-slate-400 block mb-1">Data da Compra / Vencimento Original</label>
-                    <input type="date" id="divVencimento" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                </div>
-                <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" onclick="fecharModalDivida()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="button" onclick="salvarDivida()" class="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold">Salvar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div id="modalConta" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
             <h3 class="text-lg font-bold text-white">Cadastrar Banco</h3>
@@ -568,6 +486,7 @@
             if(!error) { fecharModalVR(); carregarVR(); document.getElementById('vrNome').value=''; document.getElementById('vrSaldo').value=''; }
         }
 
+        // --- CARTÕES DE CRÉDITO ---
         async function carregarCartoes() {
             const { data: cartoes } = await _supabase.from('meufuturo_cartoes').select('*');
             const { data: compras } = await _supabase.from('meufuturo_cartao_compras').select('*');
@@ -597,7 +516,15 @@
             });
         }
 
-        async function salvarCartao() {
+        function abrirModalCartao() {
+            document.getElementById('modalCartao').classList.remove('hidden');
+        }
+
+        function fecharModalCartao() {
+            document.getElementById('modalCartao').classList.add('hidden');
+        }
+
+        async function salvarCartaoSistema() {
             const nome = document.getElementById('cartaoNome').value;
             const limite = parseFloat(document.getElementById('cartaoLimite').value);
             const vencimento = parseInt(document.getElementById('cartaoVencimento').value) || 10;
@@ -697,10 +624,15 @@
             });
         }
 
-        function abrirModalVeiculo() { document.getElementById('modalVeiculo').classList.remove('hidden'); }
-        function fecharModalVeiculo() { document.getElementById('modalVeiculo').classList.add('hidden'); }
+        function abrirModalVeiculo() {
+            document.getElementById('modalVeiculo').classList.remove('hidden');
+        }
 
-        async function salvarVeiculo() {
+        function fecharModalVeiculo() {
+            document.getElementById('modalVeiculo').classList.add('hidden');
+        }
+
+        async function salvarVeiculoSistema() {
             const nome = document.getElementById('veiculoNome').value;
             const modelo = document.getElementById('veiculoModelo').value;
             const km = parseFloat(document.getElementById('veiculoKm').value) || 0;
@@ -906,93 +838,6 @@
             document.getElementById('totalAtrasadas').innerText = `R$ ${total.toFixed(2)}`;
         }
 
-        async function salvarDivida() {
-            const credor = document.getElementById('divCredor').value;
-            const original = parseFloat(document.getElementById('divOriginal').value);
-            const atual = parseFloat(document.getElementById('divAtual').value);
-            const venc = document.getElementById('divVencimento').value;
-            if(!credor || isNaN(original) || isNaN(atual)) return alert('Preencha tudo!');
-
-            await _supabase.from('meufuturo_dividas_atrasadas').insert([{ credor, valor_original: original, valor_atualizado: atual, data_vencimento: venc, status: 'pendente' }]);
-            fecharModalDivida();
-            carregarDividas();
-            alert('Dívida cadastrada!');
-        }
-
-        function abrirPagarDivida(id, credor, valorAtual) {
-            document.getElementById('pagarDividaId').value = id;
-            document.getElementById('pagarDividaCredor').value = credor;
-            document.getElementById('pagarDividaAtual').value = valorAtual.toFixed(2);
-            document.getElementById('pagarDividaRealPago').value = valorAtual.toFixed(2);
-            document.getElementById('pagarDividaEconomia').innerText = 'R$ 0,00';
-            document.getElementById('pagarDividaData').value = new Date().toISOString().split('T')[0];
-            document.getElementById('pagarDividaTipo').value = 'vista';
-            alternarModoPagamentoDivida();
-
-            const selectConta = document.getElementById('pagarDividaConta');
-            selectConta.innerHTML = '<option value="">Selecione o Banco</option>';
-            listaContasBanco.forEach(d => { selectConta.innerHTML += `<option value="${d.id}">[BANCO] ${d.nome_banco} (R$ ${Number(d.saldo_inicial).toFixed(2)})</option>`; });
-            document.getElementById('modalPagarDivida').classList.remove('hidden');
-        }
-
-        function fecharModalPagarDivida() { document.getElementById('modalPagarDivida').classList.add('hidden'); }
-
-        function alternarModoPagamentoDivida() {
-            const tipo = document.getElementById('pagarDividaTipo').value;
-            if (tipo === 'parcelado') {
-                document.getElementById('blocoParcelasDivida').classList.remove('hidden');
-                document.getElementById('blocoBancoDivida').classList.add('hidden');
-            } else {
-                document.getElementById('blocoParcelasDivida').classList.add('hidden');
-                document.getElementById('blocoBancoDivida').classList.remove('hidden');
-            }
-        }
-
-        function calcularEconomiaDivida() {
-            let vAtual = parseFloat(document.getElementById('pagarDividaAtual').value) || 0;
-            let vReal = parseFloat(document.getElementById('pagarDividaRealPago').value) || 0;
-            let eco = vAtual - vReal;
-            if (eco < 0) eco = 0;
-            document.getElementById('pagarDividaEconomia').innerText = `R$ ${eco.toFixed(2)}`;
-        }
-
-        async function confirmarPagamentoDivida() {
-            const dividaId = document.getElementById('pagarDividaId').value;
-            const credor = document.getElementById('pagarDividaCredor').value;
-            const valorAcordo = parseFloat(document.getElementById('pagarDividaRealPago').value);
-            const tipo = document.getElementById('pagarDividaTipo').value;
-            const dataInicio = document.getElementById('pagarDividaData').value;
-
-            if(isNaN(valorAcordo) || !dataInicio) return alert('Preencha os campos!');
-
-            if (tipo === 'vista') {
-                const contaId = document.getElementById('pagarDividaConta').value;
-                if(!contaId) return alert('Selecione o banco!');
-                await _supabase.from('meufuturo_dividas_atrasadas').update({ status: 'pago' }).eq('id', dividaId);
-                await _supabase.from('meufuturo_transacoes').insert([{ descricao: `Acordo Dívida: ${credor}`, valor: valorAcordo, tipo: 'despesa', data: dataInicio, conta_id: contaId }]);
-                const contaObj = listaContasBanco.find(c => c.id === contaId);
-                if(contaObj) await _supabase.from('meufuturo_contas').update({ saldo_inicial: Number(contaObj.saldo_inicial) - valorAcordo }).eq('id', contaId);
-            } else {
-                let qtd = parseInt(document.getElementById('pagarDividaQtdParcelas').value) || 2;
-                let vParcela = Number((valorAcordo / qtd).toFixed(2));
-                const partes = dataInicio.split('-');
-                let anoI = parseInt(partes[0]), mesI = parseInt(partes[1]), diaV = parseInt(partes[2]) || 20;
-
-                let parcelas = [];
-                for (let i = 1; i <= qtd; i++) {
-                    let m = mesI + (i - 1), a = anoI;
-                    while (m > 12) { m -= 12; a++; }
-                    parcelas.push({ credor: `Acordo: ${credor}`, valor_parcela: vParcela, parcela_atual: i, total_parcelas: qtd, dia_vencimento: diaV, ano_ref: a, mes_ref: m, status: 'pendente' });
-                }
-                await _supabase.from('meufuturo_carnes').insert(parcelas);
-                await _supabase.from('meufuturo_dividas_atrasadas').update({ status: 'pago' }).eq('id', dividaId);
-            }
-
-            fecharModalPagarDivida();
-            carregarTudo();
-            alert('Acordo concluído!');
-        }
-
         async function carregarTransacoes() {
             const { data } = await _supabase.from('meufuturo_transacoes').select('*');
             let rec = 0, desp = 0;
@@ -1073,16 +918,14 @@
             listaContasBanco.forEach(d => { if(selectTrans) selectTrans.innerHTML += `<option value="conta:${d.id}">[BANCO] ${d.nome_banco} (R$ ${Number(d.saldo_inicial).toFixed(2)})</option>`; });
         }
 
-        // Modais básicos
-        function abrirModalPDV() { document.getElementById('modalPDV').classList.remove('hidden'); }
-        function fecharModalPDV() { document.getElementById('modalPDV').classList.add('hidden'); }
+        // Outros Modais
+        function abrirModalPDV() { document.getElementById('modalPDV')?.classList.remove('hidden'); }
+        function fecharModalPDV() { document.getElementById('modalPDV')?.classList.add('hidden'); }
         function fecharModalExtrato() { document.getElementById('modalExtrato').classList.add('hidden'); }
         function abrirModalConta() { document.getElementById('modalConta').classList.remove('hidden'); }
         function fecharModalConta() { document.getElementById('modalConta').classList.add('hidden'); }
         function abrirModalVR() { document.getElementById('modalVR').classList.remove('hidden'); }
         function fecharModalVR() { document.getElementById('modalVR').classList.add('hidden'); }
-        function abrirModalCartao() { document.getElementById('modalCartao').classList.remove('hidden'); }
-        function fecharModalCartao() { document.getElementById('modalCartao').classList.add('hidden'); }
         function abrirModalCarne() { document.getElementById('modalCarne').classList.remove('hidden'); }
         function fecharModalCarne() { document.getElementById('modalCarne').classList.add('hidden'); }
         function abrirModalDivida() { document.getElementById('modalDivida').classList.remove('hidden'); }
