@@ -107,8 +107,8 @@
 
     </main>
 
-    <!-- Modal Pop-up de Resumo Final -->
-    <div id="modalResumo" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <!-- Modal Pop-up de Resumo Final (Garantido para abrir por cima de tudo) -->
+    <div id="modalResumo" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 z-[999]">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full space-y-4 shadow-2xl text-center">
             <div class="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto text-xl">
                 <i class="fa-solid fa-check"></i>
@@ -129,7 +129,7 @@
             return agora.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
         }
 
-        let etapaAtual = 1; // 1: Pronto, 2: Em Deslocamento, 3: No Local/Permanência
+        let etapaAtual = 1; 
         let timerInterval = null;
         let tempoInicioMs = 0;
         
@@ -143,36 +143,26 @@
         let segundosDeslocamento = 0;
         let segundosPermanencia = 0;
 
-        // Som de alarme estilo relógio digital / despertador (alto e marcante)
         function emitirSomBip() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                
-                // Função para tocar um bipe individual
                 function tocarBeepUnico(tempoInicio, frequencia) {
                     const osc = audioCtx.createOscillator();
                     const gain = audioCtx.createGain();
-                    
-                    osc.type = 'square'; // Onda quadrada imita som digital de relógio
+                    osc.type = 'square';
                     osc.frequency.value = frequencia;
-                    
-                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime + tempoInicio); // Volume mais alto (0.3)
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime + tempoInicio);
                     gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + tempoInicio + 0.1);
-                    
                     osc.connect(gain);
                     gain.connect(audioCtx.destination);
-                    
                     osc.start(audioCtx.currentTime + tempoInicio);
                     osc.stop(audioCtx.currentTime + tempoInicio + 0.1);
                 }
-
-                // Sequência de alarme: 3 bipes rápidos e agudos (estilo relógio)
                 tocarBeepUnico(0.0, 2400);
                 tocarBeepUnico(0.12, 2400);
                 tocarBeepUnico(0.24, 3000);
-
             } catch (e) {
-                console.log('Áudio não suportado ou bloqueado pelo navegador.');
+                console.log('Áudio não suportado.');
             }
         }
 
@@ -238,7 +228,6 @@
             const segundosDecorridos = Math.floor((agoraMs - tempoInicioMs) / 1000);
             document.getElementById('displayTempo').innerText = formatarTempo(segundosDecorridos);
 
-            // Verificar se deve disparar o alarme com base no intervalo escolhido
             const intervaloMinutos = parseInt(document.getElementById('inputIntervaloBip').value) || 0;
             if (intervaloMinutos > 0 && segundosDecorridos > 0 && segundosDecorridos % (intervaloMinutos * 60) === 0) {
                 emitirSomBip();
@@ -337,7 +326,6 @@
                 const textoPermanencia = formatarTempo(segundosPermanencia);
 
                 const descricaoFinal = `${notaUsuario ? notaUsuario + ' | ' : ''}Deslocamento: ${textoDeslocamento} | Permanência: ${textoPermanencia} | Distância: ${kmFormatado} km`;
-
                 const dataHoje = obterDataLocalIso();
 
                 const { error } = await _supabase.from('meufuturo_agenda_v3').insert([{
@@ -357,6 +345,7 @@
                     return;
                 }
 
+                // Exibe o Pop-up utilizando classes do Tailwind sem conflito de style inline
                 const containerResumo = document.getElementById('conteudoResumo');
                 containerResumo.innerHTML = `
                     <div><strong>Atividade:</strong> ${titulo}</div>
@@ -364,12 +353,17 @@
                     <div><strong>Permanência no Local:</strong> ${textoPermanencia}</div>
                     <div><strong>Distância Percorrida:</strong> ${kmFormatado} km</div>
                 `;
-                document.getElementById('modalResumo').style.display = 'flex';
+                
+                const modal = document.getElementById('modalResumo');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
             }
         }
 
         function fecharModalResumo() {
-            document.getElementById('modalResumo').style.display = 'none';
+            const modal = document.getElementById('modalResumo');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
             window.location.reload(); 
         }
 
