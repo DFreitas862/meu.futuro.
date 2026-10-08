@@ -500,7 +500,7 @@
         </div>
     </div>
 
-    <!-- Modal Extrato -->
+    <!-- Modal Extrato (Com lixeira para apagar movimentações) -->
     <div id="modalExtrato" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-xl w-full space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -520,6 +520,8 @@
         let listaVRBanco = [];
         let dataAtualNavegacao = new Date();
         let ordemModoDivida = 'recentes';
+        let contaExtratoAtualId = null;
+        let contaExtratoAtualNome = null;
 
         function formatarMesAnoLabel(data) {
             const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -552,7 +554,7 @@
             data?.forEach(c => {
                 soma += Number(c.saldo_inicial);
                 lista.innerHTML += `
-                    <div onclick="abrirExtrato('${c.id}', '${c.nome_banco}')" class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-emerald-500 transition">
+                    <div onclick="abrirExtrato('${c.id}', '${encodeURIComponent(c.nome_banco)}')" class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-emerald-500 transition">
                         <div>
                             <p class="font-bold text-sm text-white"><i class="fa-solid fa-wallet text-emerald-400 mr-1.5"></i>${c.nome_banco}</p>
                             <span class="text-xs text-slate-400">Ver extrato</span>
@@ -562,7 +564,7 @@
                 `;
             });
             document.getElementById('saldoTotal').innerText = `R$ ${soma.toFixed(2)}`;
-            popularSelectsContas();
+            chainsContasSelect();
         }
 
         async function salvarConta() {
@@ -580,7 +582,7 @@
             lista.innerHTML = '';
             data?.forEach(v => {
                 lista.innerHTML += `
-                    <div onclick="abrirExtrato('${v.id}', '${v.nome}')" class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-cyan-500 transition">
+                    <div onclick="abrirExtrato('${v.id}', '${encodeURIComponent(v.nome)}')" class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-cyan-500 transition">
                         <div>
                             <p class="font-bold text-sm text-white"><i class="fa-solid fa-utensils text-cyan-400 mr-1.5"></i>${v.nome}</p>
                             <span class="text-xs text-slate-400">Ver extrato</span>
@@ -589,7 +591,7 @@
                     </div>
                 `;
             });
-            popularSelectsContas();
+            chainsContasSelect();
         }
 
         async function salvarVRConta() {
@@ -632,7 +634,6 @@
                     `;
                 });
 
-                // Criação segura do botão utilizando atributos data-* para evitar conflitos de sintaxe
                 let botaoPagarHTML = '';
                 if (totalFatura > 0 && !faturaPaga) {
                     botaoPagarHTML = `<button data-id="${cartao.id}" data-nome="${encodeURIComponent(cartao.nome)}" data-valor="${totalFatura}" onclick="clicarPagarFatura(this)" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition shadow"><i class="fa-solid fa-check mr-1"></i> Pagar Fatura</button>`;
@@ -821,6 +822,61 @@
             carregarTudo();
             alert('Fatura paga com sucesso e descontada do banco!');
         }
+
+        // --- EXTRATO E EXCLUSÃO DE TRANSAÇÃO ---
+        async function abrirExtrato(id, nomeEncoded) {
+            contaExtratoAtualId = id;
+            contaExtratoAtualNome = decodeURIComponent(nomeEncoded);
+            document.getElementById('extratoTitulo').innerText = `Extrato: ${contaExtratoAtualNome}`;
+            await carregarDadosExtrato();
+            document.getElementById('modalExtrato').classList.remove('hidden');
+        }
+
+        async function carregarDadosExtrato() {
+            const lista = document.getElementById('extratoLista');
+            lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">A carregar...</p>';
+
+            const { data } = await _supabase.from('meufuturo_transacoes').select('*').eq('conta_id', contaExtratoAtualId).order('data', { ascending: false });
+            lista.innerHTML = '';
+            if(!data || data.length === 0) { lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Nenhuma movimentação.</p>'; return; }
+            
+            data.forEach(t => {
+                lista.innerHTML += `
+                    <div class="flex justify-between items-center bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-xs">
+                        <div>
+                            <p class="font-bold text-white">${t.descricao}</p>
+                            <span class="text-slate-500">${new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="${t.tipo === 'receita' ? 'text-blue-400' : 'text-amber-400'} font-bold">R$ ${Number(t.valor).toFixed(2)}</span>
+                            <button onclick="excluirTransacaoExtrato('${t.id}', '${t.tipo}', ${t.valor})" class="text-rose-400 hover:text-rose-300 transition p-1" title="Apagar transação"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        async function excluirTransacaoExtrato(transacaoId, tipo, valor) {
+            if(!confirm('Deseja realmente apagar esta transação? O saldo do banco será recalculado.')) return;
+
+            // 1. Apagar a transação
+            const { error } = await _supabase.from('meufuturo_transacoes').delete().eq('id', transacaoId);
+            if(error) return alert('Erro ao apagar: ' + error.message);
+
+            // 2. Reverter o saldo na conta bancária correspondente
+            const contaObj = listaContasBanco.find(c => c.id === contaExtratoAtualId);
+            if(contaObj) {
+                let saldoAtual = Number(contaObj.saldo_inicial);
+                let novoSaldo = tipo === 'receita' ? saldoAtual - valor : saldoAtual + valor;
+                await _supabase.from('meufuturo_contas').update({ saldo_inicial: novoSaldo }).eq('id', contaExtratoAtualId);
+            }
+
+            // 3. Recarregar extrato e painel geral
+            await carregarDadosExtrato();
+            carregarTudo();
+        }
+
+        function fecharModalExtrato() { document.getElementById('modalExtrato').classList.add('hidden'); }
 
         // --- GESTÃO DE VEÍCULOS ---
         async function carregarVeiculos() {
@@ -1146,25 +1202,6 @@
             });
         }
 
-        async function abrirExtrato(id, nome) {
-            document.getElementById('extratoTitulo').innerText = `Extrato: ${nome}`;
-            const lista = document.getElementById('extratoLista');
-            lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">A carregar...</p>';
-            document.getElementById('modalExtrato').classList.remove('hidden');
-
-            const { data } = await _supabase.from('meufuturo_transacoes').select('*').eq('conta_id', id).order('data', { ascending: false });
-            lista.innerHTML = '';
-            if(!data || data.length === 0) { lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Nenhuma movimentação.</p>'; return; }
-            data.forEach(t => {
-                lista.innerHTML += `
-                    <div class="flex justify-between items-center bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-xs">
-                        <div><p class="font-bold text-white">${t.descricao}</p><span class="text-slate-500">${new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span></div>
-                        <span class="${t.tipo === 'receita' ? 'text-blue-400' : 'text-amber-400'} font-bold">R$ ${Number(t.valor).toFixed(2)}</span>
-                    </div>
-                `;
-            });
-        }
-
         async function salvarTransacao() {
             const desc = document.getElementById('transDesc').value;
             const valor = parseFloat(document.getElementById('transValor').value);
@@ -1184,7 +1221,7 @@
             carregarTudo();
         }
 
-        function popularSelectsContas() {
+        function chainsContasSelect() {
             const selectTrans = document.getElementById('transContaId');
             if(selectTrans) selectTrans.innerHTML = '<option value="">Selecione Conta</option>';
             listaContasBanco.forEach(d => { if(selectTrans) selectTrans.innerHTML += `<option value="conta:${d.id}">[BANCO] ${d.nome_banco} (R$ ${Number(d.saldo_inicial).toFixed(2)})</option>`; });
@@ -1193,7 +1230,6 @@
         // Outros Modais
         function abrirModalPDV() { document.getElementById('modalPDV')?.classList.remove('hidden'); }
         function fecharModalPDV() { document.getElementById('modalPDV')?.classList.add('hidden'); }
-        function fecharModalExtrato() { document.getElementById('modalExtrato').classList.add('hidden'); }
         function abrirModalConta() { document.getElementById('modalConta').classList.remove('hidden'); }
         function fecharModalConta() { document.getElementById('modalConta').classList.add('hidden'); }
         function abrirModalVR() { document.getElementById('modalVR').classList.remove('hidden'); }
