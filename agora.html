@@ -36,9 +36,9 @@
         <!-- Card de Controle de Etapas -->
         <div id="cardPrincipal" class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-5 text-center relative">
             
-            <!-- Botão de Minimizar / Flutuar (Sempre visível) -->
-            <button id="btnFlutuar" onclick="alternarModoFlutuante()" class="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-800/80 p-2 rounded-xl text-xs transition shadow" title="Modo Flutuante / Compacto">
-                <i class="fa-solid fa-expand"></i>
+            <!-- Botão de Janela Flutuante (Picture-in-Picture Fora do Site) -->
+            <button id="btnFlutuar" onclick="abrirJanelaFlutuante()" class="absolute top-4 right-4 text-slate-400 hover:text-amber-400 bg-slate-800/80 p-2 rounded-xl text-xs transition shadow" title="Abrir Cronômetro Flutuante Fora do Site">
+                <i class="fa-solid fa-external-link-alt"></i>
             </button>
 
             <div class="space-y-1">
@@ -138,7 +138,7 @@
         let etapaAtual = 1; 
         let timerInterval = null;
         let tempoInicioMs = 0;
-        let modoFlutuanteAtivo = false;
+        let janelaPip = null;
         
         let horaInicioDeslocamento = '';
         let horaChegadaLocal = '';
@@ -150,58 +150,78 @@
         let segundosDeslocamento = 0;
         let segundosPermanencia = 0;
 
-        // Bipe elegante estilo carrilhão / sino de cristal (suave e refinado)
         function emitirSomBip() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                
                 function tocarNotaElegante(frequencia, atraso, duracao) {
                     const osc = audioCtx.createOscillator();
                     const gain = audioCtx.createGain();
-                    
                     osc.type = 'sine';
                     osc.frequency.setValueAtTime(frequencia, audioCtx.currentTime + atraso);
-                    
                     gain.gain.setValueAtTime(0.001, audioCtx.currentTime + atraso);
                     gain.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + atraso + 0.05);
                     gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + atraso + duracao);
-                    
                     osc.connect(gain);
                     gain.connect(audioCtx.destination);
-                    
                     osc.start(audioCtx.currentTime + atraso);
                     osc.stop(audioCtx.currentTime + atraso + duracao);
                 }
-
                 tocarNotaElegante(523.25, 0.0, 0.8);  
                 tocarNotaElegante(659.25, 0.1, 0.8);  
                 tocarNotaElegante(783.99, 0.2, 1.0);  
-
             } catch (e) {
                 console.log('Áudio não suportado.');
             }
         }
 
-        function alternarModoFlutuante() {
-            modoFlutuanteAtivo = !modoFlutuanteAtivo;
-            const card = document.getElementById('cardPrincipal');
-            const painelConfig = document.getElementById('painelConfig');
-            const painelBip = document.getElementById('painelBipConfig');
-            const painelEnd = document.getElementById('painelEnderecos');
-            const btnFlutuarIcon = document.querySelector('#btnFlutuar i');
+        // Abre uma mini janela flutuante oficial (Picture-in-Picture) fora da aba
+        async function abrirJanelaFlutuante() {
+            if (tempoInicioMs === 0) {
+                alert('Inicie o cronômetro primeiro para poder abrir a janela flutuante!');
+                return;
+            }
 
-            if (modoFlutuanteAtivo) {
-                painelConfig.style.display = 'none';
-                painelBip.style.display = 'none';
-                painelEnd.style.display = 'none';
-                card.classList.add('fixed', 'top-4', 'left-4', 'right-4', 'z-[998]', 'shadow-2xl', 'border-blue-500/50');
-                btnFlutuarIcon.className = 'fa-solid fa-compress';
-            } else {
-                painelConfig.style.display = 'block';
-                painelBip.style.display = 'flex';
-                painelEnd.style.display = 'block';
-                card.classList.remove('fixed', 'top-4', 'left-4', 'right-4', 'z-[998]', 'shadow-2xl', 'border-blue-500/50');
-                btnFlutuarIcon.className = 'fa-solid fa-expand';
+            try {
+                if ('documentPictureInPicture' in window) {
+                    janelaPip = await window.documentPictureInPicture.requestWindow({
+                        width: 260,
+                        height: 140
+                    });
+
+                    // Copia o estilo da página para a janelinha flutuante
+                    [...document.styleSheets].forEach((styleSheet) => {
+                        try {
+                            const cssRules = [...styleSheet.cssRules].map((rule) => rule.cssText).join('');
+                            const style = janelaPip.document.createElement('style');
+                            style.textContent = cssRules;
+                            janelaPip.document.head.appendChild(style);
+                        } catch (e) {}
+                    });
+
+                    // Cria o conteúdo limpo e flutuante na mini janela
+                    const containerPip = janelaPip.document.createElement('div');
+                    containerPip.className = 'bg-slate-950 text-white p-4 flex flex-col items-center justify-center h-full text-center';
+                    containerPip.innerHTML = `
+                        <div id="pipBadge" class="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">Rota em Andamento</div>
+                        <div id="pipDisplay" class="text-3xl font-extrabold font-mono tracking-wider text-amber-400">00:00:00</div>
+                    `;
+                    janelaPip.document.body.appendChild(containerPip);
+
+                    janelaPip.addEventListener('pagehide', () => {
+                        janelaPip = null;
+                    });
+                } else {
+                    // Fallback para abrir uma janela pop-up convencional redimensionada se o PiP de documento não for suportado
+                    janelaPip = window.open('', 'CronometroFlutuante', 'width=280,height=160,top=50,left=50,toolbar=no,location=no,status=no,menubar=no,scrollbars=no');
+                    janelaPip.document.write(`
+                        <body style="background:#020617;color:#fff;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;">
+                            <div style="font-size:10px;color:#60a5fa;margin-bottom:5px;font-weight:bold;">CRONÔMETRO FLUTUANTE</div>
+                            <div id="pipDisplay" style="font-size:32px;font-family:monospace;font-weight:bold;color:#fbbf24;">00:00:00</div>
+                        </body>
+                    `);
+                }
+            } catch (e) {
+                alert('O seu navegador não permitiu abrir a janela flutuante.');
             }
         }
 
@@ -265,7 +285,18 @@
         function atualizarRelogio() {
             const agoraMs = Date.now();
             const segundosDecorridos = Math.floor((agoraMs - tempoInicioMs) / 1000);
-            document.getElementById('displayTempo').innerText = formatarTempo(segundosDecorridos);
+            const tempoFormatado = formatarTempo(segundosDecorridos);
+
+            // Atualiza na tela principal
+            document.getElementById('displayTempo').innerText = tempoFormatado;
+
+            // Atualiza também na janela flutuante (se estiver aberta)
+            if (janelaPip) {
+                try {
+                    const displayPip = janelaPip.document.getElementById('pipDisplay');
+                    if (displayPip) displayPip.innerText = tempoFormatado;
+                } catch (e) {}
+            }
 
             const intervaloMinutos = parseInt(document.getElementById('inputIntervaloBip').value) || 0;
             if (intervaloMinutos > 0 && segundosDecorridos > 0 && segundosDecorridos % (intervaloMinutos * 60) === 0) {
@@ -334,8 +365,6 @@
                 tempoInicioMs = agora.getTime();
                 segundosPermanencia = 0;
 
-                if (modoFlutuanteAtivo) alternarModoFlutuante();
-
                 etapaAtual = 3;
                 badge.innerHTML = '<i class="fa-solid fa-clock text-indigo-400 mr-1"></i> Etapa 3: Permanência no Local';
                 status.innerText = 'Tempo de atendimento/permanência a contar...';
@@ -348,6 +377,12 @@
                 clearInterval(timerInterval);
                 btn.disabled = true;
                 btn.innerText = 'A salvar no histórico...';
+
+                // Fecha a janela flutuante ao finalizar
+                if (janelaPip) {
+                    try { janelaPip.close(); } catch (e) {}
+                    janelaPip = null;
+                }
 
                 const agoraMs = Date.now();
                 segundosPermanencia = Math.floor((agoraMs - tempoInicioMs) / 1000);
@@ -385,9 +420,6 @@
                     btn.innerText = '3. Finalizar Atividade';
                     return;
                 }
-
-                if (modoFlutuanteAtivo) alternarModoFlutuante();
-                document.getElementById('btnFlutuar').classList.add('hidden');
 
                 const containerResumo = document.getElementById('conteudoResumo');
                 containerResumo.innerHTML = `
