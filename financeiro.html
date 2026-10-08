@@ -97,8 +97,6 @@
         <!-- Carnês do Mês & Dívidas Atrasadas -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg space-y-4">
-                
-                <!-- Cabeçalho do Carnê com Totais Resumidos -->
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-800 pb-3">
                     <div>
                         <h3 class="text-base font-bold text-amber-400"><i class="fa-solid fa-file-invoice-dollar"></i> Carnê do Mês</h3>
@@ -109,7 +107,6 @@
                         <button onclick="abrirModalCarne()" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 transition">+ Novo Carnê</button>
                     </div>
                 </div>
-
                 <div class="space-y-3 max-h-80 overflow-y-auto" id="listaCarnes">
                     <p class="text-xs text-slate-500 text-center py-4">A carregar carnês...</p>
                 </div>
@@ -214,6 +211,31 @@
         </div>
     </div>
 
+    <!-- Modal Cartão Atualizado com Fechamento e Vencimento -->
+    <div id="modalCartao" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
+            <h3 class="text-lg font-bold text-purple-400">Cadastrar Cartão de Crédito</h3>
+            <div class="space-y-3">
+                <input type="text" id="cartaoNome" placeholder="Nome do Cartão (Ex: Nubank)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <input type="number" step="0.01" id="cartaoLimite" placeholder="Limite Total (R$)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Melhor Dia / Fechamento</label>
+                        <input type="number" id="cartaoFechamento" placeholder="Ex: 10" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Dia do Vencimento</label>
+                        <input type="number" id="cartaoVencimento" placeholder="Ex: 17" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="fecharModalCartao()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
+                    <button type="button" onclick="salvarCartao()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition">Salvar Cartão</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Outros Modais básicos -->
     <div id="modalConta" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
@@ -238,20 +260,6 @@
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="fecharModalVR()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
                     <button type="button" onclick="salvarVRConta()" class="px-4 py-2 bg-cyan-600 text-white rounded-xl text-xs font-bold">Salvar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="modalCartao" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
-            <h3 class="text-lg font-bold text-purple-400">Cadastrar Cartão</h3>
-            <div class="space-y-3">
-                <input type="text" id="cartaoNome" placeholder="Nome do Cartão" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                <input type="number" step="0.01" id="cartaoLimite" placeholder="Limite Total" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-                <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" onclick="fecharModalCartao()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="button" onclick="salvarCartao()" class="px-4 py-2 bg-purple-600 text-white rounded-xl text-xs font-bold">Salvar</button>
                 </div>
             </div>
         </div>
@@ -392,28 +400,52 @@
             if(!error) { fecharModalVR(); carregarVR(); document.getElementById('vrNome').value=''; document.getElementById('vrSaldo').value=''; }
         }
 
+        // --- CARREGAR CARTÕES COM FECHAMENTO E VENCIMENTO ---
         async function carregarCartoes() {
             const { data } = await _supabase.from('meufuturo_cartoes').select('*');
             const lista = document.getElementById('listaCartoes');
             lista.innerHTML = '';
-            data?.forEach(c => {
+            if(!data || data.length === 0) {
+                lista.innerHTML = '<p class="text-xs text-slate-500 text-center py-2">Nenhum cartão cadastrado.</p>';
+                return;
+            }
+            data.forEach(c => {
                 lista.innerHTML += `
                     <div class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
                         <div>
                             <p class="font-bold text-sm text-white"><i class="fa-solid fa-credit-card text-purple-400 mr-1.5"></i>${c.nome}</p>
-                            <span class="text-xs text-slate-400">Limite: R$ ${Number(c.limite).toFixed(2)}</span>
+                            <span class="text-[11px] text-slate-400">Limite: R$ ${Number(c.limite).toFixed(2)} | Fechamento: ${c.fechamento || '-'} | Vencimento: ${c.vencimento || '-'}</span>
                         </div>
                     </div>
                 `;
             });
         }
 
+        // --- SALVAR CARTÃO CORRIGIDO ---
         async function salvarCartao() {
             const nome = document.getElementById('cartaoNome').value;
             const limite = parseFloat(document.getElementById('cartaoLimite').value);
-            if(!nome || isNaN(limite)) return alert('Preencha os campos!');
-            const { error } = await _supabase.from('meufuturo_cartoes').insert([{ nome, limite, fechamento: 10, vencimento: 15 }]);
-            if(!error) { fecharModalCartao(); carregarCartoes(); document.getElementById('cartaoNome').value=''; document.getElementById('cartaoLimite').value=''; }
+            const fechamento = parseInt(document.getElementById('cartaoFechamento').value) || 10;
+            const vencimento = parseInt(document.getElementById('cartaoVencimento').value) || 17;
+
+            if(!nome || isNaN(limite)) return alert('Preencha o nome e o limite do cartão!');
+
+            const { error } = await _supabase.from('meufuturo_cartoes').insert([{ 
+                nome: nome, 
+                limite: limite, 
+                fechamento: fechamento, 
+                vencimento: vencimento 
+            }]);
+
+            if(error) return alert('Erro ao salvar cartão: ' + error.message);
+
+            fecharModalCartao();
+            carregarCartoes();
+            document.getElementById('cartaoNome').value = '';
+            document.getElementById('cartaoLimite').value = '';
+            document.getElementById('cartaoFechamento').value = '';
+            document.getElementById('cartaoVencimento').value = '';
+            alert('Cartão cadastrado com sucesso!');
         }
 
         function popularSelectsContas() {
@@ -484,7 +516,7 @@
             alert('Carnê gerado com sucesso!');
         }
 
-        // --- EXIBIR CARNÊS E CALCULAR TOTAIS DO CABEÇALHO ---
+        // --- EXIBIR CARNÊS E TOTAIS ---
         async function carregarCarnesDoMes() {
             const { data } = await _supabase.from('meufuturo_carnes').select('*');
             const lista = document.getElementById('listaCarnes');
@@ -500,11 +532,8 @@
 
             if(data && data.length > 0) {
                 data.forEach(c => {
-                    // Calcula o total restante de todas as parcelas pendentes
                     if (c.status !== 'pago') {
                         totalRestanteGeral += Number(c.valor_parcela);
-
-                        // Verifica se está atrasado (ano/mês anterior ao atual)
                         let codigoParcela = (Number(c.ano_ref) * 100) + Number(c.mes_ref);
                         if (codigoParcela < codigoAtualNum) {
                             qtdAtrasadasGeral++;
@@ -513,7 +542,6 @@
                 });
             }
 
-            // Atualiza os valores no cabeçalho do carnê
             document.getElementById('resumoTotalFalta').innerText = `R$ ${totalRestanteGeral.toFixed(2)}`;
             const badgeAtraso = document.getElementById('resumoAtrasosBadge');
             if (qtdAtrasadasGeral > 0) {
