@@ -3,10 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Futuro - Assistente IA</title>
+    <title>Meu Futuro - Assistente IA Inteligente</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- SDK Oficial do Google Gen AI para navegador -->
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/genai": "https://esm.run/@google/genai"
+        }
+      }
+    </script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between pb-6">
 
@@ -21,23 +29,25 @@
         <div class="max-w-2xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <button onclick="window.location.href='home.html'" class="text-slate-400 hover:text-indigo-400 transition" title="Voltar ao Menu"><i class="fa-solid fa-arrow-left text-lg"></i></button>
-                <h1 class="text-lg font-bold text-indigo-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Assistente IA</span></h1>
+                <h1 class="text-lg font-bold text-indigo-400">Meu Futuro <span class="text-xs text-slate-400 font-normal">| Assistente IA Avançado</span></h1>
             </div>
-            <button onclick="limparChat()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold px-2.5 py-1.5 rounded-lg transition" title="Limpar Conversa"><i class="fa-solid fa-trash-can mr-1"></i> Limpar</button>
+            <div class="flex items-center space-x-2">
+                <button onclick="abrirModalChave()" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold px-2.5 py-1.5 rounded-lg transition" title="Configurar Chave da API"><i class="fa-solid fa-key mr-1"></i> Chave IA</button>
+                <button onclick="limparChat()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold px-2.5 py-1.5 rounded-lg transition" title="Limpar Conversa"><i class="fa-solid fa-trash-can mr-1"></i></button>
+            </div>
         </div>
     </header>
 
     <!-- Área de Mensagens do Chat -->
     <main class="max-w-2xl w-full mx-auto p-4 flex-1 flex flex-col space-y-4 overflow-y-auto mb-20" id="chatContainer">
-        <!-- Mensagem de boas-vindas da IA -->
+        <!-- Mensagem de boas-vindas -->
         <div class="flex items-start space-x-3">
             <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white shrink-0 font-bold text-xs"><i class="fa-solid fa-robot"></i></div>
             <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl text-xs sm:text-sm text-slate-200 max-w-[85%] space-y-2 shadow">
-                <p>Olá, Diego! Sou o seu assistente inteligente integrado ao sistema **Meu Futuro**. Como posso te ajudar hoje com suas rotas, finanças, ideias ou organização?</p>
+                <p>Olá, Diego! Agora estou conectado com inteligência artificial real. Posso te ajudar a planejar rotas, dar ideias de negócios ou registrar transações financeiras para você. Digite sua dúvida ou configure sua chave de API no botão acima se ainda não o fez!</p>
                 <div class="flex flex-wrap gap-1.5 pt-2">
-                    <button onclick="enviarSugestao('Como posso otimizar minhas rotas de entrega em São Paulo?')" class="bg-slate-800 hover:bg-slate-700 text-indigo-300 text-[11px] px-2.5 py-1 rounded-lg border border-slate-700 transition">🚗 Otimizar rotas</button>
-                    <button onclick="enviarSugestao('Me dê dicas de controle financeiro para motorista de entrega.')" class="bg-slate-800 hover:bg-slate-700 text-indigo-300 text-[11px] px-2.5 py-1 rounded-lg border border-slate-700 transition">💰 Dicas financeiras</button>
-                    <button onclick="enviarSugestao('Preciso de ideias criativas para papelaria e topo de bolo.')" class="bg-slate-800 hover:bg-slate-700 text-indigo-300 text-[11px] px-2.5 py-1 rounded-lg border border-slate-700 transition">🎨 Ideias de papelaria</button>
+                    <button onclick="enviarSugestao('Como posso otimizar minhas rotas de entrega e economizar combustível?')" class="bg-slate-800 hover:bg-slate-700 text-indigo-300 text-[11px] px-2.5 py-1 rounded-lg border border-slate-700 transition">🚗 Otimizar rotas</button>
+                    <button onclick="enviarSugestao('Me dê dicas de como precificar produtos de papelaria personalizada.')" class="bg-slate-800 hover:bg-slate-700 text-indigo-300 text-[11px] px-2.5 py-1 rounded-lg border border-slate-700 transition">🎨 Precificação de Papelaria</button>
                 </div>
             </div>
         </div>
@@ -46,42 +56,86 @@
     <!-- Barra Inferior de Digitação (Fixa) -->
     <footer class="bg-slate-900 border-t border-slate-800 p-3 fixed bottom-0 left-0 right-0 z-50">
         <div class="max-w-2xl mx-auto flex items-center space-x-2">
-            <input type="text" id="inputMensagem" onkeypress="verificarEnter(event)" placeholder="Digite sua dúvida ou comando para a IA..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-indigo-500 transition">
+            <input type="text" id="inputMensagem" onkeypress="verificarEnter(event)" placeholder="Digite com inteligência (ex: Preciso de ideias para...)" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-indigo-500 transition">
             <button onclick="enviarMensagem()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-3 rounded-xl font-bold transition shadow-lg shadow-indigo-900/30 flex items-center justify-center"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
     </footer>
 
-    <script>
+    <!-- Modal para Configurar a Chave da API do Gemini -->
+    <div id="modalChave" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 z-[999]">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
+            <h3 class="text-lg font-bold text-indigo-400"><i class="fa-solid fa-key mr-2"></i>Configurar Chave da API do Gemini</h3>
+            <p class="text-xs text-slate-400">Para a IA funcionar de verdade, insira a sua chave de API gratuita do Google Gemini (Gemini API Key). Ela fica salva apenas no seu navegador.</p>
+            <input type="password" id="inputApiKey" placeholder="Cole sua chave aqui (AIzaSy...)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="fecharModalChave()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
+                <button onclick="salvarChaveApi()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition">Salvar Chave</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="supabase.js"></script>
+
+    <script type="module">
+        import { GoogleGenAI } from "@google/genai";
+
         function scrollToBottom() {
             const container = document.getElementById('chatContainer');
             container.scrollTop = container.scrollHeight;
         }
 
-        function enviarSugestao(texto) {
+        window.enviarSugestao = function(texto) {
             document.getElementById('inputMensagem').value = texto;
-            enviarMensagem();
+            window.enviarMensagem();
         }
 
-        function verificarEnter(e) {
-            if (e.key === 'Enter') enviarMensagem();
+        window.verificarEnter = function(e) {
+            if (e.key === 'Enter') window.enviarMensagem();
         }
 
-        function limparChat() {
+        window.abrirModalChave = function() {
+            const chaveSalva = localStorage.getItem('gemini_api_key') || '';
+            document.getElementById('inputApiKey').value = chaveSalva;
+            document.getElementById('modalChave').classList.remove('hidden');
+            document.getElementById('modalChave').classList.add('flex');
+        }
+
+        window.fecharModalChave = function() {
+            document.getElementById('modalChave').classList.remove('flex');
+            document.getElementById('modalChave').classList.add('hidden');
+        }
+
+        window.salvarChaveApi = function() {
+            const chave = document.getElementById('inputApiKey').value.trim();
+            if (!chave) return alert('Insira uma chave válida!');
+            localStorage.setItem('gemini_api_key', chave);
+            fecharModalChave();
+            alert('Chave da IA salva com sucesso!');
+        }
+
+        window.limparChat = function() {
             const container = document.getElementById('chatContainer');
             container.innerHTML = `
                 <div class="flex items-start space-x-3">
                     <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white shrink-0 font-bold text-xs"><i class="fa-solid fa-robot"></i></div>
                     <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl text-xs sm:text-sm text-slate-200 max-w-[85%]">
-                        <p>Conversa limpa. Como posso ajudar agora?</p>
+                        <p>Conversa limpa. Como posso ajudar?</p>
                     </div>
                 </div>
             `;
         }
 
-        async function enviarMensagem() {
+        window.enviarMensagem = async function() {
             const input = document.getElementById('inputMensagem');
             const texto = input.value.trim();
             if (!texto) return;
+
+            const apiKey = localStorage.getItem('gemini_api_key');
+            if (!apiKey) {
+                alert('Por favor, clique no botão "Chave IA" no topo e insira a sua chave da API do Google Gemini para começar.');
+                window.abrirModalChave();
+                return;
+            }
 
             const container = document.getElementById('chatContainer');
 
@@ -97,43 +151,55 @@
             input.value = '';
             scrollToBottom();
 
-            // Balão temporário de "Pensando..."
+            // Balão de "Pensando..."
             const idPensando = 'pensando_' + Date.now();
             container.innerHTML += `
                 <div id="${idPensando}" class="flex items-start space-x-3">
                     <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white shrink-0 font-bold text-xs"><i class="fa-solid fa-robot"></i></div>
                     <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl text-xs sm:text-sm text-slate-400 max-w-[85%] italic">
-                        Pensando na resposta...
+                        Analisando...
                     </div>
                 </div>
             `;
             scrollToBottom();
 
-            // Resposta simulada inteligente / ou integração futura com API
-            setTimeout(() => {
+            try {
+                // Inicializa o SDK do Gemini oficial
+                const ai = new GoogleGenAI({ apiKey: apiKey });
+                
+                const promptSistema = `Você é o assistente inteligente do aplicativo "Meu Futuro", usado pelo Diego em São Paulo para gerenciar rotas, entregas e finanças. Seja direto, prestativo e dê respostas objetivas e úteis.`;
+
+                const response = await ai.models.generateContent({
+                    model: 'gemini-2.5-flash',
+                    contents: [promptSistema, texto],
+                });
+
                 document.getElementById(idPensando)?.remove();
-                
-                let respostaIA = "Entendido, Diego! Como seu assistente no 'Meu Futuro', estou aqui para ajudar a organizar suas demandas diárias, rotas e projetos. Quer que eu ajude a detalhar mais sobre esse ponto?";
-                
-                const textoLower = texto.toLowerCase();
-                if (textoLower.includes('rota') || textoLower.includes('entrega')) {
-                    respostaIA = "Para otimizar suas entregas em São Paulo, procure agrupar os pedidos por regiões vizinhas antes de sair, utilize o cronômetro de deslocamento para registrar o tempo real de cada trecho e verifique sempre o trânsito nos horários de pico.";
-                } else if (textoLower.includes('financeiro') || textoLower.includes('dinheiro') || textoLower.includes('controle')) {
-                    respostaIA = "O controle financeiro é essencial! No nosso módulo financeiro, lembre-se de sempre dar baixa nas faturas de cartão ao pagar e registrar os abastecimentos no veículo para acompanhar exatamente o custo por quilômetro rodado.";
-                } else if (textoLower.includes('papelaria') || textoLower.includes('topo de bolo') || textoLower.includes('ideia')) {
-                    respostaIA = "Para os pedidos de papelaria criativa e topos de bolo, manter uma pasta de fotos de inspiração organizada por tema (como Mickey, super-heróis, etc.) agiliza muito o atendimento com os clientes e evita atrasos na produção!";
-                }
+
+                const respostaIA = response.text || "Desculpe, não consegui processar a resposta.";
 
                 container.innerHTML += `
                     <div class="flex items-start space-x-3">
                         <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white shrink-0 font-bold text-xs"><i class="fa-solid fa-robot"></i></div>
                         <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl text-xs sm:text-sm text-slate-200 max-w-[85%] space-y-2 shadow">
-                            <p>${respostaIA}</p>
+                            <p>${respostaIA.replace(/\n/g, '<br>')}</p>
                         </div>
                     </div>
                 `;
                 scrollToBottom();
-            }, 1000);
+
+            } catch (error) {
+                document.getElementById(idPensando)?.remove();
+                container.innerHTML += `
+                    <div class="flex items-start space-x-3">
+                        <div class="w-8 h-8 rounded-full bg-rose-600 flex items-center justify-center text-white shrink-0 font-bold text-xs"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <div class="bg-slate-900 border border-rose-900/50 p-4 rounded-2xl text-xs sm:text-sm text-rose-300 max-w-[85%] shadow">
+                            <p>Erro ao comunicar com a IA: Verifique se a sua chave de API está correta.</p>
+                        </div>
+                    </div>
+                `;
+                scrollToBottom();
+            }
         }
     </script>
 </body>
